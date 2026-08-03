@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from anthropic import AsyncAnthropic
+from datetime import datetime
 from config import PipelineConfig
 from dotenv import load_dotenv
 from pathlib import Path
@@ -211,11 +212,13 @@ def parse_tasks(tasks_xml: str) -> list[dict]:
     return _parse_xml_items(tasks_xml, "task", ("function", "description", "input", "output"))
 
 
-# D2: {id, variables_involved, hypothesis, question_or_stakeholder_served, why_non_obvious,
-# rough_method} - the angle schema this plan's ANGLE_GENERATION_PROMPT_SUFFIX asks the model for.
+# D2/D5-calibrate: {id, variables_involved, hypothesis, question_or_stakeholder_served,
+# why_non_obvious, rough_method, requires} - the angle schema ANGLE_GENERATION_PROMPT_SUFFIX asks
+# the model for. requires (D5-calibrate item 6) is instrumentation only - what libraries ideation
+# reaches for, not a constraint on it (DIVERGER_PLAN.md §10) - and is never used to filter.
 _ANGLE_FIELDS = (
     "id", "variables_involved", "hypothesis", "question_or_stakeholder_served",
-    "why_non_obvious", "rough_method",
+    "why_non_obvious", "rough_method", "requires",
 )
 
 
@@ -578,6 +581,22 @@ def _angle_record(angle: dict, iteration: int, stance: str) -> str:
     return entry
 
 
+def _ensure_unique_id(angle: dict, seen_ids: set) -> None:
+    """D5-calibrate item 4: mutate angle['id'] in place to stay unique within a run, suffixing
+    -2, -3, ... on collision. Independent concurrent angle-generation calls can propose the same
+    slug (run 7 produced two angles both called "angle-1") - nothing keys on id today, but D7's
+    gallery will, so collisions are resolved here rather than left latent.
+    """
+    base = angle.get("id") or "angle"
+    candidate = base
+    suffix = 2
+    while candidate in seen_ids:
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    angle["id"] = candidate
+    seen_ids.add(candidate)
+
+
 def _angle_signature(angle: dict) -> set:
     """Token set for D4 dedup similarity. hypothesis/variables_involved are counted TWICE - run 1
     showed near-duplicate angles that shared topic but differed in method wording, and
@@ -702,14 +721,27 @@ async def judge_insight(angle: dict, report: str, ideation_criteria: str, input_
     return {"insight_score": score, "insight_reasoning": reasoning}
 
 
+# D5-calibrate item 2: three-way verdict instead of a boolean. A boolean sound/unsound collapses
+# "needs a caveat" and "cannot be supported at all" into one bucket, which saturates near-constant
+# on a small dataset (0/8, then 1/8 sound across live runs) and contributes nothing to ranking -
+# structurally the converger's binary req_pass problem in new clothes (DIVERGER_PLAN.md "Live
+# issues" #1). The caveat text is carried forward for D7 to DISPLAY, never to filter.
+_SOUNDNESS_VERDICTS = ("unsupportable", "caveat", "solid")
+_SOUNDNESS_RANK = {"solid": 3, "caveat": 2, "unsupportable": 1}
+
+
 async def judge_soundness(angle: dict, report: str, ideation_criteria: str, input_metadata: str,
                           config: PipelineConfig) -> dict:
-    """D5: flag whether one angle's claimed pattern is likely a sampling artifact given the actual
-    data volume, rather than a defensible finding - e.g. a "trend" resting on a field present in
-    only 2 of 4 years. Same prefix/fallback structure as judge_insight.
+    """D5/D5-calibrate: judge whether one angle's claimed pattern is defensible given the actual
+    data volume - graded, not gated (see _SOUNDNESS_VERDICTS above). Same prefix/fallback
+    structure as judge_insight.
 
-    Returns {"sound": bool or None, "soundness_reasoning": str}. None means the judge call failed
-    or emitted no parseable <sound> - treated as "unranked", not unsound.
+    Returns {"soundness_verdict": one of _SOUNDNESS_VERDICTS or None, "soundness_caveat": str,
+    "soundness_reasoning": str}. verdict is None if the judge call failed or emitted anything
+    outside the three-word vocabulary - treated as "unranked", not "unsupportable", so a prompt
+    that drifts off-vocabulary stays visible instead of silently reading as a quality verdict
+    (D5-calibrate item 3 - hardened from the old `verdict_text == "true"` boolean parse, which
+    silently mapped anything unexpected to False).
     """
     system_prompt = SOUNDNESS_JUDGE_SYSTEM
     prefix_template = SOUNDNESS_JUDGE_PROMPT_PREFIX
@@ -731,26 +763,70 @@ async def judge_soundness(angle: dict, report: str, ideation_criteria: str, inpu
     response = await llm_call(suffix, system_prompt=system_prompt, model=config.judge_model,
                               cache_prompt=True, cache_prefix=prefix)
     reasoning = extract_xml(response, "reasoning").strip()
-    verdict_text = extract_xml(response, "sound").strip().lower()
-    if verdict_text in ("true", "false"):
-        sound = verdict_text == "true"
+    caveat = extract_xml(response, "caveat").strip()
+    verdict_text = extract_xml(response, "verdict").strip().lower()
+    if verdict_text in _SOUNDNESS_VERDICTS:
+        verdict = verdict_text
     else:
-        print(f"WARNING: soundness judge emitted no parseable <sound> for angle "
+        print(f"WARNING: soundness judge emitted no parseable <verdict> for angle "
               f"{angle.get('id', '?')} (first 300 chars): {response[:300]}")
-        sound = None
-    return {"sound": sound, "soundness_reasoning": reasoning}
+        verdict = None
+    return {"soundness_verdict": verdict, "soundness_caveat": caveat, "soundness_reasoning": reasoning}
 
 
 def _judgment_sort_key(angle: dict) -> tuple:
-    """Rank angles for D5's final shortlist: (sound_rank, insight_score). A sound angle always
-    outranks an unsound one regardless of insight score, and both outrank an unranked one (a judge
-    call failed for it) - the same hard-gate-then-gradient shape as the deleted _candidate_score
-    (exec_pass then req_score), re-pointed at the judged-angle domain instead of code execution.
+    """Rank angles for D5's final shortlist: (soundness_rank, insight_score). solid > caveat >
+    unsupportable > unranked regardless of insight score - the same hard-gate-then-gradient shape
+    as the deleted _candidate_score (exec_pass then req_score), re-pointed at the judged-angle
+    domain instead of code execution.
     """
-    sound_rank = {True: 2, False: 1, None: 0}.get(angle.get("sound"), 0)
+    soundness_rank = _SOUNDNESS_RANK.get(angle.get("soundness_verdict"), 0)
     insight_score = angle.get("insight_score")
     insight_rank = insight_score if insight_score is not None else -1.0
-    return (sound_rank, insight_rank)
+    return (soundness_rank, insight_rank)
+
+
+def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
+    """D5-calibrate item 5: dump this run's ranked, judged angles to a human-readable file.
+
+    {existing_angles} only gives cross-iteration memory WITHIN a run (DIVERGER_PLAN.md "Live
+    issues" #3) - the report's "Already Explored" section is the only memory that persists across
+    runs, and it's maintained by hand. This file is the raw material for that: a human skims it
+    and copies entries worth retiring into the report themselves. Nothing here is applied
+    automatically - automatic retirement would suppress angles that merely resemble a prior one,
+    which the plan explicitly wants to avoid.
+
+    Returns the path written, or "" if output_dir is falsy.
+    """
+    if not output_dir:
+        return ""
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = Path(output_dir) / f"surfaced_angles_{timestamp}.md"
+
+    lines = [
+        f"# Surfaced angles - {timestamp}", "",
+        "Ranked best-first (soundness, then insight). Copy entries worth retiring into the "
+        "report's Already Explored section.", "",
+    ]
+    for angle in all_angles:
+        verdict = angle.get("soundness_verdict") or "unranked"
+        insight = angle.get("insight_score")
+        insight_str = f"{insight:.2f}" if insight is not None else "unranked"
+        lines.append(f"## {angle.get('id', '?')}")
+        lines.append(f"- soundness: {verdict}  |  insight: {insight_str}")
+        if angle.get("hypothesis"):
+            lines.append(f"- hypothesis: {angle['hypothesis']}")
+        if angle.get("variables_involved"):
+            lines.append(f"- variables: {angle['variables_involved']}")
+        if angle.get("soundness_caveat"):
+            lines.append(f"- caveat: {angle['soundness_caveat']}")
+        if angle.get("requires"):
+            lines.append(f"- requires: {angle['requires']}")
+        lines.append("")
+
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return str(path)
 
 
 async def _run_one_design(report: str, criteria: str, input_metadata: str, config: PipelineConfig, data_dir: str,
@@ -1010,6 +1086,9 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     # Archive: every angle proposed so far across all iterations, as {angle, iteration, stance}
     # records - not executed scripts, so there's no score to cap by (D4 dedups instead, below).
     archive: list[dict] = []
+    # D5-calibrate item 4: ids seen so far this run, across all iterations - collisions between
+    # independent concurrent calls get suffixed here before the angle ever reaches the archive.
+    seen_ids: set = set()
 
     for iteration in range(max_iterations):
         print(f"\n{'=' * 80}")
@@ -1055,6 +1134,7 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
                       f"question={call_question!r}) failed: {result!r}")
                 continue
             for angle in result:
+                _ensure_unique_id(angle, seen_ids)
                 angles.append(angle)
                 angle_meta.append((call_stance, call_question))
                 archive.append({"angle": angle, "iteration": iteration + 1, "stance": call_stance})
@@ -1108,19 +1188,30 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             if kind == "insight":
                 angle["insight_score"], angle["insight_reasoning"] = None, f"(judge call failed: {result!r})"
             else:
-                angle["sound"], angle["soundness_reasoning"] = None, f"(judge call failed: {result!r})"
+                angle["soundness_verdict"], angle["soundness_caveat"], angle["soundness_reasoning"] = (
+                    None, "", f"(judge call failed: {result!r})"
+                )
             continue
         angle.update(result)
 
     all_angles.sort(key=_judgment_sort_key, reverse=True)
 
-    sound_count = sum(1 for a in all_angles if a.get("sound") is True)
-    unsound_count = sum(1 for a in all_angles if a.get("sound") is False)
-    unranked_count = sum(1 for a in all_angles if a.get("sound") is None)
+    solid_count = sum(1 for a in all_angles if a.get("soundness_verdict") == "solid")
+    caveat_count = sum(1 for a in all_angles if a.get("soundness_verdict") == "caveat")
+    unsupportable_count = sum(1 for a in all_angles if a.get("soundness_verdict") == "unsupportable")
+    unranked_count = sum(1 for a in all_angles if a.get("soundness_verdict") is None)
     print(
-        f"[judge] {len(all_angles)} angle(s) scored - {sound_count} sound, {unsound_count} "
-        f"unsound, {unranked_count} unranked (judge call failed)\n"
+        f"[judge] {len(all_angles)} angle(s) scored - {solid_count} solid, {caveat_count} "
+        f"needs-caveat, {unsupportable_count} unsupportable, {unranked_count} unranked "
+        f"(judge call failed)\n"
     )
+
+    # D5-calibrate item 5: dump the ranked, judged angles for cross-run human curation - see
+    # _write_angle_dump's docstring for why this is a file, not an automatic retirement.
+    dump_path = _write_angle_dump(all_angles, output_dir)
+    if dump_path:
+        print(f"[dump] Surfaced angles written to {dump_path} - curate into the report's "
+              f"Already Explored section as needed.\n")
 
     lines = [f"{len(all_angles)} candidate analysis angle(s) generated, ranked best-first:\n"]
     for angle in all_angles:
@@ -1132,8 +1223,10 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             lines.append(f"  insight_score: {angle['insight_score']:.2f}")
         if angle.get("insight_reasoning"):
             lines.append(f"  insight_reasoning: {angle['insight_reasoning']}")
-        if angle.get("sound") is not None:
-            lines.append(f"  sound: {angle['sound']}")
+        if angle.get("soundness_verdict") is not None:
+            lines.append(f"  soundness_verdict: {angle['soundness_verdict']}")
+        if angle.get("soundness_caveat"):
+            lines.append(f"  soundness_caveat: {angle['soundness_caveat']}")
         if angle.get("soundness_reasoning"):
             lines.append(f"  soundness_reasoning: {angle['soundness_reasoning']}")
         lines.append("")

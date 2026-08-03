@@ -303,6 +303,7 @@ Return your response as one <angles> block containing exactly {n} <angle> blocks
 <question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
 <why_non_obvious>why this isn't just the first/obvious thing to check</why_non_obvious>
 <rough_method>one or two sentences on how it'd be computed</rough_method>
+<requires>comma-separated list of any Python libraries this method would need beyond numpy/pandas/matplotlib, if any (e.g. "networkx, scikit-learn, scipy"); this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available</requires>
 </angle>
 </angles>
 """
@@ -344,6 +345,7 @@ Return your response as one <angles> block containing exactly {n} <angle> blocks
 <question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
 <why_non_obvious>why this isn't just the first/obvious thing to check</why_non_obvious>
 <rough_method>one or two sentences on how it'd be computed</rough_method>
+<requires>comma-separated list of any Python libraries this method would need beyond numpy/pandas/matplotlib, if any (e.g. "networkx, scikit-learn, scipy"); this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available</requires>
 </angle>
 </angles>
 """
@@ -426,17 +428,26 @@ Ideation Criteria (guiding questions, stakeholders, anti-targets, data constrain
 Input Data: {input_data}
 """
 SOUNDNESS_JUDGE_PROMPT_SUFFIX = """
-Judge whether this candidate analysis angle's claimed pattern would likely be a real, defensible
-finding given the data volume actually available (see Input Data above) - or whether it rests on
-too little data to support the claim (e.g. a "trend" over only 2 data points, a field only present
-in a subset of years, a small subgroup). Flag angles that would need a caveat or are likely
-noise-driven as NOT sound.
+Judge whether this candidate analysis angle's claimed pattern is defensible given the data volume
+actually available (see Input Data above). Distinguish three cases, not two - a boolean sound/unsound
+call collapses "needs a caveat" and "cannot be supported at all" into the same bucket, which is not
+useful when almost nothing on a small dataset is unconditionally solid:
+- "unsupportable": the claim cannot be supported at all - e.g. a "trend" over only 2 data points, a
+  field that does not exist in the data for the years/groups being compared, a subgroup of 2-3, a
+  method that isn't actually computable from what's available.
+- "caveat": the claim is supportable but only with an explicit caveat about its limitations (small n,
+  partial-year coverage, a confound not controlled for). Expect this to be the NORMAL case for a
+  dataset this size, not a rare one.
+- "solid": the claim is well-supported with no material caveat needed. Expect this to be rare.
 
 Angle:
 {angle_text}
 
-<sound>[true or false - true only if the claimed pattern is defensible given the actual data volume]</sound>
-<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if unsound]</reasoning>
+<verdict>[unsupportable, caveat, or solid - exactly one of these three words, nothing else]</verdict>
+<caveat>[if verdict is "caveat", the specific limitation to carry forward and display alongside the
+angle later (e.g. "n=37 respondents in 2022, treat as indicative, not conclusive"); leave empty if
+verdict is "solid" or "unsupportable"]</caveat>
+<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if not solid]</reasoning>
 """
 
 SOUNDNESS_JUDGE_SYSTEM_FALLBACK = (
@@ -454,15 +465,15 @@ Input Data: {input_data}
 """
 
 SOUNDNESS_JUDGE_PROMPT_SUFFIX_FALLBACK = """
-Judge whether this candidate analysis angle's claimed pattern would likely be a real, defensible
-finding given the data volume actually available (see Input Data above) - or whether it rests on
-too little data to support the claim (e.g. a "trend" over only 2 data points, a field only present
-in a subset of years, a small subgroup). Flag angles that would need a caveat or are likely
-noise-driven as NOT sound.
+Judge whether this candidate analysis angle's claimed pattern is defensible given the data volume
+actually available (see Input Data above), or whether it needs an explicit caveat, or cannot be
+supported at all (e.g. a "trend" over only 2 data points, a field only present in a subset of years,
+a tiny subgroup).
 
 Angle:
 {angle_text}
 
-<sound>[true or false - true only if the claimed pattern is defensible given the actual data volume]</sound>
-<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if unsound]</reasoning>
+<verdict>[unsupportable, caveat, or solid - exactly one of these three words]</verdict>
+<caveat>[if verdict is "caveat", the specific limitation to note; empty otherwise]</caveat>
+<reasoning>[1-2 sentences justifying the verdict]</reasoning>
 """
