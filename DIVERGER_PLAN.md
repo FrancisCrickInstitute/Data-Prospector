@@ -1,8 +1,8 @@
-# Converger → Diverger conversion plan (rev. 4)
+# Converger → Diverger conversion plan (rev. 5)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
-**D1–D5 are complete.** The pipeline now ideates, diverges, dedups and judges — with no code executed anywhere in it. What remains is realisation (D6), the gallery (D7), and stopping/economy (D8), plus calibration of the two judges.
+**D1–D5 and D5-calibrate are complete.** The pipeline now ideates, diverges, dedups and judges — with a graded (not gated) soundness verdict — with no code executed anywhere in it. What remains is realisation (D6), the gallery (D7), and stopping/economy (D8). D5-calibrate is implemented but **not yet run live** — see §3 for what to check on the next run.
 
 **Read this whole document before starting. Then implement ONE step at a time, stopping after each for review and a live run.**
 
@@ -67,6 +67,16 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 
 **D5** — implemented (`judge_insight`, `judge_soundness`, `_rank_key`, `judge_model` per config). Prompts filled by the human. `_candidate_score` deleted as scheduled. **The judges are not yet calibrated** — see "Live issues".
 
+**D5-calibrate** — implemented, **not yet run live** (Run 8 is the next data point). All six items from the original spec:
+1. Scores were already surfaced by D5 (ranked shortlist, per-angle reasoning) — nothing to change.
+2. **Soundness graded instead of gated.** `judge_soundness` now returns a three-way `unsupportable`/`caveat`/`solid` verdict instead of a boolean, plus a `soundness_caveat` string carried forward for display, never used as a filter. `caveat` is written up as the *normal* case for a dataset this size, not a rare one. `_judgment_sort_key` now ranks `solid > caveat > unsupportable > unranked` (was `sound_rank`/boolean).
+3. **Verdict parsing hardened.** Anything outside the three-word vocabulary maps to `None` (unranked) with a warning, not a default verdict — the same fix the old boolean parse needed (it silently mapped anything unexpected to `false`).
+4. **Unique angle ids enforced.** `_ensure_unique_id` suffixes `-2`, `-3`, ... on collision before an angle reaches the archive.
+5. **Cross-run curation aid added.** `_write_angle_dump` writes every run's ranked, judged angles to `output_dir/surfaced_angles_<ts>.md`. This does NOT give the pipeline cross-run memory — `{existing_angles}` still only persists within a run, and the report's Already Explored section is still hand-maintained — it just makes copying entries into that section a copy-paste instead of a re-transcription. No automatic retirement, by design.
+6. **`requires` field added** to the angle schema (instrumentation only, §10) — tracks what libraries ideation reaches for; never constrains it.
+
+The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s new `<verdict>`/`<caveat>` tags, `ANGLE_GENERATION_PROMPT_SUFFIX`'s new `<requires>` tag) were drafted directly into both the human-owned constants and their `_FALLBACK` counterparts, at the human's request — still open to further editing, same as the rest of the human-owned prompts.
+
 **Report** — rewritten three times: plot taxonomy, metric counts and PNG counts removed; guiding questions levelled; anti-target list inlined from `djpbarry/cbias-survey`; programme CSVs pre-downloaded so Q4 is answerable without network access; Q5 reworded to drop post-attendance collaboration; `<year>_Abstracts` notation replaced (it was producing XML parse failures every iteration when the model copied it into `<variables_involved>`).
 
 ### Run log
@@ -87,15 +97,15 @@ The evidence base for every threshold in this document.
 
 ### Live issues
 
-**1. Soundness is saturated (highest priority).** 0/8 then 1/8 sound. `_rank_key` is `(sound_rank, insight_score)`, so a near-constant soundness signal contributes nothing to ranking — structurally the converger's binary `req_pass` problem in new clothes. With n=37–60 feedback respondents per year over four years, *almost nothing on this dataset is statistically robust*, so any "would this need a caveat?" bar rejects nearly everything, permanently. See D5-calibrate.
+**1. Soundness was saturated — addressed by D5-calibrate, pending live verification (highest priority to confirm).** 0/8 then 1/8 sound under the old boolean gate, which contributed nothing to ranking — structurally the converger's binary `req_pass` problem in new clothes. `judge_soundness` now emits a three-way `unsupportable`/`caveat`/`solid` verdict, with `caveat` written up as the normal case for n=37–60/year data, not the rare one. Not yet confirmed against a live run — check the `[judge]` line's solid/caveat/unsupportable/unranked breakdown on Run 8.
 
-**2. Insight discrimination is unmeasured.** Per-angle `insight_score` is computed and printed, but the ranked block hasn't appeared in reviewed output. **This is the next number to look at.** If `ticket-type-trend` and `satisfaction-driver-shifts` score similarly, the insight prompt needs work before anything else.
+**2. Insight discrimination is still unmeasured.** Per-angle `insight_score` is computed, printed, and now also written to `output_dir/surfaced_angles_<ts>.md`. **This is still the next number to look at.** If `ticket-type-trend` and `satisfaction-driver-shifts` score similarly, the insight prompt needs work before anything else.
 
-**3. Cross-run memory is absent.** `ticket-type-trend` has appeared in four consecutive runs (always Q1 + Conventional); `readability-trend` and `registration-timing` three each. `{existing_angles}` only persists *within* a run. See D5-calibrate.
+**3. Cross-run memory is still manual, now with a curation aid.** `ticket-type-trend` has appeared in four consecutive runs (always Q1 + Conventional); `readability-trend` and `registration-timing` three each. `{existing_angles}` still only persists *within* a run — the report's Already Explored section remains the only persistent cross-run memory, and it's still hand-maintained. D5-calibrate added `_write_angle_dump` so curating that section is a copy-paste from `surfaced_angles_<ts>.md` instead of a manual re-transcription; nothing retires an angle automatically, by design.
 
-**4. Duplicate angle ids.** Run 7 produced two angles both called `angle-1`. Nothing keys on `id` today, so it is currently harmless — but it is a D7 prerequisite.
+**4. Duplicate angle ids — fixed.** Run 7 produced two angles both called `angle-1`. `_ensure_unique_id` (D5-calibrate) now suffixes `-2`, `-3`, ... on collision before an angle reaches the archive.
 
-**5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Promoted to an explicit D8 task.
+**5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
 ### Known ceiling: dedup is lexical
 
@@ -165,27 +175,7 @@ Currently unreferenced but **must not be deleted**. Mark each with a banner comm
 
 ## 7. Remaining steps
 
-### D5-calibrate — Fix the judges before building on them
-
-**Goal:** make soundness informative and confirm insight discriminates. No new stages; this is calibration plus two small mechanical changes. **Do this before D6** — realisation spends real money on whatever the ranking selects, so the ranking must mean something first.
-
-**Changes**
-
-1. **Surface the scores.** Ensure the ranked shortlist prints per-angle `insight_score`, `sound`, and both reasonings at the end of a run. Everything below depends on being able to see them.
-2. **Grade soundness instead of gating it.** The judge should separate three cases rather than emit a boolean:
-   - *Cannot support the claim at all* — a two-point "trend", a field that does not exist, a subgroup of three, "forecast backward via simulated annealing"
-   - *Supportable if appropriately caveated* — the normal case on this dataset
-   - *Solid* — rare here
-
-   Emit a score (or three-level verdict) and carry the caveat text forward. **The caveat is something D7 displays, not something that filters** — D7's premise is that the human is the evaluation function, and "n=37/year, treat as indicative" next to a plot is more useful than a silently dropped angle. Prompt wording is human-owned; wire the plumbing and propose.
-3. **Harden verdict parsing.** `sound = verdict_text == "true"` means anything that is not literally `true` becomes *unsound*, silently — so a prompt that drifts to yes/no, or a model that emits `True.`, produces total rejection that looks like a quality verdict. Anything outside the expected vocabulary should map to `None`/unranked so prompt problems stay visible.
-4. **Enforce unique angle ids** at parse time (suffix a counter on collision). D7 prerequisite; also nudge the angle prompt toward descriptive slugs, since the call that produced `angle-1` also produced `semantic-topic-shift`.
-5. **Add the cross-run anti-target loop.** Dump each run's surfaced angles to a file for human curation; curated entries are appended to the report's "Already Explored" section. The anti-target list is the only cross-run memory, and this converts review effort into permanent pressure — the same mechanism that stopped `abstract-analysis.ipynb`'s contents reappearing. Keep the human in the loop: automatic retirement would suppress angles that merely *resemble* a prior one.
-6. **Add a `requires` field to the angle schema** (instrumentation only — see §10). Free, and it tells you what ideation actually reaches for before D6 makes it expensive.
-
-**Verify:** `ticket-type-trend` (fourth consecutive appearance, close cousin of an anti-target) scores clearly below `satisfaction-driver-shifts` on insight. Soundness produces a spread rather than a near-constant. If the two example angles score similarly, the insight prompt needs work before proceeding.
-
----
+**D5-calibrate is done (§3) but not yet live-verified.** Run it once on `cbias` and check the `[judge]` breakdown and `insight_score` spread before spending real money in D6 — realisation spends on whatever the ranking selects, so the ranking has to mean something first. One small item from the original D5-calibrate spec was left undone as optional polish: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs (id collisions are now handled mechanically by `_ensure_unique_id` regardless, so this only affects readability, not correctness).
 
 ### D6 — Selective execution
 
