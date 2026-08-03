@@ -264,9 +264,48 @@ for future analysis: [list 2-3 things that would help, if applicable]"
 # generate_angles() in pipeline.py logs a loud warning and falls back to the minimal built-in
 # placeholder below when any of these three are empty, so the plumbing stays runnable while
 # they're unfilled - that fallback is NOT a substitute for real ideation prompt design.
-ANGLE_GENERATION_SYSTEM = ""         # TODO(human): fill in
-ANGLE_GENERATION_PROMPT_PREFIX = ""  # TODO(human): slots {report} {ideation_criteria} {input_data}
-ANGLE_GENERATION_PROMPT_SUFFIX = ""  # TODO(human): slots {stance} {guiding_question} {existing_angles} {n}
+ANGLE_GENERATION_SYSTEM = (
+    "You are an experienced data analyst, adept at identifying novel insights from both structured and unstructured "
+    "data. You generate candidate data-analysis angles as structured XML. Each angle is a distinct question or method, "
+    "not a full analysis plan. While novelty is encouraged, the calculation must be feasible with the given data. "
+    "Avoid over-extrapolating or making assumptions not supported by the data."
+)
+ANGLE_GENERATION_PROMPT_PREFIX = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+ANGLE_GENERATION_PROMPT_SUFFIX = """
+{existing_angles}
+
+For this call, your assigned angle of attack is:
+- Approach/stance: {stance}
+- Guiding question or stakeholder to focus on: {guiding_question}
+
+Propose {n} distinct candidate analysis angle(s) that concretely reflect the stance and question
+above - do not default back to whichever opportunity in the data looks most obvious or most
+concrete if it conflicts with this assignment. Each angle is an idea for a specific analysis - not
+code, not a full script design - identified by what it would compute and why it might be
+interesting, and it must be genuinely different from anything already listed above (if non-empty). However, do not 
+suggest analysis angles that cannot be supported by the underlying data - candidate analyses must be feasible,
+not just interesting.
+
+Return your response as one <angles> block containing exactly {n} <angle> blocks:
+
+<angles>
+<angle>
+<id>short slug, e.g. angle-1</id>
+<variables_involved>which fields/columns this angle uses</variables_involved>
+<hypothesis>what pattern or relationship this angle expects to find</hypothesis>
+<question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
+<why_non_obvious>why this isn't just the first/obvious thing to check</why_non_obvious>
+<rough_method>one or two sentences on how it'd be computed</rough_method>
+</angle>
+</angles>
+"""
 
 ANGLE_GENERATION_SYSTEM_FALLBACK = (
     "You generate candidate data-analysis angles as structured XML. Each angle is a distinct "
@@ -320,9 +359,31 @@ Return your response as one <angles> block containing exactly {n} <angle> blocks
 # judge_insight()/judge_soundness() in pipeline.py log a loud warning and fall back to the minimal
 # built-in placeholders below when their three constants are empty, so the plumbing stays runnable
 # while they're unfilled - the fallback is NOT a substitute for real judge prompt design.
-INSIGHT_JUDGE_SYSTEM = ""         # TODO(human): fill in
-INSIGHT_JUDGE_PROMPT_PREFIX = ""  # TODO(human): slots {report} {ideation_criteria} {input_data}
-INSIGHT_JUDGE_PROMPT_SUFFIX = ""  # TODO(human): slots {angle_text}
+INSIGHT_JUDGE_SYSTEM = (
+    "You judge whether a proposed data-analysis angle is genuinely non-obvious, grounded in what "
+    "the data can actually support - not whether the angle's own self-description claims novelty."
+)
+INSIGHT_JUDGE_PROMPT_PREFIX = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, ANTI-TARGETS - analyses already explored, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+INSIGHT_JUDGE_PROMPT_SUFFIX = """
+Judge the non-obviousness of this candidate analysis angle. Do NOT take its own why_non_obvious
+field as evidence - judge independently against the anti-target list above and your own knowledge
+of what's obvious to try first with this kind of data. An angle that overlaps the anti-target list,
+even if phrased differently or using a different library/method, is NOT non-obvious.
+
+Angle:
+{angle_text}
+
+<score>[0.0-1.0, where 0.0 = exactly what the anti-target list already covers, 1.0 = genuinely novel and non-obvious]</score>
+<reasoning>[1-2 sentences justifying the score, referencing the anti-target list or data if relevant]</reasoning>
+"""
+
 
 INSIGHT_JUDGE_SYSTEM_FALLBACK = (
     "You judge whether a proposed data-analysis angle is genuinely non-obvious, grounded in what "
@@ -351,9 +412,32 @@ Angle:
 <reasoning>[1-2 sentences justifying the score, referencing the anti-target list or data if relevant]</reasoning>
 """
 
-SOUNDNESS_JUDGE_SYSTEM = ""         # TODO(human): fill in
-SOUNDNESS_JUDGE_PROMPT_PREFIX = ""  # TODO(human): slots {report} {ideation_criteria} {input_data}
-SOUNDNESS_JUDGE_PROMPT_SUFFIX = ""  # TODO(human): slots {angle_text}
+SOUNDNESS_JUDGE_SYSTEM = (
+    "You judge whether a proposed data-analysis angle's claimed pattern is likely a real, "
+    "defensible finding given the data volume available, or a sampling artifact / overclaim. You also judge "
+    "whether the angle is implementable, given the underlying data."
+)
+SOUNDNESS_JUDGE_PROMPT_PREFIX = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+SOUNDNESS_JUDGE_PROMPT_SUFFIX = """
+Judge whether this candidate analysis angle's claimed pattern would likely be a real, defensible
+finding given the data volume actually available (see Input Data above) - or whether it rests on
+too little data to support the claim (e.g. a "trend" over only 2 data points, a field only present
+in a subset of years, a small subgroup). Flag angles that would need a caveat or are likely
+noise-driven as NOT sound.
+
+Angle:
+{angle_text}
+
+<sound>[true or false - true only if the claimed pattern is defensible given the actual data volume]</sound>
+<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if unsound]</reasoning>
+"""
 
 SOUNDNESS_JUDGE_SYSTEM_FALLBACK = (
     "You judge whether a proposed data-analysis angle's claimed pattern is likely a real, "
