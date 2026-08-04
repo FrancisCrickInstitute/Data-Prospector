@@ -29,6 +29,12 @@ Available libraries for imports:
 - NumPy: for numerical computing
 - Pandas: for data manipulation and analysis
 - Matplotlib: for plotting and visualization
+- SciPy: for statistical tests and scientific computing
+- scikit-learn: for clustering, dimensionality reduction, and other ML techniques
+- NLTK: for text tokenization/stopword removal on free-text feedback and abstract fields (punkt,
+  punkt_tab, and stopwords corpora are pre-downloaded; other corpora are not available)
+- Seaborn: for statistical plotting on top of Matplotlib
+- textstat: for readability metrics on free-text fields
 """
 
 DOMAIN_NOTES = """

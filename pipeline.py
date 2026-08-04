@@ -633,13 +633,19 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     O(n^2) comparisons, fine at the angle counts this pipeline produces per run.
 
     Returns (kept_records, merge_stats) where merge_stats = {"within_iteration": int,
-    "across_iteration": int} - split so within-iteration duplication (stance/question
-    differentiation too weak, see D3a) and across-iteration duplication ({existing_angles}
-    pressure too weak, see D3) can be diagnosed separately.
+    "across_iteration": int, "merges": list[dict]} - counts split so within-iteration
+    duplication (stance/question differentiation too weak, see D3a) and across-iteration
+    duplication ({existing_angles} pressure too weak, see D3) can be diagnosed separately.
+    "merges" records each individual merge event (record id, the id of the most-similar
+    existing record it matched, the similarity score, and the type) so which specific pair
+    merged - not just how many - can be read off the run log (see DIVERGER_PLAN.md §3/§4).
+    Logged at merge time against the best-matching member, not the cluster's eventual
+    representative, since _pick_representative runs after clustering is complete.
     """
     clusters: list[list[dict]] = []
     within_iteration = 0
     across_iteration = 0
+    merges: list[dict] = []
 
     for record in records:
         record_tokens = _angle_signature(record["angle"])
@@ -651,16 +657,27 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
                     best_idx, best_sim, best_match = idx, sim, member
 
         if best_idx is not None and best_sim >= threshold:
-            if best_match["iteration"] == record["iteration"]:
+            merge_type = "within_iteration" if best_match["iteration"] == record["iteration"] else "across_iteration"
+            if merge_type == "within_iteration":
                 within_iteration += 1
             else:
                 across_iteration += 1
+            merges.append({
+                "record_id": record["angle"].get("id", "?"),
+                "matched_id": best_match["angle"].get("id", "?"),
+                "similarity": best_sim,
+                "type": merge_type,
+            })
             clusters[best_idx].append(record)
         else:
             clusters.append([record])
 
     kept = [_pick_representative(cluster) for cluster in clusters]
-    return kept, {"within_iteration": within_iteration, "across_iteration": across_iteration}
+    return kept, {
+        "within_iteration": within_iteration,
+        "across_iteration": across_iteration,
+        "merges": merges,
+    }
 
 
 def _format_angle(angle: dict) -> str:
@@ -1161,8 +1178,14 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         f"[dedup] {len(archive)} angle(s) -> {len(kept_records)} after dedup "
         f"(threshold={config.angle_similarity_threshold}); merged "
         f"{merge_stats['within_iteration']} within-iteration, "
-        f"{merge_stats['across_iteration']} across-iteration duplicate(s)\n"
+        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
     )
+    for merge in merge_stats["merges"]:
+        print(
+            f"    merged [{merge['record_id']}] -> [{merge['matched_id']}] "
+            f"(similarity={merge['similarity']:.3f}, {merge['type']})"
+        )
+    print()
     all_angles = [rec["angle"] for rec in kept_records]
 
     if not all_angles:
