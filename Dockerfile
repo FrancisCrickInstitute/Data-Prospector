@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir \
 # --network none in DOCKER_SANDBOX_FLAGS that fails on first use unless baked in at build time
 # (DIVERGER_PLAN.md §10). punkt/punkt_tab (tokenization) and stopwords cover the standard entry
 # point for the free-text feedback/abstract fields this config's angles reach for.
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords')"
+RUN python -P -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords')"
 
 WORKDIR /work
 
