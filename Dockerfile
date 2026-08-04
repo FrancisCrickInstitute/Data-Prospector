@@ -22,13 +22,18 @@ RUN pip install --no-cache-dir \
     seaborn \
     textstat
 
+WORKDIR /work
+
 # nltk corpora are fetched at runtime by nltk.download(), not by `pip install nltk` - with
 # --network none in DOCKER_SANDBOX_FLAGS that fails on first use unless baked in at build time
 # (DIVERGER_PLAN.md §10). punkt/punkt_tab (tokenization) and stopwords cover the standard entry
 # point for the free-text feedback/abstract fields this config's angles reach for.
+# Must run with cwd != "/" (hence WORKDIR above): nltk 3.10's import-hijacking guard
+# (nltk/inisec.py, CWE-427 mitigation) blocks any import whose resolved path is "relative to"
+# the cwd, and every absolute path is trivially "relative to" root - triggers a spurious block
+# on nltk's own `import locale` if this runs before WORKDIR is set. `-P`/PYTHONSAFEPATH does not
+# help here: the guard reads Path.cwd() directly, not sys.path.
 RUN python -P -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords')"
-
-WORKDIR /work
 
 
 # Default sandbox image for bioimage_config.py.
