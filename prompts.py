@@ -374,9 +374,10 @@ Angle:
 {angle_text}
 
 <verdict>[unsupportable, caveat, or solid - exactly one of these three words, nothing else]</verdict>
-<caveat>[the specific limitation to carry forward and display alongside the
-angle later (e.g. "n=37 respondents in 2022, treat as indicative, not conclusive"); leave empty if
-verdict is "solid"]</caveat>
-<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if not solid or 
-unsupportable]</reasoning>
+<caveat>[the specific reason to carry forward and display alongside the angle later. For "caveat":
+the limitation to hedge with (e.g. "n=37 respondents in 2022, treat as indicative, not conclusive").
+For "unsupportable": the specific reason the claim cannot be supported at all (e.g. "only 2 data
+points available, cannot support a trend claim"). Leave empty only if verdict is "solid".]</caveat>
+<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation regardless of
+which verdict was chosen]</reasoning>
 """

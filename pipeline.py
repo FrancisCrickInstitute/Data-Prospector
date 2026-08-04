@@ -838,6 +838,8 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
             lines.append(f"- variables: {angle['variables_involved']}")
         if angle.get("soundness_caveat"):
             lines.append(f"- caveat: {angle['soundness_caveat']}")
+        if angle.get("soundness_reasoning"):
+            lines.append(f"- soundness_reasoning: {angle['soundness_reasoning']}")
         if angle.get("requires"):
             lines.append(f"- requires: {angle['requires']}")
         lines.append("")
