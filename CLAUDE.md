@@ -135,9 +135,9 @@ The pipeline is retargeted entirely through `PipelineConfig` (`config.py`) — n
   different regions of the solution space with no extra LLM calls.
 
 Then wire the new config into `app.py`'s `--config` choices. Note: `trello_config.py` currently
-references a `python-analysis:latest` Docker image that this repo's `Dockerfile` does not build (only
-`bia-analysis:latest` is defined) — building that image is a prerequisite for the trello config to
-validate execution.
+references a `python-analysis:latest` Docker image that this repo's `Dockerfile` does not build (it
+defines `bia-analysis` and `cbias-analysis` targets, not `python-analysis`) — building that image
+yourself is a prerequisite for the trello config to validate execution.
 
 ### Structured I/O convention
 

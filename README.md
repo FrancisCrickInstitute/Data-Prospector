@@ -105,8 +105,8 @@ pixi run python app.py --config trello --report <path> --data-dir <path>
 ```
 
 Note: `trello_config.py` references a `python-analysis:latest` Docker image that this repo's
-`Dockerfile` does not build (only `bia-analysis:latest` is defined) — build that image yourself before
-execution-validation will work for this config.
+`Dockerfile` does not build (it defines `bia-analysis` and `cbias-analysis` targets, not
+`python-analysis`) — build that image yourself before execution-validation will work for this config.
 
 ### Flags
 
