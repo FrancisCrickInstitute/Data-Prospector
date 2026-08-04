@@ -12,7 +12,7 @@ from pipeline import generate_and_optimize
 
 
 async def main(report_path: str, data_dir: str, output_dir: str, max_iterations: int,
-               designs_per_iteration: int, angles_per_iteration: int):
+               realize_top_k: int, angles_per_iteration: int):
     """Run the pipeline on a task report with domain-specific configuration."""
     with open(report_path, 'r', encoding='utf-8') as f:
         report_content = f.read()
@@ -23,7 +23,7 @@ async def main(report_path: str, data_dir: str, output_dir: str, max_iterations:
         data_dir=data_dir,
         max_iterations=max_iterations,
         output_dir=output_dir,
-        designs_per_iteration=designs_per_iteration,
+        realize_top_k=realize_top_k,
         angles_per_iteration=angles_per_iteration,
     )
 
@@ -75,19 +75,19 @@ if __name__ == "__main__":
              "angles-per-iteration candidate angles as text (D2) - no code, no Docker."
     )
     parser.add_argument(
-        "--designs-per-iteration",
+        "--realize-top-k",
         type=int,
-        default=3,
-        help="D1/pre-D2 relic: unused as of D2 (ideation no longer generates full designs). "
-             "Kept only as a CLI-compatible no-op and as the default reference point for "
-             "--angles-per-iteration below; re-roled in D6 as the top-k realized-angle count."
+        default=4,
+        help="D6: how many of the top-ranked, non-unsupportable judged angles to actually write "
+             "and run code for (default: 4). Selective execution - the rest of the archive is "
+             "judged as text only, never compiled or run."
     )
     parser.add_argument(
         "--angles-per-iteration",
         type=int,
         default=12,
         help="Candidate analysis angles generated per iteration (default: 12 - deliberately "
-             "higher than the old --designs-per-iteration default of 3, since ideation-only "
+             "higher than the pre-D6 --designs-per-iteration default of 3, since ideation-only "
              "generation (D2) is much cheaper than full design + compile + Docker execution."
     )
 
@@ -114,4 +114,4 @@ if __name__ == "__main__":
     data_dir = args.data_dir or data_dir_default
 
     asyncio.run(main(report_path, data_dir, args.output_dir, args.max_iterations,
-                     args.designs_per_iteration, args.angles_per_iteration))
+                     args.realize_top_k, args.angles_per_iteration))

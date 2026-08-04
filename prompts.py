@@ -22,6 +22,9 @@ COMPILER_SYSTEM = """You are an expert code integrator. Your role is to assemble
 EVALUATOR_SYSTEM = """You are an expert code reviewer and validator. Your role is to verify code meets requirements and works correctly.
 - Assess task alignment, code quality, and execution correctness
 - Check both the code and its actual behavior (if available)
+- For a script realizing one candidate analysis angle, your PRIMARY judgment is whether the actual
+  output legibly demonstrates the angle's claimed pattern - not just whether the code runs and
+  superficially matches a checklist
 - Be critical but fair - flag real issues, not style preferences
 - Provide actionable feedback for improvement
 - Your verdict determines if the code is production-ready"""
@@ -70,13 +73,17 @@ If the report is silent on a dimension for either output, say so rather than ass
 </deliverable_rubric>
 """
 
-# Split in two so _run_one_design can cache the prefix: report/input_data/criteria are identical
-# across every design and iteration in a run, while feedback (grows each iteration), stance, and
-# seed_section vary - see the cache_prefix argument to llm_call.
+# Split in two so _run_one_design can cache the prefix: report/input_data/criteria (the
+# deliverable_rubric, D3b) are identical across every angle realized in a run, so cached; the
+# ANGLE being realized varies per call and stays in the suffix - see the cache_prefix argument to
+# llm_call. D6: report stays the TRUE original report here (not the angle brief) precisely so this
+# prefix - and WORKER_PROMPT_PREFIX below, which also takes the true report - actually hits cache
+# across the top-k angles realized this run, not just within one angle's compile retries.
 ORCHESTRATOR_PROMPT_PREFIX = """
-You are an experienced solutions architect. Design a minimal, focused approach for this task.
+You are an experienced solutions architect. Design a minimal, focused script to realize ONE
+specific candidate analysis angle (given in full below).
 
-Report: {report}
+Report (background context only - the angle below, not the whole report, is what this script must realize): {report}
 
 Input Data: {input_data}
 
@@ -85,16 +92,20 @@ Success Criteria (the finished script must satisfy every item below - no more, n
 """
 
 ORCHESTRATOR_PROMPT_SUFFIX = """
-{feedback}
+THE ANGLE TO REALIZE (design a script that implements THIS ONE angle, not a general-purpose
+analysis of the report above):
+- Hypothesis: {hypothesis}
+- Variables involved: {variables_involved}
+- Rough method: {rough_method}
+- Why non-obvious: {why_non_obvious}
 
-Approach for this design: {stance}
-{seed_section}
 STEP 1: ANALYZE THE DATA
 Examine the available fields and structures.
 
 STEP 2: PLAN THE APPROACH
-Decide what the script needs to compute, produce, and save in order to satisfy every item in the
-Success Criteria above. Do not add outputs, metrics, or visualizations the criteria doesn't call for.
+Decide what the script needs to compute, produce, and save in order to (a) realize the angle above
+and (b) satisfy every item in the Success Criteria. Do not add outputs, metrics, or visualizations
+beyond what these two things call for.
 
 STEP 3: DESIGN MINIMAL ARCHITECTURE
 Design the smallest set of functions that implements your plan - prefer a single load_data() plus
@@ -104,7 +115,7 @@ Return your response in this format:
 
 <analysis>
 1. Describe the data structure briefly
-2. Summarize your plan and how each part maps to a Success Criteria item
+2. Summarize your plan and how it realizes the angle above and maps to each Success Criteria item
 3. Brief overview of how the architecture implements the plan
 </analysis>
 
@@ -207,34 +218,45 @@ if __name__ == '__main__':
 The <response> tags are METADATA MARKERS ONLY—do not include them in the Python code itself.
 """
 
-# Split in two so validate_requirements can cache the prefix: report + criteria are identical
-# across every design's validation call in a run, while the script/execution output vary per
-# design - see the cache_prefix argument to llm_call.
-REQUIREMENTS_VALIDATOR_PROMPT_PREFIX = """
-Check if this successfully-executed script's actual output satisfies the success criteria below.
+# Split in two so validate_realization can cache the prefix: report + criteria (the
+# deliverable_rubric) are identical across every angle realized in a run, so cached; claimed_pattern
+# (the specific angle's hypothesis) varies per angle, same as script/execution output, so all three
+# stay in the suffix - see the cache_prefix argument to llm_call.
+REALIZATION_VALIDATOR_PROMPT_PREFIX = """
+Check if this successfully-executed script's actual output satisfies the deliverable requirements
+below, and legibly demonstrates its claimed pattern.
 
 Task: {report}
 
-Success Criteria:
+Deliverable Requirements:
 {criteria}
 """
 
-REQUIREMENTS_VALIDATOR_PROMPT_SUFFIX = """
+REALIZATION_VALIDATOR_PROMPT_SUFFIX = """
 Script: {content}
 Execution Output: {execution_result}
 
-If PNG images are attached to this message, they are the actual plots the script produced (up to a
-few, in the order listed above) — inspect them directly and judge any criteria about visualizations
-(correct chart type, all expected series/labels present, readable and not empty/blank) from what you
-actually see, not just from what the code claims to plot.
+This script exists to realize ONE specific candidate analysis angle. Its claimed pattern is:
+{claimed_pattern}
 
-Judge EACH bullet in the Success Criteria above, in the same order, against the ACTUAL output above
-(console output, the "Files actually produced on disk" listing, and any attached images) — NOT against
-what the code merely claims to do. A file the criteria requires that is 0-byte or missing is NOT met,
-even if the code calls a save function on it.
+If PNG images are attached to this message, they are the actual plots the script produced (up to a
+few, in the order listed above) — inspect them directly.
+
+FIRST, and most importantly: does the actual output (console output and/or attached images) legibly
+show the claimed pattern above? Judge what was actually produced, not whether the code looks like it
+should produce this pattern. A blank, unreadable, or contradicting plot means the pattern was NOT
+shown, even if the script ran without error.
+
+<pattern_shown>[true or false]</pattern_shown>
+<pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show]</pattern_reasoning>
+
+SECOND, judge EACH bullet in the Deliverable Requirements above, in the same order, against the
+ACTUAL output above (console output, the "Files actually produced on disk" listing, and any attached
+images) — NOT against what the code merely claims to do. A file the requirements require that is
+0-byte or missing is NOT met, even if the code calls a save function on it.
 
 Emit exactly one <criterion met="true"/> or <criterion met="false"/> tag per bullet, in the same
-order as the Success Criteria, and nothing else inside this block:
+order as the Deliverable Requirements, and nothing else inside this block:
 
 <criteria_result>
 <criterion met="true"/>
@@ -242,11 +264,11 @@ order as the Success Criteria, and nothing else inside this block:
 </criteria_result>
 
 <feedback>
-For every criterion above marked met="false", explain specifically what's missing and what needs to
-change. Also note, without changing the verdicts above, if the script adds outputs/metrics/files
-beyond what the criteria calls for, or if the code is not clean (one-line docstrings, no bloat).
-If every criterion is met="true" and there's nothing else to flag: "All requirements met. Data gaps
-for future analysis: [list 2-3 things that would help, if applicable]"
+For every criterion above marked met="false", or if pattern_shown is false, explain specifically
+what's missing and what needs to change. Also note, without changing the verdicts above, if the
+script adds outputs/metrics/files beyond what's needed, or if the code is not clean (one-line
+docstrings, no bloat). If everything is met and the pattern is shown: "Realized successfully. Data
+gaps for future analysis: [list 2-3 things that would help, if applicable]"
 </feedback>
 """
 

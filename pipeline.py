@@ -39,9 +39,9 @@ deepseek_client = (
 )
 
 # Caps concurrent in-flight LLM requests across the whole pipeline (orchestrators, workers,
-# compilers, evaluators all funnel through llm_call). Without this, designs_per_iteration
-# parallel designs x per-design worker fan-out can easily put 15-20+ requests in flight at
-# once, tripping rate limits. Override via LLM_MAX_CONCURRENCY.
+# compilers, evaluators all funnel through llm_call). Without this, angles_per_iteration parallel
+# ideation calls, or realize_top_k parallel realizations (D6) x per-angle worker fan-out, can
+# easily put 15-20+ requests in flight at once, tripping rate limits. Override via LLM_MAX_CONCURRENCY.
 LLM_SEMAPHORE = asyncio.Semaphore(int(os.environ.get("LLM_MAX_CONCURRENCY", "8")))
 
 
@@ -449,24 +449,31 @@ def _load_plot_images(artifacts: list[dict], artifacts_dir: str, limit: int = _M
     return images
 
 
-async def validate_requirements(compiled_script: str, report: str, criteria: str, exec_output: str,
-                                config: PipelineConfig, artifacts: list[dict] = None,
-                                artifacts_dir: str = None) -> tuple[float, bool, str]:
-    """Check the script's actual output against each bullet of the extracted success criteria.
+async def validate_realization(compiled_script: str, report: str, deliverable_rubric: str,
+                                claimed_pattern: str, exec_output: str, config: PipelineConfig,
+                                artifacts: list[dict] = None,
+                                artifacts_dir: str = None) -> tuple[bool, float, bool, str]:
+    """D6: check whether a realized script's actual output legibly shows ONE angle's claimed
+    pattern - the PRIMARY judgment (DIVERGER_PLAN.md D6 item 3), replacing the converger's "meets
+    requirements" framing. The deliverable rubric's mechanical checklist (file counts, etc.) is
+    still checked and reported, but graded alongside pattern_shown rather than gating it - the
+    same graded-not-gated shape as D5-calibrate's soundness verdict.
 
-    Returns (req_score, req_pass, feedback): req_score is met/total across every <criterion> tag the
-    validator emitted (0.0 if it emitted none - treated as a full miss, not a free pass); req_pass is
-    True only when every criterion was met. The graded score, not just the boolean, is what lets a
-    mutated design's fitness be compared even when neither pass outright.
+    Returns (pattern_shown, delivered_score, delivered_pass, feedback). pattern_shown is what
+    _run_one_design uses to set realization_status ("realised" vs "unsound"); delivered_score/
+    delivered_pass are met/total across every <criterion> tag the validator emitted against the
+    deliverable rubric (0.0/False if it emitted none - treated as a full miss, not a free pass).
     """
     artifacts = artifacts or []
     artifacts_listing = _format_artifacts(artifacts)
 
-    # report + criteria are identical across every design's validation call in a run, so they're
-    # cached as a prefix (see cache_prefix on llm_call); only the script/execution output vary.
-    validator_prefix = REQUIREMENTS_VALIDATOR_PROMPT_PREFIX.format(report=report, criteria=criteria)
-    validator_suffix = REQUIREMENTS_VALIDATOR_PROMPT_SUFFIX.format(
+    # report + criteria (the deliverable_rubric) are identical across every angle realized this
+    # run, so cached as a prefix; claimed_pattern varies per angle and stays in the suffix along
+    # with script/execution output (see cache_prefix on llm_call).
+    validator_prefix = REALIZATION_VALIDATOR_PROMPT_PREFIX.format(report=report, criteria=deliverable_rubric)
+    validator_suffix = REALIZATION_VALIDATOR_PROMPT_SUFFIX.format(
         content=compiled_script,
+        claimed_pattern=claimed_pattern,
         # Keep the TAIL: the script prints metrics then data-gap suggestions at the very end
         execution_result=f"Console output:\n{exec_output[-3000:]}\n\nFiles actually produced on disk:\n{artifacts_listing}"
     )
@@ -475,21 +482,22 @@ async def validate_requirements(compiled_script: str, report: str, criteria: str
     validator_response = await llm_call(validator_suffix, system_prompt=EVALUATOR_SYSTEM,
                                         model=config.requirements_evaluator_model, cache_prompt=True,
                                         images=images or None, cache_prefix=validator_prefix)
+    pattern_shown = extract_xml(validator_response, "pattern_shown").strip().lower() == "true"
     verdicts = _CRITERION_PATTERN.findall(validator_response)
     feedback = extract_xml(validator_response, "feedback").strip()
 
     if not verdicts:
         print(
-            f"DEBUG: Requirements validator emitted no <criterion> tags (first 800 chars):\n{validator_response[:800]}")
+            f"DEBUG: Realization validator emitted no <criterion> tags (first 800 chars):\n{validator_response[:800]}")
         if not feedback:
             feedback = validator_response.strip()
 
     total = len(verdicts)
     met = sum(1 for v in verdicts if v.lower() == "true")
-    req_score = met / total if total else 0.0
-    req_pass = total > 0 and met == total
+    delivered_score = met / total if total else 0.0
+    delivered_pass = total > 0 and met == total
 
-    return req_score, req_pass, feedback
+    return pattern_shown, delivered_score, delivered_pass, feedback
 
 
 async def _call_worker(task_info: dict, task_index: int, report: str, input_metadata: str,
@@ -818,48 +826,40 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
     return str(path)
 
 
-async def _run_one_design(report: str, criteria: str, input_metadata: str, config: PipelineConfig, data_dir: str,
-                          feedback_section: str, stance: str, artifacts_dir: str, label: str,
-                          max_compile_attempts: int = 3, seed_script: str = None,
-                          seed_label: str = None) -> dict:
-    """Run one full design attempt (orchestrate → workers → compile/execute loop → requirements).
+async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, input_metadata: str,
+                          config: PipelineConfig, data_dir: str, artifacts_dir: str, label: str,
+                          max_compile_attempts: int = 3) -> dict:
+    """D6: realize ONE judged angle (orchestrate -> workers -> compile/execute loop -> realization
+    check). The angle's hypothesis/rough_method - not the whole report - is the brief the
+    orchestrator designs against (DIVERGER_PLAN.md D6 item 2); report/deliverable_rubric stay the
+    TRUE, identical background context shared by every angle realized this run, so
+    ORCHESTRATOR_PROMPT_PREFIX and WORKER_PROMPT_PREFIX both still hit cache across the top-k
+    angles, not just within one angle's own compile retries (D6 item 1's caching note).
 
-    If seed_script is given (a prior candidate's working script, e.g. from the archive), the
-    orchestrator and compiler are instructed to IMPROVE it rather than design from scratch - a
-    mutation, not a diff/patch. Safe because the Docker oracle in the compile/execute loop below
-    still catches any regression the mutation introduces, exactly as it would for a from-scratch
-    design. seed_label is purely for logging (which archived node this design mutated).
-
-    Returns a candidate dict: {script, exec_pass, req_pass, artifacts, artifacts_dir, feedback, label,
-    analysis}. `feedback` is empty on full pass, else a description of what failed (for the redesign
-    history). `analysis` is the orchestrator's raw <analysis> text ("" if never produced).
+    Returns {angle_id, realization_status, realization_feedback, delivered_score, artifacts,
+    artifacts_dir, script}. realization_status is one of:
+    - "realised": executed, and the claimed pattern was legibly shown.
+    - "unsound": executed, but the claimed pattern was NOT shown - a quality judgement.
+    - "not_realisable": never executed after max_compile_attempts (e.g. a missing library) or
+      execution was unverifiable (no data_dir / Docker unavailable) - an engineering/provisioning
+      outcome, never conflated with "unsound" (DIVERGER_PLAN.md D6 item 5).
     """
 
     def log(msg):
         print(f"  [{label}] {msg}")
 
-    log(f"Seed: mutating {seed_label}" if seed_script else "Seed: none (from scratch)")
-
-    orchestrator_seed_section = ""
-    if seed_script:
-        orchestrator_seed_section = (
-            "\nSEED SCRIPT (a working script from a prior design that already executed successfully):\n"
-            f"{seed_script}\n\n"
-            "Your job is to IMPROVE this script so it better satisfies the Success Criteria and the "
-            "journal above - not to design a new architecture from scratch. Keep what already works; "
-            "change only what's needed to fix known issues or satisfy criteria the seed doesn't yet "
-            "meet.\n"
-        )
-
-    # ORCHESTRATOR: design the architecture
-    # report/input_data/criteria are identical across every design and iteration in this run, so
-    # they're cached as a prefix; feedback/stance/seed_section vary and stay in the suffix.
+    # ORCHESTRATOR: design an architecture for THIS ONE angle.
+    # report/input_data/criteria (deliverable_rubric) are identical across every angle realized
+    # this run, so cached as a prefix; the angle itself varies per call and stays in the suffix.
     orchestrator_prefix = format_prompt(
-        ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=criteria, input_data=input_metadata,
+        ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=deliverable_rubric, input_data=input_metadata,
     )
     orchestrator_suffix = format_prompt(
-        ORCHESTRATOR_PROMPT_SUFFIX, feedback=feedback_section, stance=stance,
-        seed_section=orchestrator_seed_section,
+        ORCHESTRATOR_PROMPT_SUFFIX,
+        hypothesis=angle.get("hypothesis", ""),
+        variables_involved=angle.get("variables_involved", ""),
+        rough_method=angle.get("rough_method", ""),
+        why_non_obvious=angle.get("why_non_obvious", ""),
     )
     orchestrator_response = await llm_call(orchestrator_suffix, system_prompt=ORCHESTRATOR_SYSTEM,
                                            model=config.orchestrator_model, cache_prompt=True,
@@ -868,25 +868,23 @@ async def _run_one_design(report: str, criteria: str, input_metadata: str, confi
     tasks = parse_tasks(extract_xml(orchestrator_response, "tasks"))
     log(f"Architecture: {len(tasks)} functions")
 
-    # WORKERS: implement each function in parallel
+    # WORKERS: implement each function in parallel - unchanged from before D6 (item 1). Called
+    # with the TRUE report (not the angle brief) so WORKER_PROMPT_PREFIX stays identical, and
+    # cacheable, across every angle realized this run too.
     worker_results = await asyncio.gather(
         *[_call_worker(t, i, report, input_metadata, config) for i, t in enumerate(tasks, 1)]
     )
     orchestrator_results = {"analysis": analysis, "worker_results": worker_results}
 
-    # INNER LOOP: Compiler + (grounded) Execution check
-    # TODO(diverger): D1 leaves Docker execution wired but inert as a top-level selection gate -
-    # every design still runs here, unconditionally. D6 re-roles this to selective execution:
-    # only the top-k judged angles get compiled/run at all, demoting this from *scorer* (converger)
-    # to *validity gate* (did it run, did it produce a legible plot) for that small realized set.
+    # COMPILER + (grounded) EXECUTION: unchanged from before D6 (item 1) - retries up to
+    # max_compile_attempts, feeding the execution error back into the next compile attempt.
     compiled_script, exec_output, artifacts = None, "", []
     execution_passed = False
     exec_verdict = "FAIL"
     compile_error = ""
     for attempt in range(max_compile_attempts):
         log(f"Compile attempt {attempt + 1}/{max_compile_attempts}...")
-        compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error,
-                                               seed_script=seed_script)
+        compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error)
         exec_verdict, exec_feedback, exec_output, artifacts = validate_execution(
             compiled_script, config, data_dir, artifacts_dir=artifacts_dir)
         log(f"Execution: {exec_verdict}")
@@ -899,42 +897,39 @@ async def _run_one_design(report: str, criteria: str, input_metadata: str, confi
             compile_error = exec_feedback
 
     if not execution_passed:
-        log(f"[FAILED] Did not execute after {max_compile_attempts} attempts.")
+        log(f"[not_realisable] Did not execute after {max_compile_attempts} attempts.")
         return {
-            "script": compiled_script, "exec_pass": False, "req_pass": False, "req_score": 0.0,
-            "artifacts": artifacts, "artifacts_dir": artifacts_dir, "label": label, "analysis": analysis,
-            "exec_verdict": "FAIL",
-            "feedback": f"Execution failed after {max_compile_attempts} compile attempts: {exec_feedback}",
+            "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
+            "realization_feedback": f"Execution failed after {max_compile_attempts} compile attempts: {exec_feedback}",
+            "delivered_score": None, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
+            "script": compiled_script,
         }
 
     if exec_verdict == "SKIPPED":
-        # Execution was never verified (no data_dir / Docker unavailable), so there are no real
-        # artifacts to grade - a requirements call here is a guaranteed-FAIL judge call paid for
-        # nothing. Short-circuit instead of spending one per design per iteration.
-        log("Requirements: SKIPPED (execution unverified, skipping judge call)")
+        # Execution was never verified (no data_dir / Docker unavailable), so there's no real
+        # output to judge - a realization call here is a guaranteed-uninformative judge call paid
+        # for nothing. Short-circuit instead of spending one per realized angle.
+        log("[not_realisable] Execution unverified (no data_dir / Docker unavailable)")
         return {
-            "script": compiled_script, "exec_pass": False, "req_pass": False, "req_score": 0.0,
-            "artifacts": artifacts, "artifacts_dir": artifacts_dir, "label": label, "analysis": analysis,
-            "exec_verdict": "SKIPPED",
-            "feedback": f"Execution was not verified, so requirements cannot be checked: {exec_feedback}",
+            "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
+            "realization_feedback": f"Execution was not verified, so realization cannot be checked: {exec_feedback}",
+            "delivered_score": None, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
+            "script": compiled_script,
         }
 
-    # REQUIREMENTS VALIDATOR: only reached on a verified execution PASS (FAIL returned above,
-    # SKIPPED short-circuited above).
-    # TODO(diverger): D1 leaves this (and its multimodal grounding via _load_plot_images) wired
-    # but inert as a gate - req_pass/req_score are returned and still logged, but no longer
-    # terminate or select at the top level (see generate_and_optimize). D6 re-roles this function
-    # to validate_realization: from "meets criteria" to "does this legibly show the claimed
-    # pattern", checked only for the small top-k realized set instead of every design.
-    req_score, req_passed, req_feedback = await validate_requirements(
-        compiled_script, report, criteria, exec_output, config, artifacts=artifacts,
-        artifacts_dir=artifacts_dir)
-    log(f"Requirements: {'PASS' if req_passed else 'FAIL'} (score={req_score:.2f})")
+    # REALIZATION CHECK: only reached on a verified execution PASS (FAIL returned above, SKIPPED
+    # short-circuited above). PRIMARY judgment is whether the actual output legibly shows THIS
+    # angle's claimed pattern (item 3); the deliverable-rubric checklist is reported alongside but
+    # does not gate status - graded, not gated, matching D5-calibrate's soundness verdict.
+    pattern_shown, delivered_score, delivered_pass, realization_feedback = await validate_realization(
+        compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
+        artifacts=artifacts, artifacts_dir=artifacts_dir)
+    status = "realised" if pattern_shown else "unsound"
+    log(f"Realization: {status} (delivered_score={delivered_score:.2f})")
     return {
-        "script": compiled_script, "exec_pass": True, "req_pass": req_passed, "req_score": req_score,
-        "artifacts": artifacts, "artifacts_dir": artifacts_dir, "label": label, "analysis": analysis,
-        "exec_verdict": "PASS",
-        "feedback": "" if req_passed else f"Executed cleanly but requirements not met: {req_feedback}",
+        "angle_id": angle.get("id", "?"), "realization_status": status,
+        "realization_feedback": realization_feedback, "delivered_score": delivered_score,
+        "artifacts": artifacts, "artifacts_dir": artifacts_dir, "script": compiled_script,
     }
 
 
@@ -996,27 +991,23 @@ async def generate_angles(report: str, ideation_criteria: str, input_metadata: s
 
 async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: str = None,
                                 max_iterations: int = 2, output_dir: str = None,
-                                designs_per_iteration: int = 3, angles_per_iteration: int = 12) -> str:
-    """D3/D3a/D3b/D4/D5: ideation loop, fanned out, then deduped, then judged. Each iteration fires
-    angles_per_iteration independent generate_angles calls (n=1 each) concurrently via
-    asyncio.gather, cycling config.design_stances and the parsed guiding questions across calls
-    independently (D3a) for intra-iteration diversity - concurrent calls can't see each other, so
-    these two cycling axes are the only lever within an iteration. Cross-iteration diversity
-    instead comes from {existing_angles}: the accumulated archive of every angle proposed so far,
-    fed back into ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation finishes, D4 dedups the whole
-    archive by token-set similarity, then D5 scores every surviving angle for non-obviousness
-    (judge_insight) and soundness (judge_soundness) and ranks the shortlist by both - selection is
-    now dedup -> insight -> soundness -> ranked shortlist, with no code executed anywhere in it.
-
-    TODO(diverger): designs_per_iteration and the execution machinery it used to drive
-    (_run_one_design, compile_script, Docker) are unused here for now - carried over unchanged
-    (see module docstring), re-roled in D6 as selective execution over the top-k judged angles
-    rather than run for every candidate as before. output_dir/artifacts_base are similarly unused
-    until D6 has real artifacts to write.
+                                realize_top_k: int = 4, angles_per_iteration: int = 12) -> str:
+    """D3/D3a/D3b/D4/D5/D6: ideation loop, fanned out, then deduped, then judged, then selectively
+    realized. Each iteration fires angles_per_iteration independent generate_angles calls (n=1
+    each) concurrently via asyncio.gather, cycling config.design_stances and the parsed guiding
+    questions across calls independently (D3a) for intra-iteration diversity - concurrent calls
+    can't see each other, so these two cycling axes are the only lever within an iteration.
+    Cross-iteration diversity instead comes from {existing_angles}: the accumulated archive of
+    every angle proposed so far, fed back into ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation
+    finishes, D4 dedups the whole archive by token-set similarity, then D5 scores every surviving
+    angle for non-obviousness (judge_insight) and soundness (judge_soundness) and ranks the
+    shortlist by both. D6 then realizes only the top realize_top_k non-unsupportable angles - code
+    is written and run for that small selection only, never for the whole archive.
 
     Returns a plain-text summary of every surviving angle, ranked best-first by D5's judgment (a
     string, not a script) so app.py's existing file-write path keeps working unmodified - D7
-    replaces this with the real structured gallery result.
+    replaces this with the real structured gallery result. Realized angles additionally carry
+    realization_status/realization_feedback/delivered_score/artifacts in that summary.
     """
     input_metadata = config.extract_input_metadata(data_dir) if data_dir else "(No input data provided)"
 
@@ -1027,9 +1018,8 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     # rubric text ("runs without errors", "clean code") that has nothing to do with idea quality:
     #   - ideation_criteria: guiding questions/stakeholders/anti-targets/data constraints - fed to
     #     generate_angles below (and, later, the D5 judges).
-    #   - deliverable_rubric: script-delivery mechanics - NOT consumed anywhere yet, since
-    #     _run_one_design/validate_requirements (the only place that would use it) is still
-    #     dormant. D6 revives them and wires this in (DIVERGER_PLAN.md D6 item 3).
+    #   - deliverable_rubric: script-delivery mechanics - fed to _run_one_design/validate_realization
+    #     below (D6), only for the small top-k set of angles actually realized.
     # If extraction itself fails (e.g. a transient rate-limit error), fall back to the raw report
     # for both instead of leaving either pointed at an empty rubric.
     try:
@@ -1042,7 +1032,7 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         print(f"WARNING: Criteria extraction failed ({e!r}); falling back to the raw report as both criteria.")
         ideation_criteria = deliverable_rubric = report
     print(f"\nIdeation criteria extracted from report:\n{ideation_criteria}\n")
-    print(f"\nDeliverable rubric extracted from report (held for D6, unused for now):\n{deliverable_rubric}\n")
+    print(f"\nDeliverable rubric extracted from report (fed to D6 realization only):\n{deliverable_rubric}\n")
 
     # D3a: guiding questions, the second cycling axis, parsed once from the raw report (they don't
     # change run to run). Empty means the report's guiding-questions section wasn't found/parseable
@@ -1192,6 +1182,49 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         print(f"[dump] Surfaced angles written to {dump_path} - curate into the report's "
               f"Already Explored section as needed.\n")
 
+    # D6: realize only the top-k ranked, non-unsupportable angles - selective execution, not every
+    # candidate (item 1). all_angles is already sorted best-first by _judgment_sort_key;
+    # unsupportable angles are skipped entirely rather than paying a Docker run to visualize a
+    # claim the judge already said the data can't support.
+    realizable_angles = [a for a in all_angles if a.get("soundness_verdict") != "unsupportable"]
+    to_realize = realizable_angles[:realize_top_k]
+    skipped_unsupportable = len(all_angles) - len(realizable_angles)
+    print(
+        f"[realize] Realizing top {len(to_realize)} of {len(all_angles)} angle(s) "
+        f"({skipped_unsupportable} unsupportable angle(s) skipped)\n"
+    )
+
+    artifacts_base = Path(output_dir) / "artifacts" if output_dir else None
+    realize_calls = [
+        _run_one_design(
+            angle, report, deliverable_rubric, input_metadata, config, data_dir,
+            artifacts_dir=str(artifacts_base / angle.get("id", "?")) if artifacts_base else None,
+            label=angle.get("id", "?"),
+        )
+        for angle in to_realize
+    ]
+    realize_results = await asyncio.gather(*realize_calls, return_exceptions=True)
+
+    for angle, result in zip(to_realize, realize_results):
+        if isinstance(result, Exception):
+            print(f"WARNING: realization failed for angle {angle.get('id', '?')}: {result!r}")
+            angle["realization_status"] = "not_realisable"
+            angle["realization_feedback"] = f"(realization call failed: {result!r})"
+            continue
+        angle["realization_status"] = result["realization_status"]
+        angle["realization_feedback"] = result["realization_feedback"]
+        angle["delivered_score"] = result["delivered_score"]
+        angle["artifacts"] = result["artifacts"]
+        angle["artifacts_dir"] = result["artifacts_dir"]
+
+    realised_count = sum(1 for a in to_realize if a.get("realization_status") == "realised")
+    unsound_count = sum(1 for a in to_realize if a.get("realization_status") == "unsound")
+    not_realisable_count = sum(1 for a in to_realize if a.get("realization_status") == "not_realisable")
+    print(
+        f"[realize] {realised_count} realised, {unsound_count} unsound (pattern not shown), "
+        f"{not_realisable_count} not realisable\n"
+    )
+
     lines = [f"{len(all_angles)} candidate analysis angle(s) generated, ranked best-first:\n"]
     for angle in all_angles:
         lines.append(f"[{angle.get('id', '?')}]")
@@ -1208,5 +1241,13 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             lines.append(f"  soundness_caveat: {angle['soundness_caveat']}")
         if angle.get("soundness_reasoning"):
             lines.append(f"  soundness_reasoning: {angle['soundness_reasoning']}")
+        if angle.get("realization_status"):
+            lines.append(f"  realization_status: {angle['realization_status']}")
+            if angle.get("delivered_score") is not None:
+                lines.append(f"  delivered_score: {angle['delivered_score']:.2f}")
+            if angle.get("realization_feedback"):
+                lines.append(f"  realization_feedback: {angle['realization_feedback']}")
+            if angle.get("artifacts"):
+                lines.append(f"  artifacts: {_format_artifacts(angle['artifacts'])}")
         lines.append("")
     return "\n".join(lines)
