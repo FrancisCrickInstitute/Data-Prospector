@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 5)
+# Converger → Diverger conversion plan (rev. 6)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -29,7 +29,7 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 ## 2. Guardrails
 
 - **One step at a time.** Implement, commit, run on the `cbias` config, review output, then continue. There is no pass/fail oracle in a diverger — the human reading the output *is* the test.
-- **Human-owned prompts stay human-owned.** `ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*` and `SOUNDNESS_JUDGE_*` are now filled in. Do not rewrite them; propose changes and let the human make them. The `*_FALLBACK` counterparts stay as the runnable-without-them safety net.
+- **Human-owned prompts stay human-owned.** `ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*` and `SOUNDNESS_JUDGE_*` are now filled in. Do not rewrite them; propose changes and let the human make them. The `*_FALLBACK` counterparts have been removed (see §3) now that these are stable — a missing/empty human-owned prompt is a hard failure now, not a silent generic substitute.
 - **Do not delete dormant code.** See §6.
 - **Follow the caching convention (§4) for every new prompt.**
 - **Reuse, don't rewrite.** `_parse_xml_items`, `_jaccard`/`_token_set`, `_log_iteration_diversity`, `_angle_record`, `_dedup_angles`, `llm_call` (semaphore + images + `cache_prefix` + provider routing), `extract_xml`, `format_prompt`, the Docker sandbox and artifact copy-out all carry over.
@@ -53,7 +53,7 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 
 **D1** — convergence spine stripped (no early exit, no mutate-the-best seeding, execution layer inert). `.gitignore` hardened; `anonymize_cbias_data.py` committed as the audit trail.
 
-**D2** — ideation decoupled from execution. `generate_angles()`, `_parse_xml_items`, human-owned `ANGLE_GENERATION_*` with fallbacks, `angle_model` per config, `--angles-per-iteration`. The design/execution loop was replaced entirely — the correct reading of "no Docker in this step".
+**D2** — ideation decoupled from execution. `generate_angles()`, `_parse_xml_items`, human-owned `ANGLE_GENERATION_*` (originally with a fallback safety net, removed in a later cleanup — see §3), `angle_model` per config, `--angles-per-iteration`. The design/execution loop was replaced entirely — the correct reading of "no Docker in this step".
 
 **D3** — fan-out to N concurrent one-angle calls, stance cycling, archive re-roled to hold proposed angles, `{existing_angles}` as cross-iteration divergence pressure, `_log_iteration_diversity` revived against angle text, `pick_best_seed`/`pick_other_seed` deleted.
 
@@ -79,7 +79,9 @@ See "Known ceiling" below.
 5. **Cross-run curation aid added.** `_write_angle_dump` writes every run's ranked, judged angles to `output_dir/surfaced_angles_<ts>.md`. This does NOT give the pipeline cross-run memory — `{existing_angles}` still only persists within a run, and the report's Already Explored section is still hand-maintained — it just makes copying entries into that section a copy-paste instead of a re-transcription. No automatic retirement, by design.
 6. **`requires` field added** to the angle schema (instrumentation only, §10) — tracks what libraries ideation reaches for; never constrains it.
 
-The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s new `<verdict>`/`<caveat>` tags, `ANGLE_GENERATION_PROMPT_SUFFIX`'s new `<requires>` tag) were drafted directly into both the human-owned constants and their `_FALLBACK` counterparts, at the human's request — still open to further editing, same as the rest of the human-owned prompts.
+The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s new `<verdict>`/`<caveat>` tags, `ANGLE_GENERATION_PROMPT_SUFFIX`'s new `<requires>` tag) were drafted directly into both the human-owned constants and their `_FALLBACK` counterparts (since removed — see below), at the human's request — still open to further editing, same as the rest of the human-owned prompts.
+
+**Prompt cleanup (post-D5-calibrate)** — once the human-owned prompts proved stable through Run 8, the `*_FALLBACK` constants and their empty-check/warning/fallback-selection branches were removed entirely from `prompts.py` and `pipeline.py`. `generate_angles`, `judge_insight`, and `judge_soundness` now call `ANGLE_GENERATION_*`/`INSIGHT_JUDGE_*`/`SOUNDNESS_JUDGE_*` directly and unconditionally — an empty human-owned prompt is now a hard failure, not a silent generic substitute. Alongside this: `SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s `<caveat>` tag now also carries the specific reason for an `unsupportable` verdict (previously populated only for `caveat`, left empty otherwise), `<reasoning>` is now requested for every verdict rather than just non-`solid` ones, and `_write_angle_dump` now surfaces `soundness_reasoning` per angle alongside `soundness_caveat`.
 
 **Report** — rewritten three times: plot taxonomy, metric counts and PNG counts removed; guiding questions levelled; anti-target list inlined from `djpbarry/cbias-survey`; programme CSVs pre-downloaded so Q4 is answerable without network access; Q5 reworded to drop post-attendance collaboration; `<year>_Abstracts` notation replaced (it was producing XML parse failures every iteration when the model copied it into `<variables_involved>`).
 
