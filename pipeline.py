@@ -698,34 +698,17 @@ async def judge_insight(angle: dict, report: str, ideation_criteria: str, input_
     self-assessment. Two live runs showed every angle confidently claiming novelty while most were
     near-identical duplicates, so self-assessment is not evidence.
 
-    Falls back to a minimal built-in prompt (INSIGHT_JUDGE_*_FALLBACK in prompts.py) with a loud
-    warning if the human-owned INSIGHT_JUDGE_* constants are still empty - the fallback is not real
-    judge design.
-
     Returns {"insight_score": float in [0, 1] or None, "insight_reasoning": str}. None means the
     judge call failed or emitted no parseable <score> - treated as "unranked", not zero.
     """
-    system_prompt = INSIGHT_JUDGE_SYSTEM
-    prefix_template = INSIGHT_JUDGE_PROMPT_PREFIX
-    suffix_template = INSIGHT_JUDGE_PROMPT_SUFFIX
-    if not (system_prompt and prefix_template and suffix_template):
-        print(
-            "WARNING: INSIGHT_JUDGE_SYSTEM/_PREFIX/_SUFFIX in prompts.py are empty "
-            "(# TODO(human)) - falling back to a minimal built-in placeholder prompt. Insight "
-            "judging will be generic/poor until a human fills these in."
-        )
-        system_prompt = system_prompt or INSIGHT_JUDGE_SYSTEM_FALLBACK
-        prefix_template = prefix_template or INSIGHT_JUDGE_PROMPT_PREFIX_FALLBACK
-        suffix_template = suffix_template or INSIGHT_JUDGE_PROMPT_SUFFIX_FALLBACK
-
     # report/ideation_criteria/input_data are identical across every judge call in a run - the
     # SAME triple generate_angles caches - so cached as a prefix; the individual angle varies per
     # call and stays in the suffix (§4).
-    prefix = format_prompt(prefix_template, report=report, ideation_criteria=ideation_criteria,
+    prefix = format_prompt(INSIGHT_JUDGE_PROMPT_PREFIX, report=report, ideation_criteria=ideation_criteria,
                            input_data=input_metadata)
-    suffix = format_prompt(suffix_template, angle_text=_format_angle(angle))
+    suffix = format_prompt(INSIGHT_JUDGE_PROMPT_SUFFIX, angle_text=_format_angle(angle))
 
-    response = await llm_call(suffix, system_prompt=system_prompt, model=config.judge_model,
+    response = await llm_call(suffix, system_prompt=INSIGHT_JUDGE_SYSTEM, model=config.judge_model,
                               cache_prompt=True, cache_prefix=prefix)
     reasoning = extract_xml(response, "reasoning").strip()
     score_text = extract_xml(response, "score").strip()
@@ -750,8 +733,8 @@ _SOUNDNESS_RANK = {"solid": 3, "caveat": 2, "unsupportable": 1}
 async def judge_soundness(angle: dict, report: str, ideation_criteria: str, input_metadata: str,
                           config: PipelineConfig) -> dict:
     """D5/D5-calibrate: judge whether one angle's claimed pattern is defensible given the actual
-    data volume - graded, not gated (see _SOUNDNESS_VERDICTS above). Same prefix/fallback
-    structure as judge_insight.
+    data volume - graded, not gated (see _SOUNDNESS_VERDICTS above). Same prefix structure as
+    judge_insight.
 
     Returns {"soundness_verdict": one of _SOUNDNESS_VERDICTS or None, "soundness_caveat": str,
     "soundness_reasoning": str}. verdict is None if the judge call failed or emitted anything
@@ -760,24 +743,11 @@ async def judge_soundness(angle: dict, report: str, ideation_criteria: str, inpu
     (D5-calibrate item 3 - hardened from the old `verdict_text == "true"` boolean parse, which
     silently mapped anything unexpected to False).
     """
-    system_prompt = SOUNDNESS_JUDGE_SYSTEM
-    prefix_template = SOUNDNESS_JUDGE_PROMPT_PREFIX
-    suffix_template = SOUNDNESS_JUDGE_PROMPT_SUFFIX
-    if not (system_prompt and prefix_template and suffix_template):
-        print(
-            "WARNING: SOUNDNESS_JUDGE_SYSTEM/_PREFIX/_SUFFIX in prompts.py are empty "
-            "(# TODO(human)) - falling back to a minimal built-in placeholder prompt. Soundness "
-            "judging will be generic/poor until a human fills these in."
-        )
-        system_prompt = system_prompt or SOUNDNESS_JUDGE_SYSTEM_FALLBACK
-        prefix_template = prefix_template or SOUNDNESS_JUDGE_PROMPT_PREFIX_FALLBACK
-        suffix_template = suffix_template or SOUNDNESS_JUDGE_PROMPT_SUFFIX_FALLBACK
-
-    prefix = format_prompt(prefix_template, report=report, ideation_criteria=ideation_criteria,
+    prefix = format_prompt(SOUNDNESS_JUDGE_PROMPT_PREFIX, report=report, ideation_criteria=ideation_criteria,
                            input_data=input_metadata)
-    suffix = format_prompt(suffix_template, angle_text=_format_angle(angle))
+    suffix = format_prompt(SOUNDNESS_JUDGE_PROMPT_SUFFIX, angle_text=_format_angle(angle))
 
-    response = await llm_call(suffix, system_prompt=system_prompt, model=config.judge_model,
+    response = await llm_call(suffix, system_prompt=SOUNDNESS_JUDGE_SYSTEM, model=config.judge_model,
                               cache_prompt=True, cache_prefix=prefix)
     reasoning = extract_xml(response, "reasoning").strip()
     caveat = extract_xml(response, "caveat").strip()
@@ -1010,32 +980,16 @@ async def generate_angles(report: str, ideation_criteria: str, input_metadata: s
     stakeholders, anti-targets, data constraints - never the deliverable rubric (script-delivery
     mechanics), which is withheld here and held for D6's realisation check instead.
 
-    Falls back to a minimal built-in prompt (ANGLE_GENERATION_*_FALLBACK in prompts.py) with a
-    loud warning if the human-owned ANGLE_GENERATION_* constants are still empty, so the pipeline
-    stays runnable while that prompt is unwritten - the fallback is not real ideation design.
     """
-    system_prompt = ANGLE_GENERATION_SYSTEM
-    prefix_template = ANGLE_GENERATION_PROMPT_PREFIX
-    suffix_template = ANGLE_GENERATION_PROMPT_SUFFIX
-    if not (system_prompt and prefix_template and suffix_template):
-        print(
-            "WARNING: ANGLE_GENERATION_SYSTEM/_PREFIX/_SUFFIX in prompts.py are empty "
-            "(# TODO(human)) - falling back to a minimal built-in placeholder prompt. Angle "
-            "quality will be generic/poor until a human fills these in."
-        )
-        system_prompt = system_prompt or ANGLE_GENERATION_SYSTEM_FALLBACK
-        prefix_template = prefix_template or ANGLE_GENERATION_PROMPT_PREFIX_FALLBACK
-        suffix_template = suffix_template or ANGLE_GENERATION_PROMPT_SUFFIX_FALLBACK
-
     # report/ideation_criteria/input_data are identical across every angle-generation call in a
     # run, so they're cached as a prefix; stance/guiding_question/existing_angles/n vary per call
     # and stay in the suffix (see DIVERGER_PLAN.md §4 - both cycling axes belong here, not the prefix).
-    prefix = format_prompt(prefix_template, report=report, ideation_criteria=ideation_criteria,
+    prefix = format_prompt(ANGLE_GENERATION_PROMPT_PREFIX, report=report, ideation_criteria=ideation_criteria,
                            input_data=input_metadata)
-    suffix = format_prompt(suffix_template, stance=stance, guiding_question=guiding_question,
+    suffix = format_prompt(ANGLE_GENERATION_PROMPT_SUFFIX, stance=stance, guiding_question=guiding_question,
                            existing_angles=existing_angles, n=n)
 
-    response = await llm_call(suffix, system_prompt=system_prompt, model=config.angle_model,
+    response = await llm_call(suffix, system_prompt=ANGLE_GENERATION_SYSTEM, model=config.angle_model,
                               cache_prompt=True, cache_prefix=prefix)
     return parse_angles(extract_xml(response, "angles"))
 
