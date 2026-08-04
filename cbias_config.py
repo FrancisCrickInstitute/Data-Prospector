@@ -10,10 +10,13 @@ anonymize_cbias_data.py's module docstring for exactly what was removed and why.
 References fields may contain a literal "[EMAIL REDACTED]"/"[PHONE REDACTED]"/"[NAME REDACTED]"
 placeholder where something was scrubbed inline - treat these as ordinary text, not an error.
 
-NOTE: `docker_image` below does not exist yet. This repo's Dockerfile only builds `bia-analysis:latest`
-(numpy/scipy/scikit-image/scikit-learn/pandas/bioio/bioio-tifffile - no matplotlib). Build a
-`cbias-analysis:latest` image with pandas, numpy, and matplotlib before execution-validation will work
-for this config - same gap already documented for `trello_config.py`'s `python-analysis:latest`.
+NOTE: `docker_image` below is defined by the Dockerfile's `cbias-analysis` target (kept in sync with
+AVAILABLE_LIBRARIES below) but is not built automatically - build/rebuild it locally before
+execution-validation will work for this config, and again whenever the Dockerfile's package list
+changes:
+    docker build --target cbias-analysis -t cbias-analysis:latest .
+`trello_config.py`'s `python-analysis:latest` has the same build-it-yourself requirement, but no
+Dockerfile target exists for it yet.
 """
 
 import re
