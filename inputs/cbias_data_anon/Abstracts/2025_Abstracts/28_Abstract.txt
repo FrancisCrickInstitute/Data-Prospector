@@ -1,0 +1,20 @@
+Institution:
+School of Computer Science, University of Nottingham, Nottingham, UK 
+School of Computer Science, University of Nottingham, Nottingham, UK 
+School of Biosciences, University of Nottingham, Nottingham, UK 
+School of Biosciences, University of Nottingham, Nottingham, UK 
+Rosalind Franklin Institute, The Rutherford Appleton Laboratory, UK 
+School of Computer Science, University of Nottingham, Nottingham, UK 
+
+Title: A Synthetic Data Generation Pipeline for Improving the Segmentation of Roots in Micro-CT Images
+
+Abstract:
+Image segmentation models typically require a significant amount of annotated data for training, which is rarely readily available in bioscience datasets due to the high costs of manually labelling images. Training datasets can be augmented with synthetically generated images that aim to match the visual and biological properties of the original dataset. Segmentation masks can be created automatically during the synthetic image generation process, removing the need for manual annotation. We present an adaptable semi-automatic pipeline for creating annotated synthetic micro-computed tomography (micro-CT) volumes at scale using the 3D modelling tool Blender, and we demonstrate our method using a dataset of micro-CT images of tomato plant roots embedded in sieved soil columns. The root system mesh is generated using an L-system model and is embedded in a column. 3D texturing is applied to the meshes, and the sample is rendered volumetrically by slicing at regular intervals, generating both the synthetic micro-CT image and the corresponding labels at each slice. We use our synthetically generated images alongside real data to create augmented datasets to train a U-Net-based segmentation model to demonstrate that when there is a small amount of real annotated data available, using synthetic data in the training dataset can improve the segmentation accuracy. 
+
+Themes: ["Modelling","Applications"]
+
+Keywords: Synthetic Data, Image Segmentation, Micro-CT, Blender, L-Systems, Plant Science 
+
+Gender of presenting author: Woman
+
+Special requirements: 

@@ -1,0 +1,19 @@
+
+
+Institution: Facility for Imaging by Light Microscopy, Imperial College London
+
+Title: Content-aware frame interpolation (CAFI): Deep Learning-based temporal super-resolution for fast bioimaging
+
+
+
+
+Abstract: The development of high-resolution microscopes has made it possible to investigate cellular processes in 4D (3D over time). 
+However, observing fast cellular dynamics remains challenging as a consequence of photobleaching and phototoxicity. These issues become increasingly problematic with the depth of the volume acquired and the speed of the biological events of interest.
+Here, we report the implementation of two content-aware frame interpolation (CAFI) deep learning networks, Zooming SlowMo (ZS) and Depth-Aware Video Frame Interpolation (DAIN), that are highly suited for accurately predicting images in between image pairs, therefore improving the temporal resolution of image series (tCAFI) as a post-acquisition analysis step. CAFI also works in the axial dimension (zCAFI), and in combination of temporal and axial dimensions (tzCAFI).
+We show that CAFI predictions are capable of understanding the motion context of biological structures to perform better than standard interpolation methods. We benchmark CAFI’s performance on twelve different datasets, obtained from four different light microscopy modalities (point-scanning confocal, spinning disk confocal, lattice light sheet and confocal brightfield microscopy) and on an electron microscopy dataset.
+We demonstrate its capabilities for single-particle tracking methods applied to the study of lysosome trafficking and on segmentation experiments of labelled nuclei. CAFI therefore allows for reduced light exposure and phototoxicity on the sample and extends the possibility of long-term live-cell imaging. Both DAIN and ZS as well as the training and testing data are made available for use by the wider community via the ZeroCostDL4Mic platform. 
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","New Tools\n","Open Science","Web/Cloud Interfaces\n"]
+
+Additional Keywords: 

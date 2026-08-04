@@ -1,0 +1,17 @@
+
+
+Institution: VIB BioImaging Core / KU Leuven
+
+Title: Towards efficient centralized research data management and analysis of bioimaging data
+
+
+Abstract: Flanders BioImaging with the Flemish supercomputing center (Vlaams Supercomputer Centrum, VSC), KU Leuven’s central IT, and VIB teamed up to make modern data management, metadata handling, and image analysis more FAIR. 
+These combined efforts aim to serve the imaging data together with other research data on the ManGO platform. ManGO, is the KU Leuven infrastructure for the management of active research data and is based on the Integrated Rule-Oriented Data System (iRODS, https://irods.org/), which is an open-source data management software used by research, commercial, and governmental organizations worldwide. ManGO helps users to store research data and annotate them with metadata in order to contextualize them and make them findable(https://github.com/kuleuven/iRODS-User-Training/blob/main/08_mango_portal.md). This can be done manually via pre-made metadata schemas (including REMBI ((Sarkans et al., 2021))) or fully automated to future-proof them for FAIR use and improved reproducibility. 
+In addition, to maximize the valorization potential of our approach we are exploring the use of a deployment of the BioImage Analysis Desktop (BAND, https://band.embl.de/), implemented within an Open OnDemand portal (https://openondemand.org/) on the VSC computing infrastructure to provide a performant and secure image analysis platform in the future with the goal to optimize service provision for internal and external researchers.
+
+
+
+Keywords: ["Big Data\n","Web/Cloud Interfaces\n"]
+
+Additional Keywords: Research Data Management;
+Image Data Management

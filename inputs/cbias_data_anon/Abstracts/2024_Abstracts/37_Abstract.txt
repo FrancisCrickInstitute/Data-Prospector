@@ -1,0 +1,17 @@
+Institution:
+City, University of London, London, UK
+London Metropolitan University, London, UK
+Universidad Autonoma de Yucatan, Merida, Mexico
+City, University of London, London, UK
+City, University of London, London, UK
+
+Title: Number of Mitochondria have a positive correlation with the volume of nuclear invaginations and a negative correlation with the volume and aspect ratios of the mitochondria and cytoplasm volume on HeLa cells observed with Electron Microscopy
+
+Abstract:
+Changes in the shapes of the cellular nuclear envelope and mitochondria have been linked to the presence of disease and cancer. Thus, they have become an important area of study. In Computer Science, algorithms have been developed to aid in this field, by performing segmentation in order to better analyse the shapes of cells and their organelles. In this study, several segmentation algorithms are implemented to perform segmentation of HeLa cell mitochondria from images taken using an Electron Microscope. Namely, an algorithm based on Persistent Homology, another based on traditional Image Processing techniques, and a hybrid algorithm combining the previous two. The challenge posed by the Electron Microscope is extremely interesting as a high resolution image presents more complex structures which are hard to segment accurately. Additionally in this study, relationships between the morphology of cells and their mitochondria were explored and a positive correlation was found between the volume of invaginations and the volume of mitochondria, and negative correlations between the number and the mean volume of mitochondria, and between the volume of the cytoplasm and the aspect ratio of mitochondria.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: HeLa cells, electron microscopy, persistent homology
+
+Gender of presenting author: Man

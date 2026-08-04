@@ -1,0 +1,27 @@
+Institution:
+Francis Crick Institute, London, UK
+Francis Crick Institute, London, UK
+Francis Crick Institute, London, UK
+Institute of Clinical Sciences, Faculty of Medicine, Imperial College London, London, UK
+Department of Natural Sciences, University of Maryland Eastern Shore, Princess Anne, MD, USA
+Institute of Clinical Sciences, Faculty of Medicine, Imperial College London, London, UK
+Francis Crick Institute, London, UK
+Institute of Clinical Sciences, Faculty of Medicine, Imperial College London, London, UK
+Department of Molecular Biology, University of Wyoming, Laramie, WY, USA
+School of Engineering and Applied Sciences, Harvard University, Cambridge, MA, USA
+Institute of Clinical Sciences, Faculty of Medicine, Imperial College London, London, UK
+London North West University HealthCare NHS Trust
+London North West University HealthCare NHS Trust
+Department of Computing, Imperial College London, London, UK
+Francis Crick Institute, London, UK
+
+Title: Three-dimensional mapping of organ geometry
+
+Abstract:
+Analysis of whole animals or organs in situ is often unfeasible due to challenges of labelling, imaging and 3D analysis. This means that organs or tissues are often dissected out of the organism for detailed study. However, this comes with the caveat that much of the 3D shape and positional information is lost or distorted by dissection. For my work I am interested in the arrangement and shape of organs within the abdomen. Here I present a scale-up of microCT scanning and a method to extract information about organ shape and position from large scale 3D image datasets. Using these methods in Drosophila, we found that gut looping is non-random and sexually dimorphic. We also identified unexpected organ adjacencies and left-right asymmetries, for example the stomach makes contact with the ovaries. I am now working on applying these techniques to human abdominal MRI scans. We aim to map gastrointestinal shape and positioning in 3D to investigate the role of organ shape in health and disease.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: three-dimensional, microCT, MRI, shape
+
+Gender of presenting author: Woman

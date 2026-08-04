@@ -1,0 +1,26 @@
+Institution:
+Francis Crick Institute, London, UK
+Francis Crick Institute, London, UK
+LISM - CNRS, Marseille, France
+HMS - BCH, Boston, USA
+Francis Crick Institute, London, UK
+Francis Crick Institute, London, UK
+Francis Crick Institute, London, UK
+
+ 
+
+Title: High-throughput microscopy coupled with deep-learning image analysis reveals that fast-growing intracellular Mycobacterium tuberculosis populations can evade antibiotic treatment.  
+
+Abstract:
+Slow growth has long been considered a hallmark of Mycobacterium tuberculosis (Mtb), one of the deadliest human pathogens. Historically, slow or arrested Mtb growth has been linked to persistence in the host and tolerance to antibiotics. Mtb is an intracellular pathogen that infects human macrophages, yet defining its intracellular growth dynamics at single-cell resolution has remained a major challenge.
+
+Here, we developed a high-content, live, single-cell imaging approach to precisely quantify Mtb growth rates in human macrophage populations with high spatiotemporal resolution. Unexpectedly, we identified fast-growing intracellular Mtb subpopulations with doubling times of less than 10 hours. Strikingly, these fast-growing subpopulations persisted after treatment with the first-line antibiotics rifampicin, isoniazid, and pyrazinamide.
+
+
+Themes: ["Imaging","Data processing and visualisation","Open science and FAIR data"]
+
+Keywords: High-throughput, single-cell, tracking
+
+Gender of presenting author: Man
+
+Special requirements: 

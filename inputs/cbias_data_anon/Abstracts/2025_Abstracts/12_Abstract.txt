@@ -1,0 +1,19 @@
+Institution:
+European Bioinformatics Institute, EMBL, Cambridge, UK
+School of computer science, University of Birmingham, UK
+BioVisionCenter, University of Zürich, Zürich, Switzerland and European Bioinformatics Institute, EMBL, Cambridge, UK
+
+Title: Data-driven shape quantification for 2D microscopy images
+
+Abstract:
+The shape of cells, nuclei, and other biological structures, is a fundamental property of living systems that reflects their function and state. It is also a phenotype that can be observed over most imaging modalities, making it an attractive target for cross-experimental and cross-platform analyses. In spite of recent progress in image segmentation, quantifying shape in an unbiased manner without relying on predefined categories, handcrafted descriptors, or arbitrary assumptions, remains challenging due to the heterogeneity of biological morphologies, sensitivity to segmentation artifacts, and the limitations of existing shape descriptors. This is particularly critical in curiosity-driven biology, where phenotypes are often unknown in advance and quantification methods should ideally not have strong priors.
+
+To address this, we have developed ShapeEmbedLite, a lightweight self-supervised representation learning framework that encodes 2D object contours in microscopy images into compact shape descriptors that are invariant to translation, scaling, rotation, reflection, and point indexing. ShapeEmbedLite can be used on a wide range of microscopy images and allows for the quantitative and visual exploration of shape differences in a purely data-driven manner, with minimal prior. In experiments on various types of microscopy images, we observe that the shape descriptions obtained with ShapeEmbedLite capture variations that align with known biological features. The geometry-aware design of our method overcomes the limited ability of classical shape descriptors based on summary statistics to capture complex morphological variability. It also improves upon existing learning-based shape quantification methods in both computational efficiency and robustness to segmentation artefacts and imaging noise. We provide an open implementation of ShapeEmbedLite, hoping that it can contribute to advanced morphological profiling and phenotype discovery in bioimage analysis.
+
+Themes: ["Applications","Data processing and visualisation"]
+
+Keywords: shape quantification, representation learning, image analysis
+
+Gender of presenting author: Woman
+
+Special requirements: 

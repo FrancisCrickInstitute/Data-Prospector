@@ -1,0 +1,22 @@
+Institution:
+University College London, London, UK
+European Synchrotron Radiation Facility, Grenoble, France
+European Synchrotron Radiation Facility, Grenoble, France
+European Synchrotron Radiation Facility, Grenoble, France
+University College London, London, UK
+European Synchrotron Radiation Facility, Grenoble, France
+European Synchrotron Radiation Facility, Grenoble, France
+University College London, London, UK
+
+Title: The Human Organ Atlas
+
+Abstract:
+We present the Human Organ Atlas (HOA), a public bioimage resource that contains 3D images of human organs down to the resolution of individual cells. So far we have released 149, taken from 17 different organs across 7 individual donors, and over the next couple of years we will be releasing more and more of the 300TB of data we have currently imaged.
+
+As well as giving a quick overview of HOA we also explain how we handle such large volumes of data, focusing on methods to create, analyse, visualize, and share datasets using next generation chunked file formats.
+
+Themes: ["None of the above"]
+
+Keywords: imaging, big-data, public-data
+
+Gender of presenting author: Man

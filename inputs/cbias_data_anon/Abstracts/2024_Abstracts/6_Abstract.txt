@@ -1,0 +1,27 @@
+Institution:
+Centre for Cell Imaging, University of Liverpool, Liverpool, UK
+Biochemistry, Cell and Systems Biology, University of Liverpool, Liverpool, UK
+Biochemistry, Cell and Systems Biology, University of Liverpool, Liverpool, UK
+Centre for Cell Imaging, University of Liverpool, Liverpool, UK
+Biochemistry, Cell and Systems Biology, University of Liverpool, Liverpool, UK
+
+
+Title: 1, 2, … 1, 2, 3, 4, - Analysing the biogenesis of bacterial microcompartments in Salmonella at scale 
+
+Abstract:
+Bacteria contain proteinaceous organelles, called bacterial microcompartments (BMC), that are involved in CO2 fixation, infection, and microbial ecology. The de novo biogenesis of BMCs appears to follow a certain pattern, from poles to the mid-cell region, suggesting a directed assembly process. This polar-to-mid-cell gradient in BMC formation could be indicative of a strategic cellular mechanism to optimize metabolic efficiency and resource allocation within the bacterium. 
+
+In this study, we employed the superresolution capabilities of the Elyra Lattice Structured Illumination Microscopy (SIM) to investigate the spatial organization and frequency of BMCs in Salmonella enterica serovar Typhimurium (S. Typhimurium) LT2with high precision. Our methodology involved in situ labelling BMCs with specific fluorescent markers and acquiring superresolved images of bacterial cells. 
+
+Quantitative image analysis was conducted using the image processing package Fiji to accurately and automatically determine the BMC counts per bacterium and the BMC statistical locations within cells (location heat maps), through a custom macro.  
+
+Our results revealed significant insights into the distribution patterns of BMCs. On average, we observed 4.12 ± 2.37 (n=1210) propanediol-utilization BMCs per bacterium. Statistical analysis indicated that the distribution of BMCs is non-random, with a tendency to localize as discrete foci within cells. These findings were validated through rigorous statistical tests, ensuring the reliability of our data. 
+
+The quantitative data obtained from this study provide a deeper understanding of BMC organization and its potential impact on bacterial physiology. The ability to accurately quantify and locate BMCs within bacterial cells opens new avenues for research into the functional dynamics of these organelles. Moreover, our approach demonstrates the utility of Elyra Lattice SIM in resolving the intricate subcellular structures of bacteria, offering a powerful tool for microbiological research. 
+
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: Bacterial Microcompartments, Superresolution Microscopy, Elyra Lattice SIM, Salmonella enterica, Quantitative Analysis, Spatial Distribution
+
+Gender of presenting author: Woman

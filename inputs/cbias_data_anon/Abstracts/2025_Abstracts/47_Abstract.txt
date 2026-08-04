@@ -1,0 +1,22 @@
+
+Institution:
+Institute of Computer Science, Georg-August-Universität Göttingen, Göttingen, Germany
+Department of Molecular Neurobiology, Max-Planck-Institute for Multidisciplinary Sciences, Göttingen, Germany
+Institute of Computer Science, Georg-August-Universität Göttingen, Göttingen, Germany
+Department of Molecular Neurobiology, Max-Planck-Institute for Multidisciplinary Sciences, Göttingen, Germany
+Institute of Computer Science, Georg-August-Universität Göttingen, Göttingen, Germany
+
+Title: SynapseNet: Deep Learning for Automatic Synapse Reconstruction
+
+Abstract:
+Electron microscopy is an important technique for the study of synaptic morphology and its relation to synaptic function. The data analysis for this task requires the segmentation of the relevant synaptic structures, such as synaptic vesicles, active zones, mitochondria, presynaptic densities, synaptic ribbons, and synaptic compartments. Previous studies were predominantly based on manual segmentation, which is very time-consuming and prevented the systematic analysis of large datasets. We introduce SynapseNet, a tool for the automatic segmentation and analysis of synapses in electron micrographs. It can reliably segment synaptic vesicles and other synaptic structures in a wide range of electron microscopy approaches, thanks to a large annotated dataset, which we assembled, and domain adaptation functionality we developed. We demonstrated its capability for (semi-)automatic biological analysis in two applications and made it available as an easy-to-use tool to enable novel data-driven insights into synapse organization and function.
+
+Muth, S., Moschref, F., Freckmann, L., Mutschall, S., Hojas-Garcia-Plaza, I., Bahr, J. N., ... & Pape, C. (2025). SynapseNet: deep learning for automatic synapse reconstruction. Molecular Biology of the Cell, mbc-E24.
+
+Themes: ["Data processing and visualisation","Open science and FAIR data","Modelling","Applications"]
+
+Keywords: methodology, automatic segmentation, electron microscopy, deep learning
+
+Gender of presenting author: Woman
+
+Special requirements: 

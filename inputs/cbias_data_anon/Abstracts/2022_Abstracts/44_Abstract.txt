@@ -1,0 +1,12 @@
+
+
+Institution: UCL
+
+Title: Two-step training for AI segmentation of 3D vasculature
+
+
+Abstract: Deep learning is an increasingly popular approach in biomedical image analysis, but generally required large amounts of manually labelled training data and struggles to learn from datasets where the label classes are highly imbalanced. In this work, a convolutional neural network based on a U-net (encoder-decoder) architecture was developed with the aim of producing a generalisable vessel-segmenting model, trained on data from multiple imaging modalities (High Resolution Episcopic Microscopy, microvascular-cast Computed Tomography and Raster-Scanning Optoacoustic Mesoscopy). A two-step training protocol was employed to separately train the encoder and decoder branches, helping to overcome the challenges associated with training deep neural networks. The encoder was trained independently as a classification model, with 3D image volumes classified into two categories: ‘contains vessel’ and ‘does not contain vessel’. The learned weights were then transferred to the encoding branch of a full U-net, which was trained to produce a voxel-wise semantic segmentation. This approach was found to produce higher accuracy segmentations than training the entire model at once. Additionally, a range of loss functions designed to cope with imbalanced classes were compared, with a custom function that combined categorical cross-entropy and DICE coefficient proving most effective.
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning"]
+
+Additional Keywords: 3D histology

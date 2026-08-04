@@ -1,0 +1,34 @@
+Institution:
+Physics Department, Imperial College London, London, UK & The Francis Crick Institute, London, UK
+Physics Department, Imperial College London, London, UK & Department of Surgery and Cancer, Imperial College London, London, UK
+Physics Department, Imperial College London, London, UK & Department of Surgery and Cancer, Imperial College London, London, UK
+Physics Department, Imperial College London, London, UK
+Physics Department, Imperial College London, London, UK & The Francis Crick Institute, London, UK
+Physics Department, Imperial College London, London, UK & The Francis Crick Institute, London, UK
+Department of Surgery and Cancer, Imperial College London, London, UK
+Physics Department, Imperial College London, London, UK & The Francis Crick Institute, London, UK
+Department of Mathematics, Imperial College London, London, UK
+Physics Department, Imperial College London, London, UK & The Francis Crick Institute, London, UK
+
+Title: Rapid analysis of nanoscale clusters in SMLM data using Spatial Points Patterns 
+
+Abstract:
+We present a new approach for quantitative analysis of complex biological structures by super-resolved microscopy using a low-cost automated single molecule localisation microscopy (SMLM) approach implemented with multiwell plate sample arrays [1,2,3]. For quantitative readouts, nanoscale cluster analysis of SMLM localisation data is desirable but the large data volumes and algorithmic complexity make analysis of such high throughput SMLM data impractical. We have developed a rapid and robust approach to SMLM cluster analysis based on fitting the two-point correlation function (TPCF g(r)) ([4], derived for multi-scale random media with Spatial Points Patterns Theory [5]) to a model of discrete cluster components. We then use the fitted parameters in a two-stage localization density-based procedure to assign localizations to the discrete cluster components. Our method addresses background noise and over-counting in SMLM localisation data. We have tested our approach on simulated and experimental SMLM data fitting to a 2-component model, including as part of our project to study mechanisms of resistance to platinum-based cancer chemotherapy. When applied to multiwell plate easySTORM [3] SMLM data of fluorescently labelled chromatin, we could contrast sensitive and resistant ovarian cancer cells with and without platinum treatment as well as fibroblasts and iPSC cells
+
+[1] Lightley et al., Robust optical autofocus system utilizing neural networks trained for extended range and time-course and automated multiwell plate imaging including single molecule localization microscopy, J Microscopy (2021) https://doi.org/10.1111/jmi.13020
+ 
+[2] Lightley et al., Robust, single-shot, optical autofocus system utilizing cylindrical lenses to provide high precision and long range of operation, J Microscopy (2023) https://doi.org/10.1101/2022.07.14.498938
+
+[3] Kwakwa et al., easySTORM: a robust, lower-cost approach to localisation and TIRF microscopy, J Biophotonics (2016) http://dx.doi.org/10.1002/jbio.201500324
+ 
+[4] Veatch et al, Correlation Functions Quantify Super-Resolution Images and Estimate Apparent Clustering Due to Over-Counting, PLOS ONE (2012), https://doi.org/10.1371/journal.pone.0031457 (F)
+
+[5] Cressie, N.A.C. (1993). Spatial Point Patterns. In Statistics for Spatial Data,
+N.A.C. Cressie (Ed.). https://doi.org/10.1002/9781119115151.ch
+
+
+Themes: 
+
+Keywords:
+
+Gender of presenting author: Man

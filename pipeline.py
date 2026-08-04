@@ -7,20 +7,36 @@ Agnostic to domain — configure via PipelineConfig.
 import asyncio
 import base64
 import os
-import random
 import re
 import shutil
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from anthropic import AsyncAnthropic
+from datetime import datetime
 from config import PipelineConfig
 from dotenv import load_dotenv
 from pathlib import Path
 from prompts import *
 
 load_dotenv(override=True)
-async_client = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+# base_url is passed explicitly (rather than left to the SDK's default) so this client can
+# never be silently rerouted by an ambient ANTHROPIC_BASE_URL - e.g. one set for the
+# deepseek_client below via DEEPSEEK_BASE_URL. Anthropic's own SDK auto-detects
+# ANTHROPIC_BASE_URL from the environment if it's not passed here.
+anthropic_client = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"], base_url="https://api.anthropic.com")
+
+# DeepSeek exposes an Anthropic-Messages-API-compatible endpoint, so it can reuse the same
+# AsyncAnthropic client shape/request logic below - just a different client instance, keyed by
+# model name. None if DEEPSEEK_BASE_URL/DEEPSEEK_API_KEY aren't configured (only needed by
+# domain configs that actually assign a deepseek* model to a role).
+_deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY")
+_deepseek_base_url = os.environ.get("DEEPSEEK_BASE_URL")
+deepseek_client = (
+    AsyncAnthropic(api_key=_deepseek_api_key, base_url=_deepseek_base_url)
+    if _deepseek_api_key and _deepseek_base_url else None
+)
 
 # Caps concurrent in-flight LLM requests across the whole pipeline (orchestrators, workers,
 # compilers, evaluators all funnel through llm_call). Without this, designs_per_iteration
@@ -28,26 +44,66 @@ async_client = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 # once, tripping rate limits. Override via LLM_MAX_CONCURRENCY.
 LLM_SEMAPHORE = asyncio.Semaphore(int(os.environ.get("LLM_MAX_CONCURRENCY", "8")))
 
+
+def _client_for_model(model: str) -> AsyncAnthropic:
+    """Route a model name to the client that can serve it - both speak the Anthropic Messages
+    API, so only the client/credentials differ, not the request-building logic in llm_call."""
+    if model.startswith("deepseek"):
+        if deepseek_client is None:
+            raise ValueError(
+                f"Model '{model}' requires DEEPSEEK_API_KEY and DEEPSEEK_BASE_URL to be set "
+                f"(in .env or the environment)."
+            )
+        return deepseek_client
+    return anthropic_client
+
+
+def _image_blocks(images: list[tuple[str, bytes]]) -> list[dict]:
+    """Build Anthropic image content blocks from (media_type, raw_bytes) pairs."""
+    return [
+        {
+            "type": "image",
+            "source": {"type": "base64", "media_type": media_type,
+                       "data": base64.standard_b64encode(data).decode("utf-8")},
+        }
+        for media_type, data in images
+    ]
+
+
 # Core LLM interface
 async def llm_call(prompt: str, system_prompt: str = None, model: str = None, cache_prompt: bool = False,
-                   max_tokens: int = 8192, images: list[tuple[str, bytes]] = None) -> str:
+                   max_tokens: int = 8192, images: list[tuple[str, bytes]] = None,
+                   cache_prefix: str = None) -> str:
     """
     Calls the model with the given prompt and returns the response.
 
     Args:
-        prompt (str): The user prompt to send to the model.
+        prompt (str): The user prompt to send to the model. If cache_prefix is given, this is
+            just the variable tail appended after it - not the whole prompt.
         system_prompt (str, optional): The system prompt.
         model (str, optional): The model to use for the call.
-        cache_prompt (bool): Enable prompt caching for this call.
+        cache_prompt (bool): Enable prompt caching for this call's system prompt. Only useful if
+            system_prompt is long enough to clear Anthropic's minimum cacheable size (1024 tokens
+            for Sonnet/Opus, 2048 for Haiku) - the short role-description system prompts in this
+            pipeline generally aren't, so this mostly matters for cache_prefix below instead.
         max_tokens (int): Maximum tokens in response (default 8192).
         images (list[tuple[str, bytes]], optional): (media_type, raw_bytes) pairs, e.g.
-            [("image/png", data)], attached as image content blocks before the prompt text.
+            [("image/png", data)], attached as image content blocks between cache_prefix (if any)
+            and prompt.
+        cache_prefix (str, optional): A stable prefix to mark as an ephemeral cache breakpoint,
+            for callers that repeat the same large content across several calls (e.g. compiler
+            retries within one design reusing the same analysis/functions, varying only the error
+            feedback). Put content that's IDENTICAL across those calls here, and whatever varies
+            in `prompt`. No effect (but harmless) if the combined prefix is under the provider's
+            minimum cacheable size.
 
     Returns:
         str: The response from the language model.
     """
     if model is None:
         raise ValueError("model must be provided")
+
+    client = _client_for_model(model)
 
     system_content = system_prompt
     if cache_prompt:
@@ -59,14 +115,13 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
             }
         ]
 
-    if images:
-        content = [
-            {
-                "type": "image",
-                "source": {"type": "base64", "media_type": media_type, "data": base64.standard_b64encode(data).decode("utf-8")},
-            }
-            for media_type, data in images
-        ]
+    if cache_prefix:
+        content = [{"type": "text", "text": cache_prefix, "cache_control": {"type": "ephemeral"}}]
+        if images:
+            content += _image_blocks(images)
+        content.append({"type": "text", "text": prompt})
+    elif images:
+        content = _image_blocks(images)
         content.append({"type": "text", "text": prompt})
     else:
         content = prompt
@@ -78,7 +133,7 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
     # Retry once with a larger budget before giving up.
     async with LLM_SEMAPHORE:
         for attempt, tokens in enumerate((max_tokens, max_tokens * 2)):
-            response = await async_client.messages.create(
+            response = await client.messages.create(
                 model=model,
                 max_tokens=tokens,
                 system=system_content,
@@ -121,37 +176,55 @@ def format_prompt(template: str, **kwargs) -> str:
 _BARE_AMPERSAND = re.compile(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)')
 
 
-def parse_tasks(tasks_xml: str) -> list[dict]:
-    """Parse XML tasks into a list of task dictionaries."""
-    tasks = []
-    sanitized = _BARE_AMPERSAND.sub('&amp;', tasks_xml)
+def _parse_xml_items(items_xml: str, item_tag: str, fallback_fields: tuple[str, ...]) -> list[dict]:
+    """Parse a flat list of same-tag XML blocks (e.g. <task>...</task>, <angle>...</angle>) into
+    dicts of their child-tag text. Falls back to a per-field regex scan if strict XML parsing
+    fails (tolerates minor formatting drift from the model, e.g. a stray literal '<')."""
+    items = []
+    sanitized = _BARE_AMPERSAND.sub('&amp;', items_xml)
     try:
         root = ET.fromstring(f"<root>{sanitized}</root>")
-        task_elems = root.findall("task")
-
-        for task_elem in task_elems:
-            task = {}
-            for child in task_elem:
+        for item_elem in root.findall(item_tag):
+            item = {}
+            for child in item_elem:
                 if child.text:
-                    task[child.tag] = child.text.strip()
-            if task:
-                tasks.append(task)
+                    item[child.tag] = child.text.strip()
+            if item:
+                items.append(item)
     except ET.ParseError as e:
-        print(f"Warning: Failed to parse tasks XML: {e}")
-        print(f"DEBUG: Raw tasks_xml (first 500 chars):\n{tasks_xml[:500]}")
-        # Fallback: try to extract tasks manually using regex (covers structural breakage that
-        # ampersand-escaping alone can't fix, e.g. a stray literal '<' in a description).
-        task_pattern = r'<task>(.*?)</task>'
-        for match in re.finditer(task_pattern, tasks_xml, re.DOTALL):
-            task_content = match.group(1)
-            task = {}
-            for field in ("function", "description", "input", "output"):
-                field_match = re.search(f'<{field}>(.*?)</{field}>', task_content, re.DOTALL)
+        print(f"Warning: Failed to parse <{item_tag}> XML: {e}")
+        print(f"DEBUG: Raw {item_tag} xml (first 500 chars):\n{items_xml[:500]}")
+        item_pattern = rf'<{item_tag}>(.*?)</{item_tag}>'
+        for match in re.finditer(item_pattern, items_xml, re.DOTALL):
+            item_content = match.group(1)
+            item = {}
+            for field in fallback_fields:
+                field_match = re.search(f'<{field}>(.*?)</{field}>', item_content, re.DOTALL)
                 if field_match:
-                    task[field] = field_match.group(1).strip()
-            if task:
-                tasks.append(task)
-    return tasks
+                    item[field] = field_match.group(1).strip()
+            if item:
+                items.append(item)
+    return items
+
+
+def parse_tasks(tasks_xml: str) -> list[dict]:
+    """Parse XML tasks into a list of task dictionaries."""
+    return _parse_xml_items(tasks_xml, "task", ("function", "description", "input", "output"))
+
+
+# D2/D5-calibrate: {id, variables_involved, hypothesis, question_or_stakeholder_served,
+# why_non_obvious, rough_method, requires} - the angle schema ANGLE_GENERATION_PROMPT_SUFFIX asks
+# the model for. requires (D5-calibrate item 6) is instrumentation only - what libraries ideation
+# reaches for, not a constraint on it (DIVERGER_PLAN.md §10) - and is never used to filter.
+_ANGLE_FIELDS = (
+    "id", "variables_involved", "hypothesis", "question_or_stakeholder_served",
+    "why_non_obvious", "rough_method", "requires",
+)
+
+
+def parse_angles(angles_xml: str) -> list[dict]:
+    """Parse XML angles into a list of angle dictionaries."""
+    return _parse_xml_items(angles_xml, "angle", _ANGLE_FIELDS)
 
 
 # Sandbox flags for running untrusted, LLM-generated code. Docker here provides both
@@ -274,16 +347,19 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
             "architecture and functions above don't touch.\n"
         )
 
-    compiler_input = COMPILER_PROMPT.format(
+    # Split at the analysis/functions/library_notes/seed boundary: identical across every
+    # sequential compile/execute retry for this design (only error_feedback changes attempt to
+    # attempt), so it's passed as a cache_prefix rather than folded into one flat prompt.
+    compiler_prefix = COMPILER_PROMPT_PREFIX.format(
         analysis=analysis,
         functions=functions_text,
         library_notes=config.available_libraries,
-        error_feedback=error_section,
         seed_section=seed_section,
     )
+    compiler_suffix = COMPILER_PROMPT_SUFFIX.format(error_feedback=error_section)
 
-    compiled_response = await llm_call(compiler_input, system_prompt=COMPILER_SYSTEM, model=config.compiler_model,
-                                       cache_prompt=True, max_tokens=16384)
+    compiled_response = await llm_call(compiler_suffix, system_prompt=COMPILER_SYSTEM, model=config.compiler_model,
+                                       cache_prompt=True, max_tokens=16384, cache_prefix=compiler_prefix)
     compiled_script = extract_xml(compiled_response, "response")
 
     if not compiled_script.strip():
@@ -355,7 +431,8 @@ _CRITERION_PATTERN = re.compile(r'<criterion\s+met="(true|false)"\s*/?>', re.IGN
 _MAX_VALIDATOR_IMAGES = 4
 
 
-def _load_plot_images(artifacts: list[dict], artifacts_dir: str, limit: int = _MAX_VALIDATOR_IMAGES) -> list[tuple[str, bytes]]:
+def _load_plot_images(artifacts: list[dict], artifacts_dir: str, limit: int = _MAX_VALIDATOR_IMAGES) -> list[
+    tuple[str, bytes]]:
     """Read the first `limit` non-empty PNGs an artifacts_dir listing points at, for the validator to see."""
     if not artifacts_dir:
         return []
@@ -384,18 +461,20 @@ async def validate_requirements(compiled_script: str, report: str, criteria: str
     """
     artifacts = artifacts or []
     artifacts_listing = _format_artifacts(artifacts)
-    validator_input = REQUIREMENTS_VALIDATOR_PROMPT.format(
-        report=report,
-        criteria=criteria,
+
+    # report + criteria are identical across every design's validation call in a run, so they're
+    # cached as a prefix (see cache_prefix on llm_call); only the script/execution output vary.
+    validator_prefix = REQUIREMENTS_VALIDATOR_PROMPT_PREFIX.format(report=report, criteria=criteria)
+    validator_suffix = REQUIREMENTS_VALIDATOR_PROMPT_SUFFIX.format(
         content=compiled_script,
         # Keep the TAIL: the script prints metrics then data-gap suggestions at the very end
         execution_result=f"Console output:\n{exec_output[-3000:]}\n\nFiles actually produced on disk:\n{artifacts_listing}"
     )
 
     images = _load_plot_images(artifacts, artifacts_dir)
-    validator_response = await llm_call(validator_input, system_prompt=EVALUATOR_SYSTEM,
+    validator_response = await llm_call(validator_suffix, system_prompt=EVALUATOR_SYSTEM,
                                         model=config.requirements_evaluator_model, cache_prompt=True,
-                                        images=images or None)
+                                        images=images or None, cache_prefix=validator_prefix)
     verdicts = _CRITERION_PATTERN.findall(validator_response)
     feedback = extract_xml(validator_response, "feedback").strip()
 
@@ -417,56 +496,30 @@ async def _call_worker(task_info: dict, task_index: int, report: str, input_meta
                        config: PipelineConfig) -> dict:
     """Call worker for a single task. Used for parallel execution."""
     func_name = task_info.get("function", f"task_{task_index}")
-    worker_input = format_prompt(
-        WORKER_PROMPT,
+    # report/input_data/library_notes/domain_notes are identical across every task in this design,
+    # so they're cached as a prefix; function/description/input/output vary and stay in the suffix.
+    worker_prefix = format_prompt(
+        WORKER_PROMPT_PREFIX,
         original_report=report,
-        function=func_name,
-        description=task_info.get("description", ""),
-        input=task_info.get("input", ""),
-        output=task_info.get("output", ""),
         input_data=input_metadata,
         library_notes=config.available_libraries,
         domain_notes=config.domain_notes,
     )
-    worker_response = await llm_call(worker_input, system_prompt=WORKER_SYSTEM, model=config.worker_model,
-                                     cache_prompt=True)
+    worker_suffix = format_prompt(
+        WORKER_PROMPT_SUFFIX,
+        function=func_name,
+        description=task_info.get("description", ""),
+        input=task_info.get("input", ""),
+        output=task_info.get("output", ""),
+    )
+    worker_response = await llm_call(worker_suffix, system_prompt=WORKER_SYSTEM, model=config.worker_model,
+                                     cache_prompt=True, cache_prefix=worker_prefix)
     worker_content = extract_xml(worker_response, "response")
     return {
         "function": func_name,
         "description": task_info.get("description", ""),
         "result": worker_content,
     }
-
-
-def _candidate_score(candidate: dict) -> tuple:
-    """Rank candidates lexicographically: execution-pass first, then the graded requirements score.
-
-    exec_pass is the high-order bit because it's the hard, Docker-grounded oracle signal - nothing
-    the noisy LLM requirements judgment says should ever outrank it. req_score (met/total against the
-    extracted rubric, from validate_requirements) only ever separates designs that already agree on
-    exec_pass, and unlike a boolean req_pass it gives a real gradient both below and approaching the
-    pass line - which is what lets mutation-from-seed (see generate_and_optimize) tell a design that
-    got closer from one that didn't.
-    """
-    return (candidate["exec_pass"], candidate.get("req_score", 0.0))
-
-
-def pick_best_seed(archive: list[dict]) -> dict | None:
-    """Return the highest-scoring node in the archive, or None if it's empty."""
-    if not archive:
-        return None
-    return max(archive, key=lambda node: node["score"])
-
-
-def pick_other_seed(archive: list[dict], exclude: dict) -> dict | None:
-    """Return a different archived node than `exclude`, chosen at random for diversity.
-
-    None if the archive is empty or `exclude` is the only node in it.
-    """
-    others = [node for node in archive if node is not exclude]
-    if not others:
-        return None
-    return random.choice(others)
 
 
 _TOKEN_PATTERN = re.compile(r'[a-z0-9]+')
@@ -485,20 +538,25 @@ def _jaccard(a: set, b: set) -> float:
     return len(a & b) / len(a | b)
 
 
-def _log_iteration_diversity(results: list[dict], iteration: int) -> None:
-    """Measurement only - log pairwise token-set Jaccard similarity across designs' <analysis> text.
-    Does not affect selection, feedback, or fan-out. Candidates without an "analysis" key (e.g. a
-    design that raised an exception before the orchestrator call completed) are skipped.
+def _log_iteration_diversity(angles: list[dict], iteration: int) -> None:
+    """Measurement only - log pairwise token-set Jaccard similarity across this iteration's angle
+    text (hypothesis + variables_involved + rough_method). Does not affect selection or fan-out.
     """
-    designs = [(c["label"], _token_set(c["analysis"])) for c in results if "analysis" in c]
+    entries = [
+        (
+            a.get("id", "?"),
+            _token_set(" ".join(a.get(f, "") for f in ("hypothesis", "variables_involved", "rough_method"))),
+        )
+        for a in angles
+    ]
     pairs = [
-        (designs[i][0], designs[j][0], _jaccard(designs[i][1], designs[j][1]))
-        for i in range(len(designs))
-        for j in range(i + 1, len(designs))
+        (entries[i][0], entries[j][0], _jaccard(entries[i][1], entries[j][1]))
+        for i in range(len(entries))
+        for j in range(i + 1, len(entries))
     ]
 
     if not pairs:
-        print(f"[diversity] iteration {iteration}: mean=n/a (fewer than 2 analyses to compare)")
+        print(f"[diversity] iteration {iteration}: mean=n/a (fewer than 2 angles to compare)")
         return
 
     mean_similarity = sum(sim for _, _, sim in pairs) / len(pairs)
@@ -506,34 +564,286 @@ def _log_iteration_diversity(results: list[dict], iteration: int) -> None:
     print(f"[diversity] iteration {iteration}: mean={mean_similarity:.2f}  pairs: {pair_str}")
 
 
-def _journal_entry(candidate: dict, iteration: int) -> str:
-    """One line recording what a design tried and what happened - not just failures.
+def _angle_record(angle: dict, iteration: int, stance: str) -> str:
+    """One line recording what was proposed, in which iteration, under which stance.
 
-    Plain structured text, no LLM summarization: label, a one-line approach summary (the first
-    line of its <analysis>), the exec/requirements outcome, how many real artifacts it produced,
-    and - only if it failed - the specific reason from its feedback.
+    Plain structured text, no LLM summarization. This is what accumulates into the archive and
+    feeds back into ANGLE_GENERATION_PROMPT_SUFFIX's {existing_angles} slot, so later iterations
+    are pushed toward angles different in kind from what's already been proposed.
     """
-    label = candidate.get("label", "?")
-    analysis = (candidate.get("analysis") or "").strip()
-    approach = analysis.splitlines()[0].strip() if analysis else "(no analysis available)"
-    if len(approach) > 200:
-        approach = approach[:200].rstrip() + "..."
+    angle_id = angle.get("id", "?")
+    hypothesis = (angle.get("hypothesis") or "").strip()
+    variables = (angle.get("variables_involved") or "").strip()
 
-    exec_verdict = candidate.get("exec_verdict", "ERROR")
-    req_pass = candidate.get("req_pass", False)
-    if exec_verdict == "PASS":
-        req_status = f"{'PASS' if req_pass else 'FAIL'} (score={candidate.get('req_score', 0.0):.2f})"
-    else:
-        req_status = "n/a"
-    valid_artifacts = sum(1 for a in candidate.get("artifacts") or [] if a.get("size", 0) > 0)
-
-    entry = (
-        f"[Iteration {iteration}] {label}: approach=\"{approach}\" | "
-        f"exec={exec_verdict} req={req_status} | artifacts={valid_artifacts}"
-    )
-    if not req_pass and candidate.get("feedback"):
-        entry += f" | reason: {candidate['feedback']}"
+    entry = f"[Iteration {iteration}] {angle_id} (stance: {stance}): {hypothesis}"
+    if variables:
+        entry += f" | variables: {variables}"
     return entry
+
+
+def _ensure_unique_id(angle: dict, seen_ids: set) -> None:
+    """D5-calibrate item 4: mutate angle['id'] in place to stay unique within a run, suffixing
+    -2, -3, ... on collision. Independent concurrent angle-generation calls can propose the same
+    slug (run 7 produced two angles both called "angle-1") - nothing keys on id today, but D7's
+    gallery will, so collisions are resolved here rather than left latent.
+    """
+    base = angle.get("id") or "angle"
+    candidate = base
+    suffix = 2
+    while candidate in seen_ids:
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    angle["id"] = candidate
+    seen_ids.add(candidate)
+
+
+def _angle_signature(angle: dict) -> set:
+    """Token set for D4 dedup similarity. hypothesis/variables_involved are counted TWICE - run 1
+    showed near-duplicate angles that shared topic but differed in method wording, and
+    rough_method's extra tokens diluted the signal; this crude weighting biases the Jaccard score
+    toward the fields that actually carry the topical signal.
+    """
+    hypothesis = angle.get("hypothesis", "")
+    variables = angle.get("variables_involved", "")
+    rough_method = angle.get("rough_method", "")
+    return _token_set(f"{hypothesis} {variables} {hypothesis} {variables} {rough_method}")
+
+
+def _pick_representative(cluster: list[dict]) -> dict:
+    """Within a dedup cluster, keep the record with the most specific why_non_obvious (longest
+    text, as a crude proxy for specificity) - else the earliest-proposed record.
+    # TODO(human): tiebreak may want tuning - longest text is a crude specificity proxy.
+    """
+    best = cluster[0]
+    best_len = len((best["angle"].get("why_non_obvious") or "").strip())
+    for record in cluster[1:]:
+        candidate_len = len((record["angle"].get("why_non_obvious") or "").strip())
+        if candidate_len > best_len:
+            best, best_len = record, candidate_len
+    return best
+
+
+def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], dict]:
+    """D4: cluster archive records ({angle, iteration, stance}) by token-set Jaccard similarity
+    over _angle_signature, dropping near-duplicates. Selection now optimises for distinct, not
+    best - there is no score yet (that's D5).
+
+    Greedy single-linkage clustering: each record joins the cluster containing its most similar
+    previously-seen record if that similarity clears `threshold`, else it starts a new cluster.
+    O(n^2) comparisons, fine at the angle counts this pipeline produces per run.
+
+    Returns (kept_records, merge_stats) where merge_stats = {"within_iteration": int,
+    "across_iteration": int, "merges": list[dict]} - counts split so within-iteration
+    duplication (stance/question differentiation too weak, see D3a) and across-iteration
+    duplication ({existing_angles} pressure too weak, see D3) can be diagnosed separately.
+    "merges" records each individual merge event (record id, the id of the most-similar
+    existing record it matched, the similarity score, and the type) so which specific pair
+    merged - not just how many - can be read off the run log (see DIVERGER_PLAN.md §3/§4).
+    Logged at merge time against the best-matching member, not the cluster's eventual
+    representative, since _pick_representative runs after clustering is complete.
+    """
+    clusters: list[list[dict]] = []
+    within_iteration = 0
+    across_iteration = 0
+    merges: list[dict] = []
+
+    for record in records:
+        record_tokens = _angle_signature(record["angle"])
+        best_idx, best_sim, best_match = None, 0.0, None
+        for idx, cluster in enumerate(clusters):
+            for member in cluster:
+                sim = _jaccard(record_tokens, _angle_signature(member["angle"]))
+                if sim > best_sim:
+                    best_idx, best_sim, best_match = idx, sim, member
+
+        if best_idx is not None and best_sim >= threshold:
+            merge_type = "within_iteration" if best_match["iteration"] == record["iteration"] else "across_iteration"
+            if merge_type == "within_iteration":
+                within_iteration += 1
+            else:
+                across_iteration += 1
+            merges.append({
+                "record_id": record["angle"].get("id", "?"),
+                "matched_id": best_match["angle"].get("id", "?"),
+                "similarity": best_sim,
+                "type": merge_type,
+            })
+            clusters[best_idx].append(record)
+        else:
+            clusters.append([record])
+
+    kept = [_pick_representative(cluster) for cluster in clusters]
+    return kept, {
+        "within_iteration": within_iteration,
+        "across_iteration": across_iteration,
+        "merges": merges,
+    }
+
+
+def _format_angle(angle: dict) -> str:
+    """Render one angle's full fields as readable text, for a D5 judge suffix - unlike
+    _angle_record's one-line archive-feed summary, this includes every _ANGLE_FIELDS value so the
+    judge sees the whole idea, not just hypothesis + variables_involved."""
+    lines = [f"id: {angle.get('id', '?')}"]
+    for field in _ANGLE_FIELDS[1:]:
+        if angle.get(field):
+            lines.append(f"{field}: {angle[field]}")
+    return "\n".join(lines)
+
+
+async def judge_insight(angle: dict, report: str, ideation_criteria: str, input_metadata: str,
+                        config: PipelineConfig) -> dict:
+    """D5: score one angle for non-obviousness, grounded in input_metadata and the anti-target
+    list (already folded into ideation_criteria by D3b) - not the angle's own why_non_obvious
+    self-assessment. Two live runs showed every angle confidently claiming novelty while most were
+    near-identical duplicates, so self-assessment is not evidence.
+
+    Falls back to a minimal built-in prompt (INSIGHT_JUDGE_*_FALLBACK in prompts.py) with a loud
+    warning if the human-owned INSIGHT_JUDGE_* constants are still empty - the fallback is not real
+    judge design.
+
+    Returns {"insight_score": float in [0, 1] or None, "insight_reasoning": str}. None means the
+    judge call failed or emitted no parseable <score> - treated as "unranked", not zero.
+    """
+    system_prompt = INSIGHT_JUDGE_SYSTEM
+    prefix_template = INSIGHT_JUDGE_PROMPT_PREFIX
+    suffix_template = INSIGHT_JUDGE_PROMPT_SUFFIX
+    if not (system_prompt and prefix_template and suffix_template):
+        print(
+            "WARNING: INSIGHT_JUDGE_SYSTEM/_PREFIX/_SUFFIX in prompts.py are empty "
+            "(# TODO(human)) - falling back to a minimal built-in placeholder prompt. Insight "
+            "judging will be generic/poor until a human fills these in."
+        )
+        system_prompt = system_prompt or INSIGHT_JUDGE_SYSTEM_FALLBACK
+        prefix_template = prefix_template or INSIGHT_JUDGE_PROMPT_PREFIX_FALLBACK
+        suffix_template = suffix_template or INSIGHT_JUDGE_PROMPT_SUFFIX_FALLBACK
+
+    # report/ideation_criteria/input_data are identical across every judge call in a run - the
+    # SAME triple generate_angles caches - so cached as a prefix; the individual angle varies per
+    # call and stays in the suffix (§4).
+    prefix = format_prompt(prefix_template, report=report, ideation_criteria=ideation_criteria,
+                           input_data=input_metadata)
+    suffix = format_prompt(suffix_template, angle_text=_format_angle(angle))
+
+    response = await llm_call(suffix, system_prompt=system_prompt, model=config.judge_model,
+                              cache_prompt=True, cache_prefix=prefix)
+    reasoning = extract_xml(response, "reasoning").strip()
+    score_text = extract_xml(response, "score").strip()
+    try:
+        score = max(0.0, min(1.0, float(score_text)))
+    except ValueError:
+        print(f"WARNING: insight judge emitted no parseable <score> for angle "
+              f"{angle.get('id', '?')} (first 300 chars): {response[:300]}")
+        score = None
+    return {"insight_score": score, "insight_reasoning": reasoning}
+
+
+# D5-calibrate item 2: three-way verdict instead of a boolean. A boolean sound/unsound collapses
+# "needs a caveat" and "cannot be supported at all" into one bucket, which saturates near-constant
+# on a small dataset (0/8, then 1/8 sound across live runs) and contributes nothing to ranking -
+# structurally the converger's binary req_pass problem in new clothes (DIVERGER_PLAN.md "Live
+# issues" #1). The caveat text is carried forward for D7 to DISPLAY, never to filter.
+_SOUNDNESS_VERDICTS = ("unsupportable", "caveat", "solid")
+_SOUNDNESS_RANK = {"solid": 3, "caveat": 2, "unsupportable": 1}
+
+
+async def judge_soundness(angle: dict, report: str, ideation_criteria: str, input_metadata: str,
+                          config: PipelineConfig) -> dict:
+    """D5/D5-calibrate: judge whether one angle's claimed pattern is defensible given the actual
+    data volume - graded, not gated (see _SOUNDNESS_VERDICTS above). Same prefix/fallback
+    structure as judge_insight.
+
+    Returns {"soundness_verdict": one of _SOUNDNESS_VERDICTS or None, "soundness_caveat": str,
+    "soundness_reasoning": str}. verdict is None if the judge call failed or emitted anything
+    outside the three-word vocabulary - treated as "unranked", not "unsupportable", so a prompt
+    that drifts off-vocabulary stays visible instead of silently reading as a quality verdict
+    (D5-calibrate item 3 - hardened from the old `verdict_text == "true"` boolean parse, which
+    silently mapped anything unexpected to False).
+    """
+    system_prompt = SOUNDNESS_JUDGE_SYSTEM
+    prefix_template = SOUNDNESS_JUDGE_PROMPT_PREFIX
+    suffix_template = SOUNDNESS_JUDGE_PROMPT_SUFFIX
+    if not (system_prompt and prefix_template and suffix_template):
+        print(
+            "WARNING: SOUNDNESS_JUDGE_SYSTEM/_PREFIX/_SUFFIX in prompts.py are empty "
+            "(# TODO(human)) - falling back to a minimal built-in placeholder prompt. Soundness "
+            "judging will be generic/poor until a human fills these in."
+        )
+        system_prompt = system_prompt or SOUNDNESS_JUDGE_SYSTEM_FALLBACK
+        prefix_template = prefix_template or SOUNDNESS_JUDGE_PROMPT_PREFIX_FALLBACK
+        suffix_template = suffix_template or SOUNDNESS_JUDGE_PROMPT_SUFFIX_FALLBACK
+
+    prefix = format_prompt(prefix_template, report=report, ideation_criteria=ideation_criteria,
+                           input_data=input_metadata)
+    suffix = format_prompt(suffix_template, angle_text=_format_angle(angle))
+
+    response = await llm_call(suffix, system_prompt=system_prompt, model=config.judge_model,
+                              cache_prompt=True, cache_prefix=prefix)
+    reasoning = extract_xml(response, "reasoning").strip()
+    caveat = extract_xml(response, "caveat").strip()
+    verdict_text = extract_xml(response, "verdict").strip().lower()
+    if verdict_text in _SOUNDNESS_VERDICTS:
+        verdict = verdict_text
+    else:
+        print(f"WARNING: soundness judge emitted no parseable <verdict> for angle "
+              f"{angle.get('id', '?')} (first 300 chars): {response[:300]}")
+        verdict = None
+    return {"soundness_verdict": verdict, "soundness_caveat": caveat, "soundness_reasoning": reasoning}
+
+
+def _judgment_sort_key(angle: dict) -> tuple:
+    """Rank angles for D5's final shortlist: (soundness_rank, insight_score). solid > caveat >
+    unsupportable > unranked regardless of insight score - the same hard-gate-then-gradient shape
+    as the deleted _candidate_score (exec_pass then req_score), re-pointed at the judged-angle
+    domain instead of code execution.
+    """
+    soundness_rank = _SOUNDNESS_RANK.get(angle.get("soundness_verdict"), 0)
+    insight_score = angle.get("insight_score")
+    insight_rank = insight_score if insight_score is not None else -1.0
+    return (soundness_rank, insight_rank)
+
+
+def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
+    """D5-calibrate item 5: dump this run's ranked, judged angles to a human-readable file.
+
+    {existing_angles} only gives cross-iteration memory WITHIN a run (DIVERGER_PLAN.md "Live
+    issues" #3) - the report's "Already Explored" section is the only memory that persists across
+    runs, and it's maintained by hand. This file is the raw material for that: a human skims it
+    and copies entries worth retiring into the report themselves. Nothing here is applied
+    automatically - automatic retirement would suppress angles that merely resemble a prior one,
+    which the plan explicitly wants to avoid.
+
+    Returns the path written, or "" if output_dir is falsy.
+    """
+    if not output_dir:
+        return ""
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = Path(output_dir) / f"surfaced_angles_{timestamp}.md"
+
+    lines = [
+        f"# Surfaced angles - {timestamp}", "",
+        "Ranked best-first (soundness, then insight). Copy entries worth retiring into the "
+        "report's Already Explored section.", "",
+    ]
+    for angle in all_angles:
+        verdict = angle.get("soundness_verdict") or "unranked"
+        insight = angle.get("insight_score")
+        insight_str = f"{insight:.2f}" if insight is not None else "unranked"
+        lines.append(f"## {angle.get('id', '?')}")
+        lines.append(f"- soundness: {verdict}  |  insight: {insight_str}")
+        if angle.get("hypothesis"):
+            lines.append(f"- hypothesis: {angle['hypothesis']}")
+        if angle.get("variables_involved"):
+            lines.append(f"- variables: {angle['variables_involved']}")
+        if angle.get("soundness_caveat"):
+            lines.append(f"- caveat: {angle['soundness_caveat']}")
+        if angle.get("requires"):
+            lines.append(f"- requires: {angle['requires']}")
+        lines.append("")
+
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return str(path)
 
 
 async def _run_one_design(report: str, criteria: str, input_metadata: str, config: PipelineConfig, data_dir: str,
@@ -570,12 +880,18 @@ async def _run_one_design(report: str, criteria: str, input_metadata: str, confi
         )
 
     # ORCHESTRATOR: design the architecture
-    orchestrator_input = format_prompt(
-        ORCHESTRATOR_PROMPT, report=report, criteria=criteria, input_data=input_metadata,
-        feedback=feedback_section, stance=stance, seed_section=orchestrator_seed_section,
+    # report/input_data/criteria are identical across every design and iteration in this run, so
+    # they're cached as a prefix; feedback/stance/seed_section vary and stay in the suffix.
+    orchestrator_prefix = format_prompt(
+        ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=criteria, input_data=input_metadata,
     )
-    orchestrator_response = await llm_call(orchestrator_input, system_prompt=ORCHESTRATOR_SYSTEM,
-                                           model=config.orchestrator_model, cache_prompt=True)
+    orchestrator_suffix = format_prompt(
+        ORCHESTRATOR_PROMPT_SUFFIX, feedback=feedback_section, stance=stance,
+        seed_section=orchestrator_seed_section,
+    )
+    orchestrator_response = await llm_call(orchestrator_suffix, system_prompt=ORCHESTRATOR_SYSTEM,
+                                           model=config.orchestrator_model, cache_prompt=True,
+                                           cache_prefix=orchestrator_prefix)
     analysis = extract_xml(orchestrator_response, "analysis").strip()
     tasks = parse_tasks(extract_xml(orchestrator_response, "tasks"))
     log(f"Architecture: {len(tasks)} functions")
@@ -587,6 +903,10 @@ async def _run_one_design(report: str, criteria: str, input_metadata: str, confi
     orchestrator_results = {"analysis": analysis, "worker_results": worker_results}
 
     # INNER LOOP: Compiler + (grounded) Execution check
+    # TODO(diverger): D1 leaves Docker execution wired but inert as a top-level selection gate -
+    # every design still runs here, unconditionally. D6 re-roles this to selective execution:
+    # only the top-k judged angles get compiled/run at all, demoting this from *scorer* (converger)
+    # to *validity gate* (did it run, did it produce a legible plot) for that small realized set.
     compiled_script, exec_output, artifacts = None, "", []
     execution_passed = False
     exec_verdict = "FAIL"
@@ -629,6 +949,11 @@ async def _run_one_design(report: str, criteria: str, input_metadata: str, confi
 
     # REQUIREMENTS VALIDATOR: only reached on a verified execution PASS (FAIL returned above,
     # SKIPPED short-circuited above).
+    # TODO(diverger): D1 leaves this (and its multimodal grounding via _load_plot_images) wired
+    # but inert as a gate - req_pass/req_score are returned and still logged, but no longer
+    # terminate or select at the top level (see generate_and_optimize). D6 re-roles this function
+    # to validate_realization: from "meets criteria" to "does this legibly show the claimed
+    # pattern", checked only for the small top-k realized set instead of every design.
     req_score, req_passed, req_feedback = await validate_requirements(
         compiled_script, report, criteria, exec_output, config, artifacts=artifacts,
         artifacts_dir=artifacts_dir)
@@ -641,171 +966,291 @@ async def _run_one_design(report: str, criteria: str, input_metadata: str, confi
     }
 
 
+# D3a: heading match is deliberately loose (any level, any wording containing "guiding
+# question") since the only contract with the report author is that heading text, not its exact
+# phrasing or markdown level.
+_GUIDING_QUESTIONS_HEADING = re.compile(r'^#{1,6}\s*.*guiding question.*$', re.IGNORECASE | re.MULTILINE)
+_NUMBERED_LIST_ITEM = re.compile(r'^\s*\d+\.\s+(.+)$', re.MULTILINE)
+
+# Used when _parse_guiding_questions finds nothing - passed as the {guiding_question} value so the
+# fallback suffix template still reads sensibly instead of showing a blank line.
+_NO_GUIDING_QUESTION = "(none identified this run - use your own judgement)"
+
+
+def _parse_guiding_questions(report: str) -> list[str]:
+    """Pull the numbered guiding-question list out of the raw report's markdown - D3a's second
+    cycling axis, alongside stance. Parsed from the report (deterministic markdown structure), not
+    the LLM-paraphrased criteria. Looks for a heading mentioning "guiding question" (e.g. "##
+    Guiding Questions for Analysis") and returns the numbered list items between it and the next
+    heading. Returns [] if no such section is found or it contains no numbered items - callers
+    must treat that as "cycle nothing", per DIVERGER_PLAN.md's D3a guardrail, not retry harder.
+    """
+    heading_match = _GUIDING_QUESTIONS_HEADING.search(report)
+    if not heading_match:
+        return []
+    section_start = heading_match.end()
+    next_heading = re.search(r'^#{1,6}\s', report[section_start:], re.MULTILINE)
+    section_end = section_start + next_heading.start() if next_heading else len(report)
+    section = report[section_start:section_end]
+    return [item.strip() for item in _NUMBERED_LIST_ITEM.findall(section) if item.strip()]
+
+
+async def generate_angles(report: str, ideation_criteria: str, input_metadata: str, config: PipelineConfig,
+                          stance: str, guiding_question: str, existing_angles: str, n: int) -> list[dict]:
+    """D3: generate n candidate analysis angles as structured text - no code, no Docker.
+
+    Each angle: {id, variables_involved, hypothesis, question_or_stakeholder_served,
+    why_non_obvious, rough_method} (see _ANGLE_FIELDS). stance and guiding_question are the two
+    independent cycling axes generate_and_optimize assigns per concurrent call (D3/D3a);
+    existing_angles is the accumulated archive, all three passed straight through to the suffix.
+
+    ideation_criteria (D3b) is only the IDEATION half of the criteria split - guiding questions,
+    stakeholders, anti-targets, data constraints - never the deliverable rubric (script-delivery
+    mechanics), which is withheld here and held for D6's realisation check instead.
+
+    Falls back to a minimal built-in prompt (ANGLE_GENERATION_*_FALLBACK in prompts.py) with a
+    loud warning if the human-owned ANGLE_GENERATION_* constants are still empty, so the pipeline
+    stays runnable while that prompt is unwritten - the fallback is not real ideation design.
+    """
+    system_prompt = ANGLE_GENERATION_SYSTEM
+    prefix_template = ANGLE_GENERATION_PROMPT_PREFIX
+    suffix_template = ANGLE_GENERATION_PROMPT_SUFFIX
+    if not (system_prompt and prefix_template and suffix_template):
+        print(
+            "WARNING: ANGLE_GENERATION_SYSTEM/_PREFIX/_SUFFIX in prompts.py are empty "
+            "(# TODO(human)) - falling back to a minimal built-in placeholder prompt. Angle "
+            "quality will be generic/poor until a human fills these in."
+        )
+        system_prompt = system_prompt or ANGLE_GENERATION_SYSTEM_FALLBACK
+        prefix_template = prefix_template or ANGLE_GENERATION_PROMPT_PREFIX_FALLBACK
+        suffix_template = suffix_template or ANGLE_GENERATION_PROMPT_SUFFIX_FALLBACK
+
+    # report/ideation_criteria/input_data are identical across every angle-generation call in a
+    # run, so they're cached as a prefix; stance/guiding_question/existing_angles/n vary per call
+    # and stay in the suffix (see DIVERGER_PLAN.md §4 - both cycling axes belong here, not the prefix).
+    prefix = format_prompt(prefix_template, report=report, ideation_criteria=ideation_criteria,
+                           input_data=input_metadata)
+    suffix = format_prompt(suffix_template, stance=stance, guiding_question=guiding_question,
+                           existing_angles=existing_angles, n=n)
+
+    response = await llm_call(suffix, system_prompt=system_prompt, model=config.angle_model,
+                              cache_prompt=True, cache_prefix=prefix)
+    return parse_angles(extract_xml(response, "angles"))
+
+
 async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: str = None,
                                 max_iterations: int = 2, output_dir: str = None,
-                                designs_per_iteration: int = 3) -> str:
-    """Best-of-N loop: each iteration fans out N independent designs, keeps the best, redesigns.
+                                designs_per_iteration: int = 3, angles_per_iteration: int = 12) -> str:
+    """D3/D3a/D3b/D4/D5: ideation loop, fanned out, then deduped, then judged. Each iteration fires
+    angles_per_iteration independent generate_angles calls (n=1 each) concurrently via
+    asyncio.gather, cycling config.design_stances and the parsed guiding questions across calls
+    independently (D3a) for intra-iteration diversity - concurrent calls can't see each other, so
+    these two cycling axes are the only lever within an iteration. Cross-iteration diversity
+    instead comes from {existing_angles}: the accumulated archive of every angle proposed so far,
+    fed back into ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation finishes, D4 dedups the whole
+    archive by token-set similarity, then D5 scores every surviving angle for non-obviousness
+    (judge_insight) and soundness (judge_soundness) and ranks the shortlist by both - selection is
+    now dedup -> insight -> soundness -> ranked shortlist, with no code executed anywhere in it.
 
-    Set designs_per_iteration=1 for the classic single-design-per-iteration behavior.
+    TODO(diverger): designs_per_iteration and the execution machinery it used to drive
+    (_run_one_design, compile_script, Docker) are unused here for now - carried over unchanged
+    (see module docstring), re-roled in D6 as selective execution over the top-k judged angles
+    rather than run for every candidate as before. output_dir/artifacts_base are similarly unused
+    until D6 has real artifacts to write.
+
+    Returns a plain-text summary of every surviving angle, ranked best-first by D5's judgment (a
+    string, not a script) so app.py's existing file-write path keeps working unmodified - D7
+    replaces this with the real structured gallery result.
     """
-    # Accumulated failure history so each orchestrator redesign sees ALL prior issues,
-    # not just the most recent one (prevents fix-A-breaks-B oscillation).
-    feedback_history = []
-    # Best script seen so far, kept across iterations so a timeout returns the best
-    # candidate (not merely whatever the last iteration produced).
-    best_candidate = None
-    # Flat scored archive of every candidate that has executed successfully, across all
-    # iterations - reusable seed nodes for future design generation. This is NOT a tree search:
-    # no parent pointers, no node-expansion graph, no search controller - just a capped,
-    # score-ranked pool that pick_best_seed()/pick_other_seed() draw from.
-    archive: list[dict] = []
     input_metadata = config.extract_input_metadata(data_dir) if data_dir else "(No input data provided)"
 
-    # Parse the report into a success rubric ONCE, shared by every design/iteration. This is what
-    # actually makes the pipeline domain-agnostic: without it, the orchestrator and requirements
-    # validator prompts would have to hardcode the shape of "success" (metric counts, plot counts,
-    # file types) for one specific kind of report, pre-deciding every axis a design could vary on.
+    # Parse the report into two separate rubrics ONCE, shared by every call that needs them (D3b).
+    # This is what actually makes the pipeline domain-agnostic: without it, the ideation and
+    # (later) judging prompts would have to hardcode the shape of "success" for one specific kind
+    # of report. Splitting by consumer stops ideation from paying cached tokens on deliverable
+    # rubric text ("runs without errors", "clean code") that has nothing to do with idea quality:
+    #   - ideation_criteria: guiding questions/stakeholders/anti-targets/data constraints - fed to
+    #     generate_angles below (and, later, the D5 judges).
+    #   - deliverable_rubric: script-delivery mechanics - NOT consumed anywhere yet, since
+    #     _run_one_design/validate_requirements (the only place that would use it) is still
+    #     dormant. D6 revives them and wires this in (DIVERGER_PLAN.md D6 item 3).
     # If extraction itself fails (e.g. a transient rate-limit error), fall back to the raw report
-    # instead of leaving every design this run pointed at an empty rubric.
+    # for both instead of leaving either pointed at an empty rubric.
     try:
         criteria_input = format_prompt(CRITERIA_PROMPT, report=report, input_data=input_metadata)
         criteria_response = await llm_call(criteria_input, system_prompt=CRITERIA_SYSTEM,
                                            model=config.requirements_evaluator_model, cache_prompt=True)
-        criteria = extract_xml(criteria_response, "criteria").strip() or criteria_response.strip()
+        ideation_criteria = extract_xml(criteria_response, "ideation_criteria").strip() or criteria_response.strip()
+        deliverable_rubric = extract_xml(criteria_response, "deliverable_rubric").strip() or criteria_response.strip()
     except Exception as e:
-        print(f"WARNING: Criteria extraction failed ({e!r}); falling back to the raw report as the criteria.")
-        criteria = report
-    print(f"\nSuccess criteria extracted from report:\n{criteria}\n")
+        print(f"WARNING: Criteria extraction failed ({e!r}); falling back to the raw report as both criteria.")
+        ideation_criteria = deliverable_rubric = report
+    print(f"\nIdeation criteria extracted from report:\n{ideation_criteria}\n")
+    print(f"\nDeliverable rubric extracted from report (held for D6, unused for now):\n{deliverable_rubric}\n")
 
-    # Base dir under which each design gets its OWN iter_N/design_M subdir, so the files
-    # on disk always match whichever script we ultimately return.
-    artifacts_base = str(Path(output_dir) / "artifacts") if output_dir else None
+    # D3a: guiding questions, the second cycling axis, parsed once from the raw report (they don't
+    # change run to run). Empty means the report's guiding-questions section wasn't found/parseable
+    # - every call falls back to _NO_GUIDING_QUESTION rather than cycling a mis-parsed list.
+    guiding_questions = _parse_guiding_questions(report)
+    if not guiding_questions:
+        print(
+            "WARNING: Could not parse guiding questions from the report (no heading matching "
+            "'guiding question' with a numbered list under it) - the second cycling axis is "
+            "disabled this run; every call gets a placeholder guiding_question."
+        )
 
-    def record_candidate(candidate: dict, iteration: int):
-        """Keep the highest-scoring candidate across all iterations; ties resolve to the earliest."""
-        nonlocal best_candidate
-        candidate = {**candidate, "iteration": iteration}
-        if best_candidate is None or _candidate_score(candidate) > _candidate_score(best_candidate):
-            best_candidate = candidate
-
-    def update_archive(candidate: dict, iteration: int):
-        """Add an executed candidate to the archive, keeping only the top 5 by score."""
-        nonlocal archive
-        if not candidate.get("exec_pass"):
-            return
-        archive.append({**candidate, "score": _candidate_score(candidate), "iteration": iteration})
-        archive.sort(key=lambda node: node["score"], reverse=True)
-        del archive[5:]
-
-    def print_artifacts(candidate: dict):
-        """Print the produced-file listing for a candidate, if any."""
-        if candidate["artifacts"] and candidate["artifacts_dir"]:
-            print(f"Produced {len(candidate['artifacts'])} file(s) in: {candidate['artifacts_dir']}")
-            for a in candidate["artifacts"]:
-                print(f"  - {a['name']} ({a['size']} bytes)")
+    stances = config.design_stances
+    # Archive: every angle proposed so far across all iterations, as {angle, iteration, stance}
+    # records - not executed scripts, so there's no score to cap by (D4 dedups instead, below).
+    archive: list[dict] = []
+    # D5-calibrate item 4: ids seen so far this run, across all iterations - collisions between
+    # independent concurrent calls get suffixed here before the angle ever reaches the archive.
+    seen_ids: set = set()
 
     for iteration in range(max_iterations):
         print(f"\n{'=' * 80}")
-        print(f"ITERATION {iteration + 1}/{max_iterations}  ({designs_per_iteration} parallel designs)")
+        print(f"ITERATION {iteration + 1}/{max_iterations}  ({angles_per_iteration} angles, fanned out)")
         print(f"{'=' * 80}")
 
-        if feedback_history:
-            print(f"\nRedesigning based on accumulated journal...")
-            joined = "\n\n".join(feedback_history)
-            feedback_section = (
-                "Journal of every design tried so far, what happened, and why (not just a list of "
-                "complaints) - use it to build on what worked and avoid repeating what didn't. "
-                "Address ALL known issues at once; do NOT reintroduce an earlier problem while "
-                "fixing a later one:\n"
-                f"{joined}"
+        # {existing_angles} is the only cross-iteration divergence pressure (stance and guiding
+        # question are the intra-iteration ones, below). It goes in the SUFFIX, not the PREFIX -
+        # it grows every iteration and would invalidate the cache if it were cached (§4).
+        existing_angles_section = "\n".join(
+            _angle_record(rec["angle"], rec["iteration"], rec["stance"]) for rec in archive
+        ) or "(none yet)"
+
+        def _stance_for(m: int) -> str:
+            return stances[(m + iteration) % len(stances)]
+
+        def _question_for(m: int) -> str:
+            return guiding_questions[
+                (m + iteration * angles_per_iteration) % len(guiding_questions)
+            ] if guiding_questions else _NO_GUIDING_QUESTION
+
+        # N independent calls of one angle each, not one call asking for N - independent samples
+        # diverge more than one sample self-organising within a single context. Call m gets
+        # (stance[m % S], question[m % Q]) as two INDEPENDENT cycling axes (D3a) - e.g. 4 calls
+        # over 5 questions structurally can't all land on the same question, unlike stance alone.
+        # A call that raises is dropped with a logged warning rather than failing the iteration.
+        calls = [
+            generate_angles(
+                report, ideation_criteria, input_metadata, config,
+                stance=_stance_for(m), guiding_question=_question_for(m),
+                existing_angles=existing_angles_section, n=1,
             )
-        else:
-            feedback_section = ""
-
-        # Fan out N independent designs, each isolated in its own artifacts subdir. Stances cycle
-        # (design m gets design_stances[m % len]) so extra designs beyond the stance list length
-        # just repeat stances rather than erroring - no LLM call needed to pick them.
-        design_dirs = [
-            str(Path(artifacts_base) / f"iter_{iteration + 1}" / f"design_{m + 1}") if artifacts_base else None
-            for m in range(designs_per_iteration)
+            for m in range(angles_per_iteration)
         ]
-        labels = [f"I{iteration + 1}.D{m + 1}" for m in range(designs_per_iteration)]
-        stances = [config.design_stances[m % len(config.design_stances)] for m in range(designs_per_iteration)]
+        call_results = await asyncio.gather(*calls, return_exceptions=True)
 
-        # Seed some designs from the archive once it's non-empty, mutating a prior working script
-        # instead of designing from scratch - orthogonal to the stance assignment above. Design 0
-        # mutates the best archived node, design 1 mutates a different node (for diversity), any
-        # remaining designs stay from-scratch (exploration). Iteration 1's archive is empty, so
-        # every design that iteration is from-scratch. A mutated design that regresses simply loses
-        # on _candidate_score and never overwrites a better archived node - the Docker oracle in the
-        # compile/execute loop still catches any regression the mutation introduces.
-        seed_scripts = [None] * designs_per_iteration
-        seed_labels = [None] * designs_per_iteration
-        if archive:
-            best_seed = pick_best_seed(archive)
-            if designs_per_iteration >= 1:
-                seed_scripts[0], seed_labels[0] = best_seed["script"], best_seed["label"]
-            if designs_per_iteration >= 2:
-                other_seed = pick_other_seed(archive, exclude=best_seed)
-                if other_seed:
-                    seed_scripts[1], seed_labels[1] = other_seed["script"], other_seed["label"]
+        angles = []
+        angle_meta = []
+        for m, result in enumerate(call_results):
+            call_stance, call_question = _stance_for(m), _question_for(m)
+            if isinstance(result, Exception):
+                print(f"WARNING: angle generation call {m} (stance={call_stance!r}, "
+                      f"question={call_question!r}) failed: {result!r}")
+                continue
+            for angle in result:
+                _ensure_unique_id(angle, seen_ids)
+                angles.append(angle)
+                angle_meta.append((call_stance, call_question))
+                archive.append({"angle": angle, "iteration": iteration + 1, "stance": call_stance})
 
-        raw_results = await asyncio.gather(*[
-            _run_one_design(report, criteria, input_metadata, config, data_dir, feedback_section,
-                            stances[m], design_dirs[m], label=labels[m],
-                            seed_script=seed_scripts[m], seed_label=seed_labels[m])
-            for m in range(designs_per_iteration)
-        ], return_exceptions=True)
+        print(f"\nGenerated {len(angles)} angle(s) this iteration:")
+        for angle, (call_stance, call_question) in zip(angles, angle_meta):
+            print(f"\n  [{angle.get('id', '?')}]  (stance: {call_stance}  |  question: {call_question})")
+            for field in _ANGLE_FIELDS[1:]:
+                if angle.get(field):
+                    print(f"    {field}: {angle[field]}")
 
-        # A design that raised (e.g. a rate_limit_error) scores as a zero candidate instead
-        # of killing the whole iteration - the other parallel designs still get a chance.
-        results = []
-        for label, result in zip(labels, raw_results):
-            if isinstance(result, BaseException):
-                print(f"  [{label}] [ERROR] {result!r}")
-                result = {
-                    "script": None, "exec_pass": False, "req_pass": False, "req_score": 0.0,
-                    "artifacts": [], "artifacts_dir": None, "label": label, "exec_verdict": "ERROR",
-                    "feedback": f"Design raised an exception before completing: {result!r}",
-                }
-            results.append(result)
-
-        _log_iteration_diversity(results, iteration + 1)
-
-        # Score every design and update the global best.
-        for candidate in results:
-            record_candidate(candidate, iteration + 1)
-
-        # Archive every executed design as a reusable seed node for future design generation.
-        for candidate in results:
-            update_archive(candidate, iteration + 1)
-        best_score = archive[0]["score"] if archive else None
-        print(f"[archive] size={len(archive)} best_score={best_score}")
-
-        # Journal EVERY design this iteration (winners, losers, and exceptions alike) - a record
-        # of what was tried and what happened, not just a list of complaints from the losers.
-        for candidate in results:
-            feedback_history.append(_journal_entry(candidate, iteration + 1))
-
-        iter_best = max(results, key=_candidate_score)
-        print(f"\nIteration {iteration + 1} best design: {iter_best['label']} "
-              f"(exec={iter_best['exec_pass']}, req={iter_best['req_pass']}, "
-              f"req_score={iter_best.get('req_score', 0.0):.2f})")
-
-        if iter_best["req_pass"]:
-            print(f"\n{'=' * 80}")
-            print(f"[OK] Script is production-ready! (design {iter_best['label']})")
-            print_artifacts(iter_best)
-            print(f"{'=' * 80}\n")
-            return iter_best["script"]
+        _log_iteration_diversity(angles, iteration + 1)
 
     print(f"\n{'=' * 80}")
-    print("[WARNING] Max iterations reached. Returning best effort.")
-    if best_candidate:
-        status = "executed + requirements" if best_candidate["req_pass"] else (
-            f"executed cleanly, req_score={best_candidate.get('req_score', 0.0):.2f}"
-            if best_candidate["exec_pass"] else "did not execute")
-        print(f"Best candidate: iteration {best_candidate['iteration']}, design {best_candidate['label']} ({status}).")
-        print_artifacts(best_candidate)
+    print(f"Completed all {max_iterations} iteration(s). {len(archive)} angle(s) generated total.")
     print(f"{'=' * 80}\n")
-    return best_candidate["script"] if best_candidate else None
+
+    # D4: dedup - drop near-duplicate angles across the WHOLE run (all iterations), not per
+    # iteration, so across-iteration duplicates are caught too. Does not feed back into
+    # {existing_angles} above - that cross-iteration pressure already works on the raw archive
+    # (see DIVERGER_PLAN.md §3), so dedup stays a separate, final selection step.
+    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold)
+    print(
+        f"[dedup] {len(archive)} angle(s) -> {len(kept_records)} after dedup "
+        f"(threshold={config.angle_similarity_threshold}); merged "
+        f"{merge_stats['within_iteration']} within-iteration, "
+        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
+    )
+    for merge in merge_stats["merges"]:
+        print(
+            f"    merged [{merge['record_id']}] -> [{merge['matched_id']}] "
+            f"(similarity={merge['similarity']:.3f}, {merge['type']})"
+        )
+    print()
+    all_angles = [rec["angle"] for rec in kept_records]
+
+    if not all_angles:
+        return "(No angles were generated.)"
+
+    # D5: judge the surviving (post-dedup) angles for non-obviousness and soundness - this
+    # replaces req_score as the quality bar now that there's no code to grade yet. Both judges run
+    # per-angle (2 calls per angle), all fanned out together; a failed call scores that angle
+    # "unranked" (None) rather than failing the run or being penalised as if actually judged.
+    judge_calls = []
+    call_meta = []
+    for angle in all_angles:
+        judge_calls.append(judge_insight(angle, report, ideation_criteria, input_metadata, config))
+        call_meta.append(("insight", angle))
+        judge_calls.append(judge_soundness(angle, report, ideation_criteria, input_metadata, config))
+        call_meta.append(("soundness", angle))
+
+    judge_results = await asyncio.gather(*judge_calls, return_exceptions=True)
+
+    for (kind, angle), result in zip(call_meta, judge_results):
+        if isinstance(result, Exception):
+            print(f"WARNING: judge_{kind} failed for angle {angle.get('id', '?')}: {result!r}")
+            if kind == "insight":
+                angle["insight_score"], angle["insight_reasoning"] = None, f"(judge call failed: {result!r})"
+            else:
+                angle["soundness_verdict"], angle["soundness_caveat"], angle["soundness_reasoning"] = (
+                    None, "", f"(judge call failed: {result!r})"
+                )
+            continue
+        angle.update(result)
+
+    all_angles.sort(key=_judgment_sort_key, reverse=True)
+
+    solid_count = sum(1 for a in all_angles if a.get("soundness_verdict") == "solid")
+    caveat_count = sum(1 for a in all_angles if a.get("soundness_verdict") == "caveat")
+    unsupportable_count = sum(1 for a in all_angles if a.get("soundness_verdict") == "unsupportable")
+    unranked_count = sum(1 for a in all_angles if a.get("soundness_verdict") is None)
+    print(
+        f"[judge] {len(all_angles)} angle(s) scored - {solid_count} solid, {caveat_count} "
+        f"needs-caveat, {unsupportable_count} unsupportable, {unranked_count} unranked "
+        f"(judge call failed)\n"
+    )
+
+    # D5-calibrate item 5: dump the ranked, judged angles for cross-run human curation - see
+    # _write_angle_dump's docstring for why this is a file, not an automatic retirement.
+    dump_path = _write_angle_dump(all_angles, output_dir)
+    if dump_path:
+        print(f"[dump] Surfaced angles written to {dump_path} - curate into the report's "
+              f"Already Explored section as needed.\n")
+
+    lines = [f"{len(all_angles)} candidate analysis angle(s) generated, ranked best-first:\n"]
+    for angle in all_angles:
+        lines.append(f"[{angle.get('id', '?')}]")
+        for field in _ANGLE_FIELDS[1:]:
+            if angle.get(field):
+                lines.append(f"  {field}: {angle[field]}")
+        if angle.get("insight_score") is not None:
+            lines.append(f"  insight_score: {angle['insight_score']:.2f}")
+        if angle.get("insight_reasoning"):
+            lines.append(f"  insight_reasoning: {angle['insight_reasoning']}")
+        if angle.get("soundness_verdict") is not None:
+            lines.append(f"  soundness_verdict: {angle['soundness_verdict']}")
+        if angle.get("soundness_caveat"):
+            lines.append(f"  soundness_caveat: {angle['soundness_caveat']}")
+        if angle.get("soundness_reasoning"):
+            lines.append(f"  soundness_reasoning: {angle['soundness_reasoning']}")
+        lines.append("")
+    return "\n".join(lines)

@@ -1,0 +1,14 @@
+
+
+Institution: Turing Center for Living Systems, Parc Scientifique de Luminy, 13288, Marseille Cedex 09, France
+
+Title: Automated Detection of LTi Cell Clusters in Lymph Node Development
+
+
+
+
+Abstract: Lymph nodes are crucial for monitoring the body’s health. During their development, lymphoid tissue inducer cells (LTi) aggregate into cell clusters in precise locations within the embryos. However, the factors that drive their position and morphology remain elusive. Localization of LTi cell clusters and single-cell quantification in diverse conditions is needed to advance our understanding of lymph node formation. To localize the LTi cell clusters that will eventually form lymph nodes, we use whole-mount 3D light-sheet images of mouse embryos immunofluorescently stained with anti-CD4. LTi cells are the only CD4+ cell lineage in the stages of lymph node development (E12.5, E13.5, E14.5), although it is not specific to the LTi cell clusters that form lymph nodes. As a result, we recover all CD4+ cells within the embryo, making the detection of lymph node cell precursors difficult. To further escalate the problem, the embryo spatial complexity at the stages of development poses its own problems (i.e. image size, autofluorescence, staining, and imaging artifacts). Until now, lymph node detection has relied on expert manual annotation, which is not easy to provide since lymph node object borders in 2D are not well-defined. Even reconstructing 3D annotations from sparse 2D plane annotations is complicated because of their irregular shape. Thus, manual reconstruction prevents the scaling of the study to a higher number of samples. Automatic localization of LTi cluster cells is therefore necessary in the context of our project. However, because of the previously mentioned complexities, the automatic localization of LTi cell clusters is a complicated problem and a bottleneck for lymph node development research. In response, we present a novel algorithm for automatic LTi cell cluster detection in mouse embryos at stage E14.5. Our pipeline achieves encouraging results with the detection of the complete set of LTi cell clusters without any manual annotation. Now, our focus is on applying our pipeline to earlier stages of embryonic development. In the future, we will use our pipeline to drive single-cell segmentation to quantify LTi cell morphologies.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning"]
+
+Additional Keywords: Lymph Node Development; 3D light-sheet imaging

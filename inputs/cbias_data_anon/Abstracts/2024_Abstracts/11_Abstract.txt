@@ -1,0 +1,19 @@
+Institution:
+Delft Center for Systems and Control, Delft University of Technology, Delft, the Netherlands
+Delft Center for Systems and Control, Delft University of Technology, Delft, the Netherlands
+Centre for Genomic & Experimental Medicine, Institute of Genetics and Cancer, The University of Edinburgh, Edinburgh, United Kingdom
+Edinburgh Pathology and CRUK Scotland Centre, Institute of Genetics and Cancer, The University of Edinburgh, Edinburgh, United Kingdom
+Laboratory of Tumor Immunology, Department of Medical Oncology, Erasmus MC Cancer Institute, Erasmus Medical Center, Rotterdam, the Netherlands
+Delft Center for Systems and Control, Delft University of Technology, Delft, the Netherlands
+Laboratory of Tumor Immunology, Department of Medical Oncology, Erasmus MC Cancer Institute, Erasmus Medical Center, Rotterdam, the Netherlands
+
+Title: CLEAR-IT: Contrastive Learning to Capture the Immune Composition of Tumor Microenvironments
+
+Abstract:
+Accurate phenotyping of cells in the tumor microenvironment is crucial for understanding cancer biology and developing effective therapies. However, current methods require precise cell segmentations and struggle to generalize across different imaging modalities, limiting their utility in digital pathology. Here, we show that Contrastive Learning Enabled Accurate Registration of Immune and Tumor Cells (CLEAR-IT) overcomes these limitations, providing a robust and versatile tool for cell phenotyping. CLEAR-IT accurately phenotypes cells comparable to state-of-the-art methods, generalizes across multiplex imaging modalities, maintains high performance even with limited number of labels, and enables the extraction of prognostic markers. Additionally, CLEAR-IT can be combined with existing methods to boost their performance, whereas its lack of need for precise cell segmentations significantly reduces training efforts. This method enhances the robustness and efficiency of digital pathology workflows, making it a valuable tool for cancer research and diagnostics.
+
+Themes: ["AI: What Can('t) it do?","BioMedical Applications of Image Analysis"]
+
+Keywords: Contrastive Learning, Self-supervised Learning, Digital Pathology, Immunology, Oncology, Cell Phenotyping, Tumor Microenvironment, Multiplexed Imaging
+
+Gender of presenting author: Man

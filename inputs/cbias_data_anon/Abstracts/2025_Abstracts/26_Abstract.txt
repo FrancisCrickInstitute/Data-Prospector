@@ -1,0 +1,21 @@
+Institution:
+Advanced Research Computing (ARC) Centre, UCL, London, UK
+Advanced Research Computing (ARC) Centre, UCL, London, UK
+Advanced Research Computing (ARC) Centre, UCL, London, UK and Hawkes Institute, UCL, London, UK
+
+Title: Scaling OMERO for Histopathology and Beyond: Experiences from UCL
+
+Abstract:
+The Medical Imaging Research Software Group (MIRSG) within UCL’s Advanced Research Computing (ARC) Centre develops and supports research software and infrastructure for imaging science. A core component of this work is the provision of OMERO as a service, an open-source platform for managing, visualising and analysing microscopy data and metadata. 
+
+At UCL, MIRSG currently operate a dedicated OMERO server for histopathology imaging, enabling researchers to store, share and interrogate large whole-slide images in a secure, centralised repository. This service has supported collaborative projects across multiple groups, providing practical insights into the challenges of running OMERO at scale. Issues around handling terabyte-sized datasets, heterogeneous metadata standards, and integration with downstream analysis pipelines have shaped our approach to both system administration and user support. 
+
+Looking ahead, we are working with researchers to extend OMERO to support larger and more diverse microscopy modalities. Leveraging Condenser, UCL’s new on-prem cloud platform, we aim to design through more resources and improved architecture an OMERO service capable of managing higher-throughput data with potential hooks into computational analysis workflows. By sharing our experiences of maintaining a production histopathology OMERO and outlining our plans for expansion, we hope to contribute to community discussions on sustainable, analysis-ready microscopy data infrastructure.
+
+Themes: ["Communities","Applications","Imaging"]
+
+Keywords: OMERO, infrastructure, service, histopathology
+
+Gender of presenting author: Man
+
+Special requirements: No

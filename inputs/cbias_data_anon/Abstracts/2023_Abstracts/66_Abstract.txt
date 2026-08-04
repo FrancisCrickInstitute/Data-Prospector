@@ -1,0 +1,16 @@
+
+
+Institution: 
+
+Title: Are model-based tools still relevant for bioimage analysis? New methods for background estimation and denoising fight back
+
+
+Abstract: Artificial Intelligence (AI) methods have taken the field of bioimage analysis by storm, eclipsing model-based methods with their promises of *learning* the *model* from the data. However, model-based methods offer several advantages: from avoiding the *training* process to better generalization when facing out-of-distribution samples. More importantly, they are *understandable*, based on hypotheses that let us know *a priori* if they are well-suited for the task.
+
+Here, we demonstrate two of our recently published model-based methods and compare them against AI ones. The first method, SMO, is based on robust directional statistics to recover an image's background intensity distribution. Leveraging the lack of spatial correlation in flat background regions, it allows to robustly select a fair sample of those regions, providing an unbiased estimation of the distribution. The second method, binlets, is an adaptive binning algorithm based on the Haar wavelet, which shines when handling (transformations of) multichannel data. It puts a spin on standard wavelet denoising by considering the trade-off between accuracy and resolution on all channels simultaneously. Its only hypothesis is that the underlying signal is smooth such that neighboring pixels may be averaged, and just requires a statistical test to compare them.
+
+As a community, it would be pertinent to revise this bewitchment with AI/ML. To publish new methods, it is becoming a requirement to compare against them, which might not be already pre-trained for the same task. AI can be a tool to explore data and generate new hypotheses, but not the end goal of science. After all, to overcome the diffraction limit it was necessary to model the whole measurement process, and could not have been done from a purely data-driven perspective.
+
+Keywords: 
+
+Additional Keywords: 

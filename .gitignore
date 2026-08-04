@@ -1,3 +1,14 @@
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+# Raw CBIAS attendee data contains personal data (names, emails, locations, abstracts) - never
+# commit until anonymised. Remove this line once inputs/cbias_data/ only holds anonymised data.
+inputs/cbias_data/
+
+# Quotes flagged raw text for manual PII review - never committed, regardless of where it's written.
+*_REVIEW_FLAGGED.txt
+
+# Real names found via manual review that anonymize_cbias_data.py should also redact - never
+# committed, since the whole point is these strings are PII.
+manual_redactions.txt

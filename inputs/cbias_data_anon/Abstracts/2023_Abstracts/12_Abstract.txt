@@ -1,0 +1,16 @@
+
+
+Institution: King's College London 
+
+Title: Mathematical modelling of muscle stem cell behaviour in ageing
+
+
+Abstract: The premise of this project is that cell behaviour can be related to gene expression profiles. Therefore, building a mathematical framework to bridge these two aspects allows one to predict how cells will respond under stimulus. To address this concept in an in vivo manner, we have proposed to obtain correlated measures of muscle stem cells (muSCs) responding to a focal injury via 3D time-lapse imaging and measures of gene expression using RNA-seq from zebrafish larvae. 
+
+We have used a telomerase mutant, which underpinnings most age-associated hallmarks. We have shown that muSCs have a reduced capacity to respond to injury, showing less proliferation and fusion. Regarding the gene expression profile, it is correlated with leading ageing hallmarks with significant up-regulation of genes associated with the DNA damage response.  
+
+The other key aspect of the project is to obtain measures of muSC behaviour and relate this to gene expression. Extracting information about cell behaviour from 3D time-lapse movies is challenging. Preliminarily, we tried to utilise a cell segmentation profile trained in ilastik and migratory behaviour characterising pipeline in Fiji. Initial observations suggest that the muSCs lost their directory towards the injury sites, but show a dispersive behaviour. We also observed perturbations in macrophage responses to muscle injury, suggesting a general defect in cell migration during the regeneration response. This work is still ongoing and welcoming discussions from the imaging community.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","Multi-Disciplinary","AI & Machine/Deep Learning","Modelling","New Tools\n"]
+
+Additional Keywords: In vivo, 3D, Live-imaging, Cell behaviour, Regeneration, Ageing 

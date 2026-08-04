@@ -1,0 +1,18 @@
+Institution:
+Max Planck Institute for Terrestrial Microbiology, Marburg, Germany and Rosalind Franklin Institute, Didcot, UK
+University of Edinburgh, Edinburgh, UK
+Max Planck Institute for Terrestrial Microbiology, Marburg, Germany
+
+
+Title: Exploiting time to phenotype cell morphology
+
+Abstract:
+Cellular processes observed in single cells are frequently dynamic, heterogeneous and spatially distributed, making time-lapse microscopy indispensable for resolving such phenomena. However, characterising complex phenotypes and cell morphologies from image data is nontrivial and, in many cases, this has motivated application-specific image processing methods that are prone to subjectivity and bias. Here we present an objective and general method to assess phenotypic distance: Tracking Objects by Deep Distances to Learn Embedding Representations (TODDLER). Our TODDLER method treats object tracking as a pre-text task to train deep networks that ignore short-time change, like subtle shifts in focus or small movements of cellular organelles, but that can distinguish mid- to long-time change such as cell-cycle stage or cell-type specialisation. The latent representations of these trained networks offer rich measures of morphology and we demonstrate their utility by using our TODDLER method to qualify and quantify cell-cycle stage and cell age in budding yeast.
+
+Themes: ["Data processing and visualisation","Modelling"]
+
+Keywords: Time-lapse microscopy, representation learning, cell morphology
+
+Gender of presenting author: Man
+
+Special requirements: 

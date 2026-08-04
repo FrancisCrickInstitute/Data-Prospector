@@ -1,0 +1,12 @@
+
+
+Institution: Francis Crick Institute
+
+Title: AI OnDemand: Segmenting at Scale from Napari
+
+
+Abstract: Deep learning models for segmentation are continually released, presenting a potential boon for scientists by reducing the need for manual segmentation and improving overall quality. There are typically three key issues with these models, however: interacting with these models can be cumbersome, requiring bespoke scripts for inference and integration with downstream analysis; using these models with high-performance computing can require significant additional work; and fine-tuning these models for specific tasks/data can improve performance, yet can be difficult to implement for many practitioners. To tackle this, we present AI OnDemand, an open-source tool which consists of two main components. First, we have developed a Napari plugin to allow users to seamlessly integrate deep learning models within their typical workflow. Second, we have developed a Nextflow (a workflow manager commonly used in bioinformatics) pipeline that handles the computational backend (pre-processing, inference, fine-tuning etc.) and can inherently scale from local to large HPC environments with no additional work. We present the key features of AI OnDemand, and demonstrate segmentation on a range of organelle segmentations tasks with EM data using both popular models (e.g. Empanada, Segment Anything) and our Attention-based U-Net model.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Web/Cloud Interfaces\n","New Tools\n","Big Data\n","Open Science"]
+
+Additional Keywords: Deep learning, Nextflow, HPC, Fine-tuning

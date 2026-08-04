@@ -1,0 +1,17 @@
+Institution:
+The Randall Centre for Cell & Molecular Biophysics, King's College London, UK
+
+Title: Single Molecule Localisation Microscopy and Image Analysis to investigate the sarcomere at the nanoscale. 
+
+Abstract:
+Striated muscle comprises skeletal and cardiac muscle, and its structure, organisation and biophysical mechanisms are essential for the function of these organs. Sarcomeres are ordered in a highly aligned and repetitive fashion within structures called myofibrils, with molecularly distinct regions such as the M-band and the Z-disc, which remain poorly characterised. Immunofluorescence allows for precise labelling of protein domains, which in the myofibril present as striations; domains in the less-characterised dense regions of the Z-disc and the M-band have small spacings (<200nm) between adjacent striations. A precise measurement of this separation can provide structural information about the location of the domain of interest within the sarcomere, but diffraction-limited microscopy is not sufficient to attain these. Hence, super-resolution fluorescence microscopy techniques—such as SMLM—are necessary, as they allow us to bridge the gap between the molecular specificity of biochemistry and the resolution of electron microscopy. However, there are many additional factors, such as the linker size or biological variation, that limit imaging accuracy and resolution.  
+
+The task of obtaining precise measurements from variable data at the edge of the super-resolution capabilities requires an image analysis approach tailored to both the unique challenges of muscle, and the unique information present in super-resolution imaging modalities. Here, we present a sarcomere-specific image analysis pipeline to resolve separations between adjacent symmetrical striations. The performance of this pipeline is explored via statistical tests and model comparison to reduce analysis bias and quantify the information present in images. We also account for specific properties of super-resolution data, such as the localisation precision in SMLM, which can impact measurements. Finally, we apply these tools to a novel problem that aims to understand different conformations of titin in the sarcomere. 
+
+Themes: ["Imaging","Data processing and visualisation","Applications"]
+
+Keywords: microscopy, image, super-resolution, SMLM, image analysis, muscle, sarcomere
+
+Gender of presenting author: Woman
+
+Special requirements: No

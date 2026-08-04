@@ -1,0 +1,13 @@
+
+
+Institution: University of Sheffield
+
+Title: Comparison of Cell Tracking Algorithms for Analysis of Epithelial Dynamics During Zebrafish Ear Morphogenesis
+
+
+Abstract: The adult zebrafish inner ear is a complex structure that forms from a simple ball of epithelial cells. This dynamic process requires highly orchestrated specification and movement of many different cell types and structures. During morphogenesis of the semicircular canal system, projections of tissue move into the lumen of the otic vesicle and fuse to form pillars of epithelium that span the vesicle. These pillars progressively enlarge as the semicircular canal ducts elongate to form the fully functioning adult vestibular organ.
+Using live fluorescence imaging of transgenic lines in wild-type and mutant zebrafish we are investigating the epithelial cell movements and cell shape changes that accompany or drive morphogenesis over the life course. We use a combination of image analysis pipelines (Origami, 3D-UNet, Matlab, ACME, Fiji and arivis Vision4D) to measure 3D cell shapes and to track cell movements during key stages of inner ear development. Accurate object tracking within our timelapse light-sheet microscopy datasets is essential to understand the cell movements occurring within the complex 3D epithelial tissues. To determine the best cell tracking pipeline for zebrafish ear development, we compared the tracking performance of several open-source and commercial cell tracking algorithms (including TrackMate, Btrack, Elephant, Imaris, arivis Vision4D). By using these algorithms to analyse the same light-sheet dataset we have measured a range of parameters to determine the most accurate and easy-to-use pipeline for our data.
+
+Keywords: ["Segmentation","Object Tracking","AI & Machine/Deep Learning","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: light-sheet microscopy, morphogenesis

@@ -1,0 +1,14 @@
+
+
+Institution: Hubrecht Institute
+
+Title: Single-cell tracking in intestinal organoids reveal oscillations in Notch signalling
+
+
+Abstract: The intestinal epithelium undergoes one of the most rapid self-renewal processes in organs, and yet maintains a remarkably regular tissue organisation. Notch signalling has long been implicated in the regulation of this organization. However, exactly how it dynamically coordinates the precise spatial patterning of specialised cells is still not fully understood. 
+
+In this project, we carry out a systematic investigation of the function of Notch signalling during intestinal homeostasis. We use light-sheet live-cell imaging on intestinal organoids to quantify Notch activity in individual cells. We combine denoising and deconvolution of light-sheet imaging data followed by deep-learning based automatic single-cell tracking. Our data shows that Notch signalling is oscillatory, which raises the exciting hypothesis that these dynamics play a functional role in tissue-wide cell fate specification as has been seen in model systems of embryonic development. 
+
+Keywords: ["Segmentation","3D/4D/ ... nD Data\n","Big Data\n","Multi-Disciplinary","Object Tracking","AI & Machine/Deep Learning"]
+
+Additional Keywords: light-sheet, single-cell tracking, multicellular, tissues, live-cell imaging

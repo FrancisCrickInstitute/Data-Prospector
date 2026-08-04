@@ -1,0 +1,31 @@
+Institution:
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+Centre for Advanced Research Computing, UCL, London, UK
+Centre for Advanced Research Computing, UCL, London, UK
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+Centre for Advanced Research Computing, UCL, London, UK
+Centre for Advanced Research Computing, UCL, London, UK
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+Department of Biological Sciences, St. John's University, Queens, NY, USA
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+Neuroinformatics Unit, Sainsbury Wellcome Centre, UCL, London, UK
+
+Title: BrainGlobe: Accessible software for neuroanatomy of emerging model organisms
+
+Abstract:
+BrainGlobe is a community-driven initiative built around a set of interoperable, user-friendly, open-source software tools for neuroanatomy. It provides atlases for human, mouse, rat and zebrafish brains through a consistent interface. Each atlas includes a “standard” reference image for sample registration and corresponding brain region segmentations. This allows data from several samples to be analysed in the same coordinate space, within and across studies.
+
+Neuroscience increasingly recognises the need to study brain function in more diverse species. BrainGlobe is species- and imaging-modality agnostic and is therefore a natural fit to enable the necessary data analysis. However, this requires novel atlases.
+
+Working with expert neuro-anatomists studying emerging model organisms, we have created a novel digital brain atlas for the Eurasian blackcap Sylvia atricapilla. We have additionally incorporated existing atlases for the Mexican blind cavefish Astyanax mexicanus and axolotl Ambystoma mexicanum into BrainGlobe.
+
+This work shows how BrainGlobe facilitates collaboration between anatomists, microscopists and software developers with large benefits to cutting-edge research. Going forward, we hope atlas-based image analysis is expanded to even more species, and other organs.
+
+
+Themes: ["None of the above"]
+
+Keywords: Atlas, anatomy, neuroscience, software, napari, python
+
+Gender of presenting author: Man

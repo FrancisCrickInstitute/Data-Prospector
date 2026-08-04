@@ -1,0 +1,16 @@
+
+
+Institution: Saarland University
+
+Title: Automated cell tracking and fluorescence analysis to assess individual killer cell efficiency
+
+
+
+
+
+Abstract: Individualized immune therapy of cancer is at the cutting edge of medical advances. To assess the efficacy of new therapeutic treatments, the killing efficiency of human natural killer (NK) cells, specifically targeted at cancer cells needs to be evaluated. Population-based assessment of NK cell killing efficiency is an established method, but inherits several shortcomings. For example, population-level analyses do not provide information about the killing efficiency of individual killer cells. However, this may be a decisive factor for the success of a therapy. Emerging evidence points towards a heterogeneity among individual NK cells, ranging from inefficient killers to “super killers”.
+Based on a novel time-resolved single-cell cytotoxicity assay allowing to assess quality, quantity, and kinetics of target cell death induced by NK cells, we are developing an automated analysis pipeline. This not only allows us to track and analyze individual target cells, but also to assess the killing efficiency of individual NK cells in order to identify potential super killers. A key factor for this analysis is the identification of immunological synapses, which can be achieved using convolutional neural networks. This allows us to determine the fate of each NK and cancer cell, their respective contacts and the time point of cell death induction. The killing history of individual NK cells will give numerous insights into single NK cell cytotoxic efficacies.
+
+Keywords: ["Segmentation","Object Tracking","AI & Machine/Deep Learning","New Tools\n","Multi-Disciplinary","Open Science","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: 

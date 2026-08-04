@@ -1,0 +1,17 @@
+
+
+Institution: University of Groningen
+
+Title: A synthetically trained convolutional neural network for budding yeast segmentation
+
+
+Abstract: The development of software tools that automatically identify and track cells is essential for realizing the full potential of time-lapse microscopy data. Several feature-based segmentation algorithms have been developed for the model eukaryote Saccharomyces cerevisiae (budding yeast), but require careful tuning to perform well. On the other hand, more powerful deep learning-based algorithms require large amounts of manually annotated data for training, a time-consuming and tedious process that needs to be repeated whenever the algorithm capabilities need to be expanded.
+
+We present a versatile tool for the automatic creation of synthetic brightfield images of yeast-like objects, together with a convolutional neural network (Mask-RCNN) for cell segmentation trained on a synthetic dataset. Despite the fact that our Mask-RCNN was trained on synthetically generated data, it is able to segment yeast cells on actual brightfield microscopy images with accuracy very similar to that of YeaZ, a recently presented CNN that is the current state-of-the-art in the field, even though the latter was trained on a large, manually annotated dataset. Given the high speed of synthetic data generation, the Mask-RCNN can be easily retrained to address new imaging conditions, improve its performance on challenging cases, or tackle completely new detection tasks. The incorporation of synthetic data creation into the development pipeline of CNN-based tools for budding yeast microscopy opens up new opportunities for the creation of powerful, flexible and user-friendly image processing tools for this microorganism.
+
+[1] https://doi.org/10.1093/bioinformatics/btab835
+
+
+Keywords: ["Segmentation","Object Tracking","AI & Machine/Deep Learning","New Tools\n"]
+
+Additional Keywords: 

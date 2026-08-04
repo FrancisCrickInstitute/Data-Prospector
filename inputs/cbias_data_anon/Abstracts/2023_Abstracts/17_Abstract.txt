@@ -1,0 +1,18 @@
+
+
+Institution: Senior software developer
+
+Title: WebAtlas pipeline for integrated single cell and spatial transcriptomic data
+
+
+Abstract: We present WebAtlas, a comprehensive pipeline that integrates nextflow, ome-zarr, Python, and other bioimage analysis tools to advance spatial transcriptomics research. Our pipeline addresses the challenges of online dissemination and exploration of integrated datasets, which are often hindered by data heterogeneity and scale.
+
+WebAtlas offers a user-friendly platform for sharing and interactively navigating integrated datasets. By leveraging the cloud-optimized Zarr format, it efficiently stores, retrieves, and manipulates large-scale spatial transcriptomic data. Moreover, WebAtlas relies on the powerful visualization framework, Vitessce, to enable remote data navigation, thus enhancing the exploration of integrated datasets.
+
+In our study, we apply WebAtlas to analyze the developing human lower limb, focusing on cutting-edge image analysis techniques. By harnessing the power of image analysis, WebAtlas facilitates cross-querying of cell types and genes across single-cell, sequencing, and imaging-based spatial transcriptomic data. This integration allows researchers to gain deeper insights into the spatial organization and cellular heterogeneity within complex tissues.
+
+Overall, WebAtlas bridges the gap between image analysis and transcriptomics, providing a valuable tool for researchers in the field of bioimage analysis. By combining nextflow, ome-zarr, Python, and other tools, and relying on the Vitessce framework, WebAtlas empowers researchers to efficiently share, explore, and gain meaningful insights from integrated datasets. We believe that the adoption of WebAtlas will significantly advance spatial transcriptomics research, enabling a better understanding of tissue complexity and paving the way for new discoveries.
+
+Keywords: ["Web/Cloud Interfaces\n","New Tools\n","Big Data\n","Open Science"]
+
+Additional Keywords: 

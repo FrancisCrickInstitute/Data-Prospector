@@ -1,0 +1,15 @@
+
+
+Institution: Laboratory for Molecular Cell Biology, University College London
+
+Title: EpiTools, a napari plugin for quantifying epithelial dynamics
+
+
+
+Abstract: EpiTools was originally developed to address challenges in analysing dynamic microscopy images of epithelia, in which cells are tightly attached to each other. EpiTools has been widely adopted by the research community and used to successfully analyse a wide range of different epithelial tissues including the Drosophila embryo, wing disc, larval epidermis, mammalian (MDCK) epithelial cells and the mouse neocortex. However, due to its implementation in Matlab/Icy and growing incompatibility issues, EpiTools had become challenging to maintain and hard to use. 
+
+We have now ported EpiTools into the Python programming language and made it into a modular napari plugin for the analysis of epithelial tissues https://www.napari-hub.org/plugins/epitools. Firstly, EpiTools projection module can selectively project a surface of interest from a 3D stack, excluding background or unwanted signal from other planes. Secondly, it can accurately segment cells in packed epithelia, which can be corrected through napari’s native labels editor if needed. Finally, it can extract different quantitative cellular and tissue features (e.g., cell areas, aspect ratio, intercalations) enabling users to analyse and visualize these properties overlaid on the tissue. We are excited to share EpiTools with the community and are looking forward further expanding its capabilities in the future, for example with a focus on tracking cell movements / intercalations. 
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n"]
+
+Additional Keywords: Napari

@@ -1,0 +1,12 @@
+
+
+Institution: Centre for Image Analysis, Department of Information Technology, Uppsala University
+
+Title: Efficient large scale multimodal image registration and AI-supported collaborative analysis
+
+
+Abstract: Multimodal imaging means capturing complementary information about a specimen by different imaging methods (modalities), enabling deeper understanding and improved analysis and diagnostics, for human as well as AI-based decision making.  For successful correlation and fusion of such heterogeneous information, acquired images need to be accurately aligned – a task which is far from easy, considering the great diversity of imaging modalities and specimens, in combination with the typically very large size of acquired medical and bio-medical images. Here we present a computationally efficient and well performing state-of-the-art method for multimodal image registration. We show how this approach can be used for improved deep learning-driven oral cancer detection. In a live demo(!), we present recent developments of CytoBrowser – an open-source web app for fast and accessible collaborative visualization, assessment, and annotation of very large microscopy images – towards simplified handling of multimodal data, thereby further advancing a user-friendly human-in-the-loop approach to large scale AI-supported medical diagnostics.
+
+Keywords: ["AI & Machine/Deep Learning","Web/Cloud Interfaces\n","New Tools\n","Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","Big Data\n","Open Science"]
+
+Additional Keywords: 

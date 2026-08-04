@@ -1,0 +1,13 @@
+
+
+Institution: University of Bath
+
+Title: Investigating the dynamics of YAP/TAZ mechanosensitive regulators of gene transcription in 2D and 3D using fluorescence microscopy and machine learning
+
+
+
+Abstract: YAP/TAZ are transcriptional coactivator proteins with the ability to move between the nucleus and cytoplasm and alter gene expression. They are vital to cellular processes including cell growth, proliferation, regeneration and wound healing as well as the development of cancer. There are multiple mechanisms which regulate the activation of YAP/TAZ, including the Hippo pathway and mechanical signalling. However, little is known about the transcriptional mechanisms which lead to YAP/TAZ protein activation. Our research focuses on the role of focal adhesion kinase (FAK) which we believe may play a role in the transcriptional regulation of YAP/TAZ, as previous data has suggested that depletion of FAK leads to the downregulation of YAP and TAZ (at the protein and gene expression levels).  Fluorescent microscopy has been used to examine differences in the level of gene and protein expression of YAP/TAZ when FAK is depleted (FAK RNAi and FAK kinase inhibitors).  Immunofluorescence experiments have been used in combination with image analysis tools (Cell Profiler, ImageJ and Illastik) in order to explore the localisation and activation of YAP and TAZ proteins. We have also used RNA FISH probes to explore the mRNA expression of YAP and TAZ genes when cells undergo loss of FAK expression. Currently, we have shown a relationship between FAK and YAP/TAZ expression and have evidence that this relationship may take place through a non-kinase FAK function. We have also begun exploring the influence of mechanical signalling and the cell cycle on this relationship between FAK and YAP/TAZ hoping to increase our knowledge of this pathway. 
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: 

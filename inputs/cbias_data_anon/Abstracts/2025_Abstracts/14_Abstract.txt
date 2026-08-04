@@ -1,0 +1,18 @@
+Institution:
+Cell Screening Laboratory, UCD School of Biology & Environmental Science, University College Dublin/SiriusXT
+Cell Screening Laboratory, UCD School of Biology & Environmental Science, University College Dublin
+Cell Screening Laboratory, UCD School of Biology & Environmental Science, University College Dublin
+University College Dublin/SiriusXT
+
+Title: SXTractor: A Self-Supervised Feature Extractor of Soft X-Ray Images That Enables Few-Shot Tomogram Segmentation
+
+Abstract:
+Soft X-ray tomography (SXT) is a powerful, non-invasive bio-imaging technique that enables visualization of cellular structures in near-native states. Despite its potential, the development of dedicated image analysis tools — particularly deep-learning-based models — has been limited, largely due to the limited accessibility of soft X-ray microscopes and the scarcity of labeled SXT data. To address this deficit, in this work, we present SXTractor, a self-supervised SXT feature extractor based on the DINO framework. SXTractor can be fine-tuned with minimal labeled data and effectively adapted to various downstream tasks. We demonstrate its utility on few-shot tomogram segmentation, where it significantly outperforms the model when trained from scratch. Furthermore, it achieves few-shot segmentation performance comparable to that of the Segment Anything Model (SAM), despite SAM being a segmentation-specific model pretrained on millions of labeled images with a significantly larger model size. Most importantly, SXTractor enables a diverse range of downstream applications of deep learning to SXT, thus offering a practical and scalable solution for SXT image analysis in data-constrained settings.
+
+Themes: ["Imaging","Applications"]
+
+Keywords: Soft X-Ray Microscopy, Segmentation, Deep Learning, Computer Vision
+
+Gender of presenting author: Man
+
+Special requirements: accommodation

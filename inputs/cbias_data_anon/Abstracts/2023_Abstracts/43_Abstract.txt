@@ -1,0 +1,19 @@
+
+
+Institution: Institute of Cancer Research
+
+Title: Whole slide image analysis of Picrosirius red staining: an automated digital processing workflow
+
+
+
+
+Abstract: Capturing brightfield Picrosirius red (PSR) stained images facilitates the visualisation and quantification of collagen matrix features at high resolution. However, staining variation across formalin-fixed paraffin-embedded tumour samples makes high-throughput analysis challenging. Moreover, user-dependent quality-control of whole slide images (WSI) from large sample cohorts is impractical and subjective. 
+
+To our knowledge no single tool exists to address the above challenges, as such we developed an automated workflow to process PSR WSI. The workflow encompasses artifact correction, parameterised quality control, stain normalisation and a one-size-fits-all colour deconvolution. The workflow has been designed to scale in a generic fashion, scale irrespective of the number of pathologist annotations, facilitate the study of tissue heterogeneity and reliably stitch regions of interest for visualisation. Our integrated approach performs at tile level, using effective multi-threading to reduce computational cost. At each step, the eligible tiles associated with regions of interest are stitched into a WSI to facilitate comparisons with the original image. 
+
+Our novel workflow generates an unbiased selection of colour normalised PSR tiles suitable for downstream quantitative analysis using tools such as the ImageJ plugin TWOMBLI1. As such users can comprehensively explore intra and inter-patient heterogeneity of the collagen matrix at scale.
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n"]
+
+Additional Keywords: 

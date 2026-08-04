@@ -1,0 +1,14 @@
+Institution:
+School of Life Sciences, University of Warwick, UK
+School of Life Sciences, University of Warwick, UK
+
+Title: Enhanced Bacterial Cytological Profiling with super resolution techniques and fluorescent D amino acids
+
+Abstract:
+Determining mechanism of action (MoA) for antimicrobial compounds is key in antibiotic discovery efforts. Bacterial Cytological Profiling (BCP) is a rapid one-step assay utilising fluorescent microscopy and machine learning to discriminate between antibacterial compounds with different MoAs and help predict the MoA of novel compounds. One barrier to BCP being adopted more widely is a lack of open-source analysis methods and data sets. My PhD project focuses on developing open-source protocols and image analysis pipelines along with enhancing the BCP method and extending it to be high-throughput compatible. Currently the BCP method has no direct readout on the bacterial cell wall, a key antibiotic target. Fluorescent D-amino acids can be used to examine cell wall synthesis as they are incorporated directly into the structure and so their potential use in BCP to provide information on cell wall perturbations merits exploration. To increase the capability of BCP in detecting complex morphological phenotypes, the feasibility of integrating super-resolution imaging via structured illumination microscopy (SIM) and the analytical Super-Resolution Radial Fluctuations (SRRF) algorithm also warrants investigation.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: high-throughput, microscopy, microbiology, drug discovery
+
+Gender of presenting author: Man

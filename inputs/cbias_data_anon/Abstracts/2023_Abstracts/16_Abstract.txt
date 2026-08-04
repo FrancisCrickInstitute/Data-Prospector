@@ -1,0 +1,21 @@
+
+
+Institution: The University of Liverpool
+
+Title: Knock-Knock-Knockin’ on your image analyst’s door – Collaboration leading to better data
+
+
+
+
+Abstract: An image analyst’s skill is to apply their knowledge to microscope user problems. 
+
+A microscopist has taken images with the aim of quantifying the change in microglial processes upon brain injury. They have found an analysis pipeline from the literature and ask their local image analyst for help with replicating the pipeline on their images. Given the literature and some exemplary images, the image analyst determines that the analysis can be done and the method even improved upon, i.e. automating the segmentation of objects instead of manually drawing polygons. However, they also determine that the image resolution is not high enough to achieve meaningful results as the imaging resolution used did not resolve the intricate processes. 
+
+A proposal is made: Can these slides be imaged again at a higher resolution? Fortunately, the microscopist still has slides and cryopreserved tissue to cut thicker sections. Together with facility staff, they image the cells as higher resolution, including z-stacks. Meanwhile, the image analyst prepared a Fiji macro to pre-process and then quantify the images, either in 2D or 3D. The final results corroborate results from other techniques thus contributing to the body of work as a whole. Following the initial request for analysis help made in January, this work can already be found as a pre-print on medRxiv, published in April. 
+
+In short, if you are not sure how to proceed with your image analysis, collaborating with your {local} image analyst results in better data, quicker.
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","Teaching/Training"]
+
+Additional Keywords: Collaboration, facility image analyst

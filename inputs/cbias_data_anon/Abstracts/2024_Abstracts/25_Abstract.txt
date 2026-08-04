@@ -1,0 +1,47 @@
+Institution:
+University of Sheffield, UK
+University of Sheffield, UK
+University of Sheffield, UK
+University of Sheffield, UK
+University of Sheffield, UK
+
+Title: Tracking of microtubule growth during epithelial morphogenesis in inner ear development
+
+Abstract:
+The onset of semicircular canal formation in the zebrafish otic vesicle is accompanied by
+local and dramatic changes in epithelial cell shape, including a pronounced doming of the
+apical cell membrane. To test whether changes in cell shape are accompanied by
+reorganisation of the cytoskeleton, we sought to image and quantify microtubule dynamics
+during cell apical doming. We generated a transgenic zebrafish line expressing the
+microtubule end-binding protein EB3 tagged with GFP to mark the growing ends of
+microtubules (EB3 comets) in otic epithelial cells. Using super-resolution Airyscan imaging,
+we captured high spatiotemporal resolution 3D time-lapse datasets to resolve and track EB3
+comets in vivo. Producing such images is challenging; key caveats are photobleaching, and
+scattering noise from imaging deep into the vesicle. By developing a pipeline combining the
+Trackpy Python library (Allan et al., 2024) with Napari software (Napari Contributors 2019),
+we were able to track EB3 comets despite these challenges. Trackpy offers open, lightweight
+3D particle tracking with granular, control of feature detection, and has synergy with Napari,
+which offers a powerful suite of visualisation and image processing tools. Following
+debleaching via Napari, optimisation of detection parameters was required to identify EB3-
+positive signal through background noise. This was achieved through analysis of feature
+mass and iteration on the Trackpy bandpass cutoff. This produced 3D tracks of EB3 comets,
+visualised using Napari. 3D vectors were extracted from tracks and used for determining
+their angle of growth relative to the apicobasal axis. Using this method, we find an
+apicobasal-to-azimuthal shift in microtubule growth direction in doming cells in comparison
+with surrounding non-doming cells. This methodology can be applied across the zebrafish
+otic vesicle, and has illuminated microtubule reorganisation concurrent with cell apical
+reorganisation, hinting at wider subcellular reorganisation in the apical dome.
+
+
+Allan, D. B., Caswell, T., Keim, N. C., van der Wel, C. M., &amp; Verweij, R. W. (2024). soft-
+matter/trackpy: v0.6.4 (v0.6.4). Zenodo. https://doi.org/10.5281/zenodo.12708864
+
+
+Napari Contributors (2019). Napari: a multi-dimensional image viewer for python.
+doi:10.5281/zenodo.3555620
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: Microscopy, Development, Tracking, In vivo
+
+Gender of presenting author: Man

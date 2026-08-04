@@ -1,0 +1,17 @@
+Institution:
+1,2,4 Department of Physiology Development and Neuroscience, University of Cambridge, Cambridge, UK
+3 Department of Life Sciences, Imperial College London, London, UK
+
+
+Title: Mechanical stress and cell fate acquisition during zebrafish trunk neural crest cell migration: Tissue bioimaging
+
+Abstract:
+Cells migrating through confined environments experience nuclear deformation, which may alter chromatin organization and gene expression. Using zebrafish trunk neural crest cells (TNCs), which move from wide progenitor regions into narrow (<3 µm) channels, I investigate how nuclear squeezing influences cell fate. Confocal live imaging with cell tracking shows that leader cells undergo more frequent and prolonged nuclear deformations than followers, correlating with their neuronal, glial, or pigment fates. To probe chromatin structure, I performed immunostaining combined with 3D segmentation of nuclei to quantify histone methylation (H3K9me3) levels across migratory stages. Additionally, I am performing single-molecule imaging of neural crest–specific H2B-Halo dynamics to compare histone mobility between pre-migratory and migrating TNCs, providing a sensitive readout of chromatin changes under mechanical stress. Together, these approaches link nuclear squeezing, chromatin reorganization, and fate specification, uncovering how mechanical forces regulate gene expression programs during in vivo cell migration.
+
+Themes: ["Data processing and visualisation"]
+
+Keywords: 3D segmentation, tissue imaging, zebrafish
+
+Gender of presenting author: Woman
+
+Special requirements: no

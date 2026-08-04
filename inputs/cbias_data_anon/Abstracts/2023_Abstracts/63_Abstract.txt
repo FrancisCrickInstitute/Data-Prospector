@@ -1,0 +1,13 @@
+
+
+Institution: 
+
+Title: 3D image reconstruction and visualization for whole tissue bespoke spatial transcriptomics maps
+
+
+
+Abstract: Three dimensional spatial transcriptomics is a fast developing technique, which is popular due to its ability to provide more insights on different cell types localisation, their interaction and signalling. However, an automatic reconstruction of whole tissue image for gene decoding and its visualization has many challenges due to the image size, large number of sequencing cycles and higher dimensionality of the images. Here we present work in development for low-level, large 3D image analysis and visualization for bespoke spatial in situ sequencing (ISS) experiments
+
+Keywords: 
+
+Additional Keywords: 

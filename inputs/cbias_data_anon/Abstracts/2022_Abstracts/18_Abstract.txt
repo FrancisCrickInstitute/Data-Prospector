@@ -1,0 +1,13 @@
+
+
+Institution: UCL
+
+Title: Imaging to inform a whole organ blood flow model in the heart of a covid-19 infected patient 
+
+
+Abstract: Covid-19 affects the functioning of many organs in the human body. In the lungs, it has been shown to cause thrombosis and angiogenesis in the lung microvasculature. In the heart, Covid-19 may affect the vasculature in a subgroup of Covid-19 patients. 20-30% of Covid-19 cases exhibit evidence of myocardial injury, the cause of which is not yet understood. The Covid-19 heart has been imaged by hierarchical phase-contrast tomography (HiP-CT), an imaging technique which allows intact human organs to be imaged at ca. 25 µm voxel resolution, down to 1 µm locally. The HiP-CT heart images are segmented to extract larger and microcirculatory coronary vessels. Vascular network structural analysis and blood flow analysis can detect if there is structural damage in the cardiac microvascular network and the influence this has in upstream haemodynamics for Covid-19 patients. Initial CFD blood flow simulation in the left coronary artery of a Covid-19 infected heart has demonstrated blood flow velocities similar to velocities measured in vivo. Comparison of vascular structure and blood flow between control and Covid-19 infected hearts may detect if Covid-19 has an effect on the vascular network structure and blood flow in the heart.
+
+
+Keywords: ["Modelling","Segmentation"]
+
+Additional Keywords: 

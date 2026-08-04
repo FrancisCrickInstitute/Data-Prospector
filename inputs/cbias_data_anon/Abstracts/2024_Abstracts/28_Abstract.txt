@@ -1,0 +1,15 @@
+Institution:
+King's College London
+
+Title: Deriving structure and heterogeneity of cell components from fluorescence microscopy data
+
+Abstract:
+The use of multiple views of difference instances of a biological structure to produce a single highly resolved image of the structure is well established in cryo-EM, and increasingly under development for fluorescence microscopy. We take a deep learning approach to allow simultaneous fitting of both a given structure, and how that structure varies between multiple observations. Unlike in traditional AI approaches it is the process of training the neural network which creates the model of the structure and its heterogeneity. We demonstrate that this approach can allow biological structures and their variation to be derived from multiple types of fluorescence microscopy images.
+
+
+
+Themes: ["AI: What Can('t) it do?"]
+
+Keywords: AI, fluorescence microscopy, super-resolution
+
+Gender of presenting author: Woman

@@ -1,0 +1,21 @@
+Institution:
+School of Biosciences, University of Sheffield, Sheffield, UK
+School of Biosciences, University of Sheffield, Sheffield, UK
+School of Biosciences, University of Sheffield, Sheffield, UK
+School of Biosciences, University of Sheffield, Sheffield, UK
+Faculty of Engineering, University of Nottingham, Nottingham, UK
+School of Biosciences, University of Sheffield, Sheffield, UK
+
+Title: Analysis of Cell Shape Changes During the Initial Stages of Semicircular Canal Duct Development
+
+Abstract:
+The semicircular canal ducts of the zebrafish inner ear develop in a defined sequence of morphogenetic events that involve a local inversion of epithelial curvature. We have developed an image analysis pipeline to examine cell shape changes involved during this process. Using time-lapse imaging of transgenic zebrafish embryos, we firstly extracted 3D image subsets encompassing each emerging otic projection. The cells within these datasets, expressing fluorescent proteins marking cell membranes and nuclei, were segmented using ACME (Mosaliganti et al. 2012). Labelled images containing the cell outlines were then processed using the Matlab pipeline Origami (Mendonca et al. 2021). Firstly, a user-interactive data cleaning step was used to clear unwanted or erroneously segmented regions before polarity vectors were determined for each cell. Using these vectors, Origami was able to extract geometric shape descriptors such as longitudinal spread, transversal spread and skewness. Cells within the otic epithelium were then automatically classified as projection cells or surrounding cells based on the local curvature of the epithelium. Linear Discriminant Analysis of the resultant geometric descriptors was used to reduce the dimensionality of the data and allowed exploration of the different cell shape classes in an unbiased manner. Using this pipeline, we identified a small group of leader cells that display anisotropic cell shape changes at the sites of inversion of epithelial curvature prior to projection outgrowth. 
+
+Mosaliganti KR, … Megason SG (2012) ACME: Automated Cell Morphology Extractor for Comprehensive Reconstruction of Cell Membranes. PLOS Computational Biology 8(12): e1002780.
+Mendonca T, … Frangi A. (2021) Origami: Single-cell 3D shape dynamics oriented along the apico-basal axis of folding epithelia from fluorescence microscopy data. PLOS Computational Biology 17(11): e1009063.
+
+Themes: ["None of the above"]
+
+Keywords:  zebrafish, cell shape, epithelial morphogenesis, otic epithelium, tubulogenesis, semicircular canal
+
+Gender of presenting author: Man

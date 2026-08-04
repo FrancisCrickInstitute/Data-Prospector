@@ -1,0 +1,15 @@
+Institution:
+Department of Computer Science, City University of London, EC1V 0HB, UK
+Department of Computer Science, City University of London, EC1V 0HB, UK
+Department of Computer Science, City University of London, EC1V 0HB, UK
+
+Title: Fat-U-Net: non-contracting U-Net for free-space optical neural networks
+
+Abstract:
+This work introduces Fat-U-Net, an innovative adaptation of the U-Net architecture designed for enhanced performance in 4f AI accelerators, focusing on the segmentation of HeLa cells. When referring to a 4f AI accelerator, we are talking about a device that uses free-space optics to accelerate the speed of inference for convolutional layers. The main advantage of this approach lies in its high-resolution capabilities. However, a potential drawback is the need for a significant number of optics-to-electronics conversions. Fat-U-Net takes advantage of the high-resolution capabilities of the free-space optical AI accelerator by eliminating pooling operations and maintaining high-resolution feature maps throughout the network. This adaptation preserves the number of weights and pixels per layer found in traditional U-Net while reducing the number of channels in each feature map to minimise the number of optics-to-electronics conversions. Our experiments demonstrate a significant increase in inference speed, with Fat-U-Net achieving up to 538 times faster performance than U-Net in an optical environment and 37 times faster than GPU-based implementations. Regarding segmentation accuracy, the performance drop is minimal, with a 4.24% reduction in Intersection over Union (IoU) on the Oxford-IIIT Pet dataset. Following this success, Fat-U-Net was applied to HeLa cell nucleus segmentation, where the IoU performance reduction was even smaller at just 1.76%.
+
+Themes: ["AI: What Can('t) it do?"]
+
+Keywords: optical neural networks, convolutional neural networks, u-net, image segmentation
+
+Gender of presenting author: Man

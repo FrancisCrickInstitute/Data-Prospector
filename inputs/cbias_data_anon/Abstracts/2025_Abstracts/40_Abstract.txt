@@ -1,0 +1,22 @@
+Institution:
+Sainsbury Wellcome Centre, UCL, UK
+Sainsbury Wellcome Centre, UCL, UK
+Sainsbury Wellcome Centre, UCL, UK; Centre for Advanced Research Computing, UCL, UK
+Sainsbury Wellcome Centre, UCL, UK
+Sainsbury Wellcome Centre, UCL, UK
+Sainsbury Wellcome Centre, UCL, UK; Gatsby Computational Neurosicence Unit, UCL, UK
+
+Title: brainglobe-registration - registering 2D planes and 3D sub-volumes to a 3D atlas
+
+Abstract:
+The BrainGlobe Initiative was created to facilitate the development of Python-based tools for computational neuroanatomy. The initiative has three main goals: 1) providing specific tools for data analysis and visualisation, 2) maintaining core tools for development of interoperable software in Python, and 3) fostering a community of neuroscientists and developers to share knowledge, build software, and engage with the scientific and open-source community. BrainGlobe addresses the crucial need for interoperability in neuroscience research by offering a comprehensive suite of analysis and visualisation tools accessible to users across different platforms and compatible with multiple model organisms. At present, we maintain 17 packages which have 100+ contributors. 
+
+One of the maintained packages, brainglobe-registration, uses elastix to register 2D slices, 3D sub-volumes, and whole brain data to a BrainGlobe atlas. This is a crucial first step in many BrainGlobe-based analyses. Previously, the workflow relied on a manual selection of the specific 2D region, or 3D subvolume of the atlas to be used as the registration target, which is a time-consuming and error-prone process. To address this, we have implemented a new pre-processing step that uses bayesian optimisation to approximate the position of the imaging location within atlas space. The user can finetune this approximation before running the full registration pipeline. Through these efforts, we hope to provide an easy-to-use tool that can serve as an entry point to the BrainGlobe ecosystem for subsequent analysis and visualisation.
+
+Themes: ["Data processing and visualisation"]
+
+Keywords: microscopy, registration, neuroscience
+
+Gender of presenting author: Man
+
+Special requirements: 

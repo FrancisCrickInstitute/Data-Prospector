@@ -1,0 +1,23 @@
+Institution:
+Integrated Pathology Unit, Royal Marsden NHS Hospital Trust and the Institute of Cancer Research, London, United Kingdom
+Division of Radiotherapy and Imaging, Institute of Cancer Research, London, United Kingdom
+Queen’s University Belfast, Belfast, UK
+Royal Marsden NHS Hospital Trust, London, United Kingdom
+
+
+Title: P-MAT - a napari-based workflow for scale-independent quantification of the extracellular matrix and its topological descriptors
+
+Abstract:
+Background:
+Despite extracellular matrix quantification tools such as TWOMBLI , there are significant challenges in pre-processing a new set of whole slide images (WSI). Napari is an open-source python-based n-dimensional image visualization and analysis software platform.   Here we present P-MAT, a new software that facilitates pre-processing and quality control (QC) developed to address the challenges in analysing heterogeneous WSIs of the collagen matrix at scale with minimal computational cost and an interactive configuration built within open-source napari workflow. Moreover, P-MAT facilitates high-resolution visualisation and quantification of collagen matrix features. However, staining variation across formalin-fixed paraffin-embedded tumour samples makes high-throughput analysis challenging. Moreover, user-dependent QC of whole slide images (WSI) from large sample cohorts is impractical and subjective. To address this challenge the proposed P-MAT acts as a user interface to run on the entire cohort to generate scale-independent features.
+Workflow design:
+P-MAT incorporates an artifact correction and region handling for PSR-stained whole slide images and automated thresholding of tiles. P-MAT consistently filters the tiles based on a threshold selected interactively from the user interface (established at 80 percent by default). Our integrated approach performed for quantification, using effective multi-threading and multi-processing reduces computational cost at the whole slide level. At each step, the eligible tiles associated with regions of interest are stitched into a WSI to facilitate comparisons with the original image. 
+Conclusion:
+P-MAT serves as a high throughput end-to-end workflow for downstream quantitative analysis using tools such as the ImageJ plugin TWOMBLI1.  As such, users can comprehensively explore intra and inter-patient heterogeneity of the collagen matrix at scale with minimal computational burden.
+
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: Digital pathology, Whole slide image analysis, Analytic framework
+
+Gender of presenting author: Woman

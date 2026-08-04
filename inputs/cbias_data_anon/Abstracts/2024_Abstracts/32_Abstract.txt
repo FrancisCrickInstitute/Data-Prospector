@@ -1,0 +1,16 @@
+Institution:
+Department of Computer Science, City, University of London, UK
+Tumour-Stroma Signalling Lab, Universidad de Salamanca, Salamanca, Spain
+Tumour-Stroma Signalling Lab, Universidad de Salamanca, Salamanca, Spain
+Department of Computer Science, City, University of London, UK & The Institute of Cancer Research, UK
+
+Title: A comparative study of fibre tracing in biomedical images.
+
+Abstract:
+Identifying traces and features of elongated structures is a crucial task in many computer vision workflows. In biomedical applications, analysing traces of vasculature, nerves, or extracellular matrix fibres can provide insights into processes like angiogenesis or the impact of specific treatments. This paper demonstrates an objective comparison of six established methods (Edge detection, CT Fire, Scale Space, Twombli, U-Net and Graph-Based) alongside a new approach named Trace Ridges to trace biomedical images exhibiting fibre-like structures. Trace Ridges is a fully automated and fast algorithm that integrates a series of image-processing techniques including filtering, watershed transform, and edge detection, to achieve precise delineation of fibre-like structures rapidly. For the comparison, four biomedical datasets with diverse characteristics were chosen. The ground truth was established through manual delineation of the fibre-like structures. Three pre-processing filtering techniques were employed initially: no filtering, Gaussian low-pass and DnCnn, a deep-learning based filter. Three distance error metrics (total, average and maximum distance from traces to ground truth) and processing time were calculated. The results indicated that no single algorithm outperformed the others across all metrics. For the total distance error, which was deemed the most significative, Trace Ridges ranked first, followed by Graph Based, U-Net, Twombli, Scale Space, CT Fire and Edge detection. In terms of processing speed, Trace Ridges was the second fastest, only slightly slower than Edge Detection. Trace Ridges was employed to detect and analyse morphological differences in collagen structures as collagen concentration increased from 1.7 mg/ml to 6.6 mg/ml, using Second Harmonic Generation and Confocal Reflectance Microscopy images.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: Fibre tracing, Extracellular Matrix, Tracing algorithms
+
+Gender of presenting author: Man

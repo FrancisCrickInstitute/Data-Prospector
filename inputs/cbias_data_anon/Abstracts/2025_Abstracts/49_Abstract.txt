@@ -1,0 +1,28 @@
+Institution:
+Electron Microscopy STP, Francis Crick Institute, London, UK
+Rosalind Franklin Institute, Didcot, UK
+EMBL-EBI, Hinxton, UK
+Electron Microscopy STP, Francis Crick Institute, London, UK
+Cellular Analysis Facility, University of Glasgow, Glasgow, UK
+School of Biochemistry, University of Bristol, Bristol, UK
+Research Complex at Harwell, Rutherford Appleton Laboratory, Harwell, Didcot, UK
+Electron Microscopy STP, Francis Crick Institute, London, UK
+Software Engineering and AI STP, Francis Crick Institute, London, UK
+Software Engineering and AI STP, Francis Crick Institute, London, UK
+Rosalind Franklin Institute, Didcot, UK
+
+Title: A new Collaborative Computational Project for Volume Electron Microscopy
+
+Abstract:
+VolumeEM (vEM) is a group of techniques used to image biological material through depths of at least one micrometre at nanometre resolution. vEM is applied extensively in neuroscience to image brain tissue at a large enough scale to reveal functional units and at high enough resolution to locate synapses. vEM techniques can be applied to a wide range of systems, bridging the gap between the functional imaging of fluorescence microscopy and the molecular detail of cryoEM. Imaging produces datasets with typical sizes in the terabyte range, leading to many challenges in data management, processing and interpretation. 
+
+Through funding from the Digital Research Infrastructure and CoSeC, a consortium (Crick, EBI, RFI, Bristol, Glasgow, STFC) is developing the remit of a new Collaborative Computational Project (CCP-volumeEM) across community building, technical scoping, and skills development. The community faces issues in handling large datasets and segmenting and identifying complex objects, while minimising the cost and environmental impact of processing. Scoping studies will establish key areas for research software development. User training is also an important component, as well as fostering a cohort of software developers.
+
+
+Themes: ["Communities","Open science and FAIR data"]
+
+Keywords: Community, volume EM, software engineering, training
+
+Gender of presenting author: Man
+
+Special requirements: 

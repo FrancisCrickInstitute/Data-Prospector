@@ -1,0 +1,18 @@
+
+
+Institution: University of Bern
+
+Title: napari-morphodynamics: quantification of cellular dynamics made easy
+
+
+
+Abstract: The analysis of intensity and shape dynamics in single-cell time-lapse images comes with different challenges. It relies not only on an accurate segmentation of the single cell over time, but also on a precise split of the cell in different regions of interest (windows), which have to be tracked over time. The tracking challenge has already been tackled with the python package morphodynamics [1] that was adapted from the Windowing-Protrusion matlab code developed by the Danuser lab [2]. Morphodynamics performs windowing, tracking, signal extraction, data post-processing and visualization, but it requires knowledge in python programming. Here we present napari-morphodynamics: a napari plugin that allows a user-friendly access to the morphodynamics functions, and therefore has more appeal to the cell biology community, for which the functions have been developed. In addition to the morphodynamics functions the plugin wraps up the entire analysis from data import, cell segmentation, windowing, tracking and data visualization. A precise cell segmentation is not only the first step but also the foundation of this analysis, therefore napari-morphodynamics implements state-of-the art segmentation algorithms, such as cellpose, but also an in-house developed deep learning based pixel classifier [3]. As some of the processes in this plugin are computationally heavy, we have developed a spin-off plugin called napari-roidynamics, which allows to generate fixed geometries instead of precise segmentation and analyses intensity fluctuations in these regions of interest.
+
+[1] https://github.com/guiwitz/MorphoDynamics
+[2] https://github.com/DanuserLab/Windowing-Protrusion 
+[3] https://github.com/hinderling/napari_pixel_classifier 
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","New Tools\n","Open Science"]
+
+Additional Keywords: 

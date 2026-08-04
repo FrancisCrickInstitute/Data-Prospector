@@ -1,0 +1,18 @@
+Institution:
+Wolfson Light Microscopy Facility, University of Sheffield, Sheffield, S10 2TN, UK.
+Wolfson Light Microscopy Facility, University of Sheffield, Sheffield, S10 2TN, UK.
+Wolfson Light Microscopy Facility, University of Sheffield, Sheffield, S10 2TN, UK.
+
+Title: Image Analysis Challenges Within a Centralized Interdisciplinary Core Imaging Facility
+
+Abstract:
+The Wolfson Light Microscopy Facility at the University of Sheffield is an open access facility primarily aimed at supporting research in biological sciences, medicine and engineering.  We provide a wide range of advanced microscopes including widefield, confocal, AiryScan super-resolution and lightsheet modalities enabling imaging experiments that span a vast scale – from one-micron microorganisms to four-millimeter zebrafish embryos and with timescales that range from single timepoints to multi-day timelapses.  Imaging applications include 3D developmental imaging of whole organisms, timelapse imaging of cultured cells and organoids, wound healing assays and imaging of cells grown on synthetic substrates.  These diverse experiments generate a large volume of complex image data that requires timely and accurate analysis to provide meaningful insights into the underlying questions of interest. 
+Many facility users have limited prior knowledge of bioimage analysis.  To address this, our staff develop and deliver customized analysis methods and provide bioimage analysis training, with a strong focus on open-source tools like Fiji/ImageJ, Python, and napari.  This approach empowers users to perform their own analysis, promoting independence and reproducibility.  We present examples of common image analysis challenges we encounter, along with the in-house workflows we have developed to solve them.
+
+Themes: ["Imaging","Data processing and visualisation"]
+
+Keywords: microscopy, image analysis, core facility, challenges
+
+Gender of presenting author: Man
+
+Special requirements: none

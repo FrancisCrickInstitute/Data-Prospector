@@ -1,0 +1,12 @@
+
+
+Institution: University of Sheffield
+
+Title: Seeing the hidden interactions of our genome
+
+
+Abstract: Although we have sequenced the entire genome, we still do not understand how many diseases evolve and progress. This is partly due to the challenge of observing individual DNA molecules, which are only 2 nanometres wide and highly flexible. DNA can also form complex nanoscale polymeric structures, through “hidden” interactions with proteins and other molecules. Our Atomic Force Microscopy (AFM) techniques enable us to see these interactions at the nanometre scale for the first time, yet current analysis tools do not readily facilitate quantification of these observations. This project involves the use of machine learning techniques such as k-means clustering and DBSCAN to identify and quantify heterogeneity in DNA structure and the functional role it plays in unprecedented detail. We demonstrate the ability to automate detection of important interactions such as protein binding, exploring the impact that this has upon the three-dimensional conformation of DNA to enable characterisation of structural motifs. We exemplify our methods by investigating protein binding at varying levels of DNA supercoiling, characterising the structures for which binding affinity is strongest. Our methods demonstrate how AFM can be employed to precisely quantify and correlate DNA structure, function, and its interactions.
+
+Keywords: ["AI & Machine/Deep Learning","New Tools\n","Multi-Disciplinary","Open Science"]
+
+Additional Keywords: 

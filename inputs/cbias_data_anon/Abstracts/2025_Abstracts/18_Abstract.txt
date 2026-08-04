@@ -1,0 +1,21 @@
+Institution:
+Delft Center for Systems and Control, Delft University of Technology, Delft, The Netherlands
+Department of Imaging Physics, Delft University of Technology, Delft, The Netherlands
+Department of Imaging Physics, Delft University of Technology, Delft, The Netherlands
+Cell Biology, University Medical Center Groningen, Groningen, The Netherlands
+Cell Biology, University Medical Center Groningen, Groningen, The Netherlands
+Delft Center for Systems and Control, Delft University of Technology, Delft, The Netherlands
+Department of Imaging Physics, Delft University of Technology, Delft, The Netherlands
+
+Title: CLEMnet: Predicting Fluorescence-Like Labels Directly from Electron Microscopy
+
+Abstract:
+Electron microscopy (EM) reveals ultrastructure but offers limited molecular specificity. In practice, identity is added by expert annotation, EM-compatible labels (e.g., immunogold or genetically encoded tags), or correlative fluorescence microscopy (CLEM) - all time-consuming and hard to scale. We present CLEMnet, a deep CNN that predicts fluorescence-like labels directly from EM, trained on large (~16 GB) integrated CLEM datasets without manual labels. It maps EM→FM on tiles and stitches predictions to tissue scale. On rat pancreas and mouse tumor sections, predictions recapitulate FM (PCC 0.67 nuclei; 0.76 insulin; up to 0.86 under varied settings) while mitigating bleedthrough, vignetting, and registration errors. In a user study, predictions improved nuclei localization (recall 80% vs 58%; F1 76% vs 64%). Robust across SNR, pixel size, and landing energy, it transfers across cell types with minimal extra data. CLEMnet converts EM into interpretable, fluorescence-like maps at scale, accelerating insight without additional staining or exhaustive correlative imaging.
+
+Themes: ["Imaging","Data processing and visualisation","Applications"]
+
+Keywords: electron microscopy, fluorescence microscopy, correlative light and electron microscopy (CLEM), deep learning, bioimage analysis, virtual fluorescence labeling
+
+Gender of presenting author: Man
+
+Special requirements: 

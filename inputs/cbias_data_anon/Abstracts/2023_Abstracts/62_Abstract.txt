@@ -1,0 +1,12 @@
+
+
+Institution: 
+
+Title: Responsible stewarding of open-source analysis tools
+
+
+Abstract: Numerous new open-source image analysis scripts and plugins are released each year and offer an invaluable resource for the scientific community.  However, end users face challenges implementing these tools, particularly in cases where more than one tool exists for a specific analysis type, but yields different results. An example of this is the Costes automatic thresholding (CAT) and Manders' Overlap Coefficient (MOC) implementation in two widely-used ImageJ plugins: Coloc2 and JaCoP. These plugins employ distinct approximations of linear regression, yielding different slope and intercept coefficients for the regression line. Coupled with varying strategies for defining the final threshold in CAT, this inherently introduces disparities in auto thresholding and, consequently, MOC calculations between the plugins. Moreover error we identified in JaCoP in the MOC calculation formula after CAT results in the computation of pixel proportions remaining after thresholding, rather than the intended MOC. A more comprehensive analysis will delve into the advantages and drawbacks of various CAT implementations. Indeed, having been initially reported online by another source 2 years ago, the above discrepancy remains unresolved and unexplained. This serves as an example of a broader issue regarding continued review of similar/overlapping open source tools for commonly used analysis types, which can lead to misleading biological conclusions and problems with data reproducibility. We call for more effective and responsible community-wide mechanisms to disseminate such discrepancies to end users and provide clearer guidance around navigation of such issues. 
+
+Keywords: 
+
+Additional Keywords: 

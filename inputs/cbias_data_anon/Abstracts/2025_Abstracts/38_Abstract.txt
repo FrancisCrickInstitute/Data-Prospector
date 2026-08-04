@@ -1,0 +1,25 @@
+Institution:
+EMBL's European Bioinformatics Institute (EMBL-EBI), Hinxton, UK
+Institute of Toxicology and Genetics, Karlsruhe Institute of Technology, Karlsruhe, Germany
+EMBL's European Bioinformatics Institute (EMBL-EBI), Hinxton, UK
+Centre for Organismal Studies (COS) Heidelberg, Heidelberg University, Heidelberg, Germany
+Centre for Organismal Studies (COS) Heidelberg, Heidelberg University, Heidelberg, Germany
+Institute of Toxicology and Genetics, Karlsruhe Institute of Technology, Karlsruhe, Germany
+EMBL's European Bioinformatics Institute (EMBL-EBI), Hinxton, UK
+
+Title: Manual and automatic image-derived phenotypes to discover genetic variants associated with skeletal development in medaka (Oryzias latipes)
+
+Abstract:
+For the past 20 years, genome-wide association studies (GWAS) have been remarkably successful at discovering novel associations between genetic variation and complex traits. Historically, these traits have been manually condensed into observable, quantifiable phenotypes; however, with the advent of recent machine learning approaches, novel avenues have arisen to enable phenotypic representations that are more feature-rich, and capture biological characteristics with greater nuance. 
+
+Skeletogenesis is one of the most intricate processes in vertebrate development. Though it is highly conserved across phyla, the number and complexity of the genes and factors involved results in a large amount of both inter- and intraspecies variation. The spatial nature of the process further complicates efforts to devise a meaningful, lossless representation with traditional methods. The basic pathways of endoskeletal development are highly conserved, enabling comparative analysis with humans and other organisms. For this study, we used the teleost medaka as a model organism to investigate skeletogenesis: the Medaka Inbred Kiyosu-Karlsruhe (MIKK) panel, a near-isogenic panel consisting of 80 distinct genotypes, was leveraged as a unique genomic resource.
+
+To isolate likely causal variants, eight MIKK lines encompassing the full range of variation in vertebrae number were selected and bred towards an F2 population. Each individual was then phenotyped: first, by counting the number of vertebrae; then, training an autoencoder model with a CNN backbone to automatically extract a meaningful embedding space from whole fish image data. Both phenotypic representations were used to carry out GWAS, revealing significant associations with skeletogenesis at chromosomes 7, 10, 13 and 21.
+
+Themes: ["Modelling","Applications"]
+
+Keywords: gwas, image-derived phenotypes, autoencoder
+
+Gender of presenting author: Woman
+
+Special requirements: No

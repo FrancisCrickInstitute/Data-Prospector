@@ -1,0 +1,17 @@
+
+
+Institution: Francis Crick Institute
+
+Title: Exploiting napari for big data exploration
+
+
+Abstract: One of the most pressing issues facing the bioimaging community is the rise in data size, with biologists routinely acquiring large image volumes, while lacking an easy-to-use, open-source, freely-available multi-dimensional viewer for big data. Finding the best software and file format will aid in bridging the gap between biologists and image analysts, streamlining workflows with efficient reading of big data and user-friendly interaction with the data.
+
+Commercial software such as Imaris and Arivis address the issue, but are unable to support multiple OS platforms and are not freely available to the microscopy community. Open-source solutions, despite being more accessible, typically have inferior features such as the lack of 3D visualisation in BigDataViewer and limited support for next-generation file formats such as OME-Zarr in napari.
+
+We are developing a napari-based workflow prototype to optimise the process of big image visualisation with an emphasis on accessibility. By taking advantage of standard python libraries, open-source plugins and next generation file formats we are exploring and comparing different approaches to user-friendly big data interaction. This will ultimately support coordination between data acquisition and processing communities by providing a smooth and responsive means of viewing and interacting with big microscopy data in napari.
+
+
+Keywords: ["Big Data\n"]
+
+Additional Keywords: napari

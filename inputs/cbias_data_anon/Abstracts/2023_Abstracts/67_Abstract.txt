@@ -1,0 +1,12 @@
+
+
+Institution: 
+
+Title: A model system for evaluating Photosystem-II by High-Speed AFM, and the automated mapping of protein distributions in AFM data
+
+
+Abstract: During photosynthesis, photons of sunlight are absorbed by thylakoid membranes within chloroplasts, where large numbers of Light-Harvesting Complex (LHC) proteins act as dish antennas for channelling energy to Photosystem (PS) proteins, forming PS-LHC supercomplexes. This project aims to use High Speed Atomic Force Microscopy (HS-AFM) and fluorescence microscopy (FM) to record the assembly and disassembly of supercomplexes of PS-LHC proteins in real time, assessing the effect of membrane composition and pH. This will reveal the interaction strength and remodelling capabilities of these critically important Photosystem clusters. I am also interested in the analysis of AFM data, focussing on improvements to image alignment for Localisation AFM (LAFM) and the automated mapping of protein distributions in mixed populations. To resolve sub-molecular protein structural features in HS-AFM data, LAFM algorithms can be applied to identify and localise positions of peaks. A key part of the analysis workflow is the alignment of particles across multiple frames, to reconstruct a single highly resolved image, which will benefit from incremental improvements to image alignment. Finally, I have begun working on the automated identification of proteins in AFM data by cross correlation with simulated structures, to allow quick determination of the contents of mixed populations. 
+
+Keywords: 
+
+Additional Keywords: 

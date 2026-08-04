@@ -1,0 +1,14 @@
+
+Institution:
+Michael Sars Centre, University of Bergen, Norway
+
+Title: MorphoSnaker: A Python Package for Bioimage Processing and Single-Cell Shape Factor Analysis
+
+Abstract:
+We hypothesize that the temporal gene expression of a cell and its neighbours contains sufficient information to predict their morphology.  In an era of high-resolution microscopy and spatial omics, we can now capture these modalities in 4D and use them to attempt to crack the morphogenetic code.  For this, we register these modalities of developing Ciona sp. embryos, which have invariant development and small numbers of cells, yet exhibit a complete set of cell types and tissues. This simplified complexity makes it a highly reproducible biological system at the cellular level, optimal for measuring gene expression and morphological traits at different temporal and spatial scales. Here, we introduce the preliminary version of 'Morphosnaker', a Python package designed for processing image data, including formatting, denoising, and segmentation. Additionally, it allows extracting single-cell shape factors (scSF) of segmented images, enabling comprehensive shape analysis. The denoising and segmentation modules centralize existing state-of-the-art tools (e.g., Cellpose, Stardist, Noise2Void, etc.) to facilitate pipeline building and tool comparison. The scSF module allows to extract meaningful shape factors from segmented images (2D and 3D), their analysis and visualisation to gain biological insights. We demonstrate MorphoSnaker’s application on a time series of Ciona sp. images, where we successfully recover certain cell types based on scSF analysis. Overall, MorphoSnaker is a Python package facilitating image processing and gain biological insights from scSF.
+
+Themes: ["BioMedical Applications of Image Analysis","Community Initiatives"]
+
+Keywords: shape factors, morphology, development 
+
+Gender of presenting author: Man

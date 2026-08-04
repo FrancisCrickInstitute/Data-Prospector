@@ -1,0 +1,17 @@
+Institution:
+Department of Computer Science, City, University of London, UK, The Institute of Cancer Research, UK,
+The Institute of Cancer Research, UK, The Royal Marsden Hospital, UK
+The Institute of Cancer Research, UK, The Royal Marsden Hospital, UK
+The Institute of Cancer Research, UK, The Royal Marsden Hospital, UK
+The Institute of Cancer Research, UK, The Royal Marsden Hospital, UK, Queen’s University Belfast, Northern Ireland
+
+Title: Identification of rare cell phenotypes in Sarcoma H&E whole slide images by a combination of deep learning and image processing approaches.
+
+Abstract:
+Rare cells, i.e., those with a lower abundance within a population, play an important part in the conditions of health and disease of an organism. In Sarcoma, the presence of these cells can reveal the state of immune response or angiogenesis among other conditions [1]. Thus, its identification is crucial and one way to identify rare cells is through its phenotype [2]. Pooling of rare cells from large whole slide images (WSI) for training is tedious and time-consuming. Deep learning techniques [3, 4] have been widely used for cellular segmentation and identification. However, an important pre-requisite of deep learning approaches mandates large number of manually annotated training data, which is not always available. In this work we propose a combination of deep learning with a traditional image analysis algorithm for the identification of plasma cells from diagnostic and routine haematoxylin and eosin WSI. Unified Segmentation and Classification models based on m-DRDIN [5] were used for baseline segmentation and classification of cells into: endothelial, mesenchymal, lymphocyte, stromal and unknown phenotype. Classification of mesenchymal cells and lymphocytes was refined using image analysis algorithm, which exploted the ”fried egg” phenotype [6] by identifying the nuclei (i.e., the yolk) and the cytoplasm (i.e., the white) of the cells based on a combination the intensity of hue and saturation in the HSV space and morphological characteristics to discard very large or elongated cells, which were considered to be tumour cells, and also those which had little contrast between nuclei and cytoplasm. To validate the output, several hundred cells were manually annotated by an experienced pathologist (TLS) in six different whole slide images. Recall varied between 0.75 and 0.96, depending on the ”strictness” of the morphological characteristics. A higher recall would imply a lower precision, which was not measured.
+
+Themes: ["AI: What Can('t) it do?"]
+
+Keywords: Digital Pathology, Deep Learning, Cell Segmentation
+
+Gender of presenting author: Man

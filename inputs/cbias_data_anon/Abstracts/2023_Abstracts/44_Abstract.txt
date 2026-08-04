@@ -1,0 +1,24 @@
+
+
+Institution: Imperial College London
+
+Title: Development of cluster analysis tools for high throughput single molecule localisation microscopy 
+
+
+
+
+
+Abstract: With single molecule localisation microscopy (SMLM), nanoarchitecture can be interrogated to explore biological mechanisms. We are developing high throughput SMLM instrumentation using easySTORM [1-2] implemented on the open-source openFrame platform [3]. To process large SMLM datasets on a practical timescale, we are working towards HPC-based cluster analysis. Currently, we are exploring two unbiased rapid cluster analysis techniques requiring no user-defined input parameters. The first is a multi-component pair correlation function model-based fitting pipeline that can analyse SMLM data of 100 nuclei in 40 minutes parallelised per nucleus on 12-core HPC nodes (each with 128 GB RAM) and yields similar results to established methods such as DBSCAN with simulated datasets. When applied to high throughput easySTORM data of (H3-AF647-labelled) chromatin structure in ovarian cancer cells treated with platinum chemotherapy, our first results indicate a decompaction of chromatin structure in treatment-resistant cells, which may indicate an underlying epigenetic mechanism driving resistance. The second technique currently utilizes a rapid model-based Bayesian approach to determine the optimum values for cluster radius search and density threshold [4] and can similarly process 100 nuclei in 40 minutes. This preliminary work indicates that high throughput SMLM with such cluster analysis pipelines can become a practical assay modality.  
+ 
+
+[1] Kwakwa et al., easySTORM: a robust, lower-cost approach to localisation and TIRF microscopy, J Biophotonics (2016) http://dx.doi.org/10.1002/jbio.201500324  
+
+[2] Lightley et al., Robust optical autofocus system utilizing neural networks trained for extended range and time-course and automated multiwell plate imaging including single molecule localization microscopy, J Microscopy (2021) https://doi.org/10.1111/jmi.13020  
+
+[3] Lightley et al., Robust, single-shot, optical autofocus system utilizing cylindrical lenses to provide high precision and long range of operation, J Microscopy (2023) https://doi.org/10.1101/2022.07.14.498938  
+
+[4] Rubin-Delanchy et al., Bayesian cluster identification in single-molecule localization microscopy data. Nat Methods (2015). https://doi.org/10.1038/nmeth.3612  
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: Cluster analysis, SMLM, high throughput, epigenetics, chromatin, ovarian cancer 

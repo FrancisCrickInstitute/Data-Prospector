@@ -1,0 +1,13 @@
+
+
+Institution: The Francis Crick Institute / Newcastle University
+
+Title: CLEM-Reg: An automated point cloud based registration algorithm for correlative light and volume electron microscopy
+
+
+
+Abstract: Correlative light and volume electron microscopy (vCLEM) is a powerful imaging technique that enables visualisation of fluorescently labelled proteins within their ultrastructural context on a subcellular level. Currently, expert microscopists find the alignment between acquisitions by manually placing landmarks on structures that can be recognised in both imaging modalities. The manual nature of the process severely impacts throughput and may introduce bias. This paper presents CLEM-Reg, a workflow that automates the alignment of vCLEM datasets by leveraging point cloud based registration techniques. Point clouds are obtained by segmenting internal landmarks, such as mitochondria, through a pattern recognition approach that includes machine-learning. CLEM-Reg is a fully automated and reproducible vCLEM alignment workflow that requires no prior expert knowledge. When benchmarked against experts on two newly acquired vCLEM datasets, CLEM-Reg achieves near expert-level registration performance. The datasets are made available in the EMPIAR public image archive for reuse in testing and developing multimodal registration algorithms by the wider community. A napari plugin integrating the algorithm is also provided to aid adoption by end-users. The source-code for CLEM-Reg and installation instructions can be found at https://github.com/krentzd/napari-clemreg.
+
+Keywords: ["Big Data\n","New Tools\n","AI & Machine/Deep Learning"]
+
+Additional Keywords: vCLEM, Alignment automation, Point cloud registration, Reproducible workflow, Napari

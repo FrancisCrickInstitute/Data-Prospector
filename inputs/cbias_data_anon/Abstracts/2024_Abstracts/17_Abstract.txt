@@ -1,0 +1,19 @@
+Institution:
+Institute of Psychiatry, Psychology & Neuroscience, King's College London
+Institute of Psychiatry, Psychology & Neuroscience, King's College London
+Centre for Ultrastructural Imaging, London, King's College London
+Centre for Ultrastructural Imaging, London, King's College London
+Mathematical Science Research Laboratory, Nikon Corporation
+Centre for Ultrastructural Imaging, London, King's College London
+Institute of Psychiatry, Psychology & Neuroscience, King's College London
+
+Title: Correlating synaptic structure with function using a novel vCLEM workflow
+
+Abstract:
+ Electron microscopy techniques represent the gold standard for the study of the structure of individual synapses. However, the measurement of functional and structural properties at the same synapse has proven extremely challenging. Volume Correlative Light and Electron Microscopy (vCLEM) allows the selective ultrastructural investigation of fluorescently labelled synapses, with known functional properties. This study presents a novel workflow to efficiently navigate across spatial scales, from light microscopy mouse brain images (mm scale) to highlight individual synapses to be analyzed using electron tomogram imaging (nm scale). The core challenge addressed is semi-automated the accurate and rapid registration of images across different microscopy techniques and scales [2, 3]. To overcome this, a semi-automated image registration algorithm is developed, which combines object segmentation and image warping. A dedicated viewer is also introduced to visualize the registration results and guide ROI selection and tissue sectioning. The workflow is successfully applied to mouse brain tissue, demonstrating its effectiveness in navigating from entire tissue blocks with preserved fluorescent signals to synapses on an axon. Figure 1 shows an overlay of TEM tomogram and synapse fluorescence. This research provides a significant advancement in vCLEM by streamlining the process and enabling more efficient analysis of biological samples. 
+
+Themes: ["Smart Microscopy"]
+
+Keywords: Neuroscience, Imaging workflow, Volume Correlative Light and Electron Microscopy
+
+Gender of presenting author: Man

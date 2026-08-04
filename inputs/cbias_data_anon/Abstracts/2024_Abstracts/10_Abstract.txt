@@ -1,0 +1,15 @@
+Institution:
+King's College London, London
+King's College London, London
+King's College London, London
+
+Title: Pitfalls of common image quality metrics used for assessing fluorescence microscopy data.
+
+Abstract:
+Image analysis is a near universal component of fluorescence microscopy experiments. The inherently noisy process of image formation is frequently compounded by the need to spread the limited photon budget across many repeated images of the same sample. The relatively low image quality that results can make quantifying structure challenging or unreliable.  Often image processing/restoration algorithms are used with the aim of improving image quality.  Many metrics are used to quantify how successful these processes are, such as Pearson’s correlation, NRMSE, PSNR, SSIM, etc. as a proxy for how well the biological information is reproduced in the image. All of these require comparison with a reference image and some (e.g. SSIM) incorporate elements of human subjectivity. None were developed specifically for microscopy images, which are typically much more sparse and have very different intensity distributions to natural images. This leads to two questions we begin to answer here with simulation and experimental data. Firstly, how well do these metrics replicate image quality in fluorescence microscopy and are there any specific problems or procedures to use in these applications. Secondly, how effective are specific metrics a reliable predictor of the success/reliability of downstream quantification the biological structure of interest
+
+Themes: ["Smart Microscopy"]
+
+Keywords: image quality, fluorescence microscopy, Analysis 
+
+Gender of presenting author: Man

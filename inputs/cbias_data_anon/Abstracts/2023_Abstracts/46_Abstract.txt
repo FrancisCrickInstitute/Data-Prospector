@@ -1,0 +1,13 @@
+
+
+Institution: Max Delbrück Center for Molecular Medicine
+
+Title: Style transfer and artefact-free stitching for generative AI in large multidimensional bioimages
+
+
+Abstract: In this work we address two problems that hinder the application of deep learning (DL) models in bioimage analysis. First, DL models often fail to adapt to out-of-domain data at test time. This means that models trained on one dataset may perform poorly when applied to a second dataset which differs too much from the first. In bioimaging, fully annotated datasets are often limited to specific domains or organelles, such as 2D segmentations of nuclei. It can thus be difficult to use DL models or datasets when analysing data acquired using different modalities, acquisition settings or organelles. Second, bioimages predicted by DL models, often need to be assembled from smaller patches because full images are too large to load into a model. However, this frequently leads to stitching artefacts which reduces image quality and can hamper downstream analysis.
+Here, we address these problems by adapting a stitching algorithm, which we previously proved to be completely artefact-free in Unet-based architectures, for the use in generative DL models such as cycleGAN. We show for large FIB-SEM datasets the stitching-artefact-free style transfer between different datasets and compare performance in 2D, 2.5D and 3D. We show how this style transfer can improve segmentations on out-of-domain datasets and demonstrate it by fully segmenting the mitochondrial membranes of a previously completely unannotated FIB-SEM dataset of a naked molerat.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Big Data\n"]
+
+Additional Keywords: 

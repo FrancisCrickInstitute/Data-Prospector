@@ -1,0 +1,20 @@
+Institution:
+BioImaging Facility, The Netherlands Cancer Institute, Amsterdam, NL
+BioImaging Facility, The Netherlands Cancer Institute, Amsterdam, NL
+Functional Oncogenomics, The Netherlands Cancer Institute, Amsterdam, NL
+Precision Cancer Immunotherapy, The Netherlands Cancer Institute, Amsterdam, NL
+Functional Oncogenomics, The Netherlands Cancer Institute, Amsterdam, NL
+
+Title: Detecting immunological synapses in patient samples through analysis of Imaging Flow Cytometry data
+
+Abstract:
+Immunological synapses are transient structures formed at the interface between lymphocytes and antigen-presenting cells. To assess the efficacy of cancer immunotherapy responses, we present a bioimage analysis workflow for quantifying cell interactions and identifying immune synapses in cancer patient samples using Imaging Flow Cytometry (IFC).
+
+IFC acquires brightfield and fluorescence images of cells as they pass through the analyzer/sorter, and provides an opportunity to capture cellular interactions in large samples. Overcoming the limitations of the existing proprietary analysis software, we preprocess and merge exported tiff files into multichannel image stacks and employ Fiji scripting for in-depth image analysis.
+By combining several open-source components (Cellpose, CLIJ2) the integrated workflow allows for automated cell segmentation based on fluorescence markers and brightfield images, classification of various immune and tumor cell types, detection and quantification of cell-cell interfaces, and assessment of marker enrichment at immune synapses.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: immune cells, Imaging Flow Cytometry, cell interactions
+
+Gender of presenting author: Man

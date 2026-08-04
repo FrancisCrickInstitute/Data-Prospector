@@ -1,0 +1,19 @@
+
+
+Institution: University of Sheffield
+
+Title: Automated segmentation and analysis methodologies for AFM images of porous materials; the cell wall of bacteria case study
+
+
+Abstract: The World Health Organisation has said that Antimicrobial Resistance (AMR) is a global health crisis that needs urgent solutions. The current antibiotics do not work to combat common bacterial infections because the cells are developing resistance mechanisms. One of the most common antibiotic targets is the bacterial cell wall. We need to shed light into the mechanisms of synthesis and destruction of the cell wall by the current antibiotics to find better solutions against AMR bacterial strains. In this project, we deciphered the molecular architecture (on the order of 1 nm) of the bacterial cell wall using atomic force microscopy (AFM). After years of research, the conclusion is that the cell wall, composed mainly of peptidoglycan is a highly porous heterogeneous hydrogel with four different architectures [1]. To understand this complex semi-3D architecture there is an urgent need of new tools of automated image analysis. Two main approaches have been developed using a combination of several softwares - Gwyddion, FIJI and MATLAB. The first approach is to transform the AFM data into a stack of 2D binary slices to detect and analyse the pores of this heterogeneous mesh in each slice and to reconstruct it back representing the isolated pores in 3D as a tomogram. The second approach is focused on the molecular fibres that form this mesh material using ridge detection routines and skeletonise the image to measure the fibre characteristics and their orientation [2]. These two novel approaches bring the AFM image analysis closer to other microscopies and will allow many applications both in biology and engineering fields. 
+
+References:
+[1] L. Pasquina-Lemonche*, J. Burns*, et al. Nature, 582, 294-297 (2020). 
+[2] O. Meacock*, L. Pasquina-Lemonche*, W. M Durham, E. Garner, S. J Foster, J. K Hobbs (in preparation).
+
+
+
+Keywords: ["Segmentation","New Tools\n","3D/4D/ ... nD Data\n","Multi-Disciplinary"]
+
+Additional Keywords: AFM (Atomic Force Microscopy)
+Porous materials

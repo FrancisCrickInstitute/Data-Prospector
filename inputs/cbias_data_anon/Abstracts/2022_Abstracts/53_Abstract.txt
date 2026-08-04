@@ -1,0 +1,12 @@
+
+
+Institution: King’s College London, BHF Centre of Research Excellence 
+
+Title: High‐content screening for target and (bio)therapeutics discovery
+
+
+Abstract: The application of high-content screening using genome-wide libraries of siRNAs, crRNAs, microRNAs and small compounds in cell-based assays offers a unique opportunity to gain new insights into the intricate molecular networks underlying complex biological and disease-relevant processes. High-content screening allows systematic, multiparametric analysis of complex cellular phenotypes in response to multiple experimental treatments, for a high number of cells, at single-cell level. By using large-scale microscopy-based screening approaches, we have identified and characterized multiple cellular factors and non-coding RNAs implicated in different biological processes and pathologies, including cardiovascular disorders (e.g. cardiomyocyte proliferation, cardiac fibroblast differentiation and ECM deposition), infections (e.g. bacterial pathogens, virus and parasites) and cancer signalling (e.g. YAP signalling). Overall, these studies have uncovered novel and unexpected molecular players and pathways, revealing novel opportunities for therapeutic intervention.
+
+Keywords: ["Segmentation","High-Throughput","Multi-Disciplinary"]
+
+Additional Keywords: High-content microscopy

@@ -1,0 +1,23 @@
+Institution:
+Centre for Cell Imaging, University of Liverpool
+Institute of Life Course and Medical Science, University of Liverpool
+Institute of Life Course and Medical Science, University of Liverpool, St. Paul’s Eye Unit, Royal Liverpool University Hospital
+Centre for Cell Imaging, University of Liverpool
+Institute of Life Course and Medical Science, University of Liverpool, St. Paul’s Eye Unit, Royal Liverpool University Hospital
+Institute of Systems, Molecular and Integrative Biology, University of Liverpool
+
+Title: Towards developing inhibitors of the Pseudomonas aeruginosa exotoxin U (ExoU) with high throughput imaging and analysis
+
+Abstract:
+High throughput time-lapse image acquisition and analysis is an extremely powerful tool for drug screening. Here we present a complete workflow to screen promising drug inhibitors against a large biobank of clinical isolates of Pseudomonas aeruginosa in a clinical corneal infection model. 
+A human corneal epithelial cell line (HCE-t) was cultured to 80% confluency in 96-well plates prior to infection with a clinical strain of P. aeruginosa. In each 96-well plate, two concentrations of each compound were tested in duplicate against seven strains of P. aeruginosa along with the appropriate controls, including no infection and chemically lysed cells. Following bacterial inoculation, the HCE-t cells were stained with calcein-AM and ethidium homodimer (LIVE/DEAD™ cytotoxicity stain, Invitrogen) and imaged on a Zeiss Cell Discoverer 7 (CD7) every 30 mins for eight hours. Following image acquisition, we utilised the built-in Zen macro language to automate the concatenated procedures of pre-processing and analysis in Zen Blue. rom the numerical results files, population averages and live/dead ratios over time are calculated and plotted per well through a python script, implemented as a Jupyter notebook, to enable quantitative evaluation of the experimental outcome. 
+Our assay vastly enhanced our ability to understand the cellular effects of the compounds over time and gain valuable insight into host pathogen-interactions as well as validate ExoU inhibitor activity in different clinical strains of P. aeruginosa. Additionally, the quantitative results provide greater granularity of the infection and/or treatment time courses and therefore more thorough evaluation of the applied treatment compared to start and end-point manual imaging.
+
+
+Themes: ["Data processing and visualisation","Imaging","Open science and FAIR data","Applications"]
+
+Keywords: high throughput, screening, automated analysis
+
+Gender of presenting author: Woman
+
+Special requirements: 

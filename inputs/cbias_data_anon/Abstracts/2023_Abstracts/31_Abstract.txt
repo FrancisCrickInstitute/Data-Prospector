@@ -1,0 +1,13 @@
+
+
+Institution: Crick-GSK Biomedical LinkLabs
+
+Title: The long isoform of the COPD-associated target FAM13A regulates cilia function and controls mucociliary transport in airway epithelial cells
+
+
+Abstract: The FAM13A locus is associated with increased susceptibility to several respiratory diseases including chronic obstructive pulmonary disease (COPD), idiopathic pulmonary fibrosis and asthma. However, the physiological role of FAM13A is currently largely unknown. Two major protein isoforms are expressed at the human FAM13A locus: a ‘long’ and a ‘short’ isoform. Current data suggests these isoforms have differential expression patterns and potentially divergent functions. To study FAM13A function in the lung epithelium, we use human bronchial epithelial cells differentiated at the air-liquid interface, to generate ciliated organotypic models of the airway epithelium. In these cultures, the FAM13A long isoform was predominately expressed in multiciliated cells, and FAM13A long isoform-deficient cultures showed no defects in differentiation at the air-liquid interface or in multiciliogenesis. To test cilia function in our ciliated airway models we performed live imaging of fluorescent bead movement across their apical surface. Two independently developed motility data analysis pipelines were applied to movies of these mucociliary transport assays and demonstrated that deficiency of the FAM13A long isoform impacts cilia co-ordination. FAM13A requirement for correct ciliary function was confirmed in vivo in Xenopus embryos whose epidermis represents a model for airway epithelia. Together this suggests that alterations in FAM13A expression may affect susceptibility to respiratory diseases such as COPD through deficiencies in mucociliary clearance.
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: 

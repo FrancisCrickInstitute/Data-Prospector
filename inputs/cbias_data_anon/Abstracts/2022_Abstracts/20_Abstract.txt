@@ -1,0 +1,12 @@
+
+
+Institution: University College London
+
+Title: Biomechanics of the vertebral endplates analysed using in situ synchrotron phase contrast tomography and digital volume correlation
+
+
+Abstract: The vertebral endplates act as a mechanical interface between the soft tissues of the intervertebral discs and hard tissues of the vertebrae. Failure of the endplates has been linked to spinal pathologies like disc degeneration. The macroscopic mechanical properties of the endplates are greatly influenced by their microstructure. This study uses high resolution synchrotron imaging coupled with digital volume correlation (DVC) to quantify microscale strains across whole small animal joints. Rat spine segments were imaged using phase-contrast synchrotron tomography at I13-2 Diamond Light Source with a voxel size of 1.625 µm. Axial compression was applied to the samples, with samples imaged after each load step. The endplates were segmented, and a tetrahedral mesh generated in Avizo. Point clouds for DVC were created from the nodes of the mesh. DVC analysis was run for whole endplates for each load step to measure displacement fields; strains were calculated from the displacement fields. The calculated strain fields were heterogenous at the macro and microscales, with high strains observed centrally. These results improve our understanding of how loads are transmitted through the spine and will aid the development of computational models and design of medical implants.
+
+Keywords: ["3D/4D/ ... nD Data\n","Multi-Disciplinary","New Tools\n","Segmentation"]
+
+Additional Keywords: Biomechanics

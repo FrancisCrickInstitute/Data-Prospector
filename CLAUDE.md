@@ -53,7 +53,7 @@ Criteria extraction (1 call, once)  →  Orchestrator (1 call)  →  Workers (pa
   swapping in a new `PipelineConfig` for a different domain.
 - **Orchestrator**: given the task report + criteria + input metadata, designs a minimal architecture to
   satisfy exactly what the criteria calls for — no more, no less — typically `load_data()` and `main()`,
-  but not hardcoded to only that shape (see `ORCHESTRATOR_PROMPT`). Returns an `<analysis>` block and a
+  but not hardcoded to only that shape (see `ORCHESTRATOR_PROMPT_PREFIX`/`_SUFFIX`). Returns an `<analysis>` block and a
   `<tasks>` list parsed by `parse_tasks()`.
 - **Workers**: one parallel LLM call per task (`asyncio.gather` in `_call_worker`), each implementing a
   single function to spec with no helpers, no defensive try/except.
@@ -135,16 +135,32 @@ The pipeline is retargeted entirely through `PipelineConfig` (`config.py`) — n
   different regions of the solution space with no extra LLM calls.
 
 Then wire the new config into `app.py`'s `--config` choices. Note: `trello_config.py` currently
-references a `python-analysis:latest` Docker image that this repo's `Dockerfile` does not build (only
-`bia-analysis:latest` is defined) — building that image is a prerequisite for the trello config to
-validate execution.
+references a `python-analysis:latest` Docker image that this repo's `Dockerfile` does not build (it
+defines `bia-analysis` and `cbias-analysis` targets, not `python-analysis`) — building that image
+yourself is a prerequisite for the trello config to validate execution.
 
 ### Structured I/O convention
 
-All system/message prompt templates (`ORCHESTRATOR_PROMPT`, `WORKER_PROMPT`, `COMPILER_PROMPT`,
-`REQUIREMENTS_VALIDATOR_PROMPT`, `CRITERIA_PROMPT`, and their `*_SYSTEM` counterparts) live in
-`prompts.py`, imported into `pipeline.py` via `from prompts import *`. `pipeline.py` itself holds no
-prompt text — only the orchestration logic and the parsing helpers below.
+All system/message prompt templates (`ORCHESTRATOR_PROMPT_PREFIX`/`ORCHESTRATOR_PROMPT_SUFFIX`,
+`WORKER_PROMPT_PREFIX`/`WORKER_PROMPT_SUFFIX`, `COMPILER_PROMPT_PREFIX`/`COMPILER_PROMPT_SUFFIX`,
+`REQUIREMENTS_VALIDATOR_PROMPT_PREFIX`/`REQUIREMENTS_VALIDATOR_PROMPT_SUFFIX`, `CRITERIA_PROMPT`, and
+their `*_SYSTEM` counterparts) live in `prompts.py`, imported into `pipeline.py` via
+`from prompts import *`. `pipeline.py` itself holds no prompt text — only the orchestration logic and
+the parsing helpers below.
+
+The orchestrator, worker, compiler, and requirements-validator prompts are each split into a
+prefix/suffix pair so their callers can cache the prefix via `llm_call`'s `cache_prefix` argument,
+instead of repaying full price for it on every call:
+- `_run_one_design`'s orchestrator call: prefix is report/input_data/criteria, identical across every
+  design and iteration in a run; suffix is feedback (grows each iteration)/stance/seed_section, which vary.
+- `_call_worker`: prefix is report/input_data/library_notes/domain_notes, identical across every task in
+  a design; suffix is function/description/input/output, which vary per task. Weakest of the four to
+  actually hit cache, since same-iteration workers fire in parallel via `asyncio.gather` and mostly race
+  past each other - it pays off reliably from the second iteration onward instead.
+- `compile_script`: prefix is analysis/functions/library_notes/seed_section, identical across a
+  design's sequential compile/execute retries; suffix is error_feedback + the fixed rules/instructions.
+- `validate_requirements`: prefix is report + criteria, identical across every design's validation call
+  in an entire run; suffix is the script/execution output, which vary per design.
 
 All LLM prompts/responses use XML tags (`<analysis>`, `<tasks>`, `<task>`, `<response>`, `<criteria>`,
 `<criterion met="...">`, `<feedback>`) parsed via `extract_xml()` / `parse_tasks()` in `pipeline.py`,
@@ -153,6 +169,6 @@ model). When editing prompts, preserve these tags — downstream parsing depends
 
 ### Generated-script conventions (enforced via prompts, not code)
 
-Every compiled script is required (per `COMPILER_PROMPT`) to start with `# -*- coding: utf-8 -*-` and
+Every compiled script is required (per `COMPILER_PROMPT_SUFFIX`) to start with `# -*- coding: utf-8 -*-` and
 have `main()` call `sys.stdout.reconfigure(encoding='utf-8')` as its first line, so UTF-8 output (emoji,
 special characters) is safe across platforms inside the Docker container.

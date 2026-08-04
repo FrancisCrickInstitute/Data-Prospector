@@ -64,9 +64,13 @@ def extract_input_metadata(directory: str) -> str:
 
 CONFIG = PipelineConfig(
     orchestrator_model="claude-opus-4-8",
-    worker_model="claude-sonnet-5",
-    compiler_model="claude-opus-4-8",
+    worker_model="deepseek-v4-pro",
+    compiler_model="deepseek-v4-pro",
     requirements_evaluator_model="claude-sonnet-5",
+    angle_model="deepseek-v4-pro",
+    # D5 judging: frontier tier, matching orchestrator_model - once req_score is gone these two
+    # judges (insight/soundness) are the entire quality bar (DIVERGER_PLAN.md §5).
+    judge_model="claude-opus-4-8",
     docker_image="python-analysis:latest",
     available_libraries=AVAILABLE_LIBRARIES,
     domain_notes=DOMAIN_NOTES,

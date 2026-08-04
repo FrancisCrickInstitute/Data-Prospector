@@ -1,0 +1,16 @@
+
+
+Institution: University of Edinburgh
+
+Title: Deep-learning based classification of segmented objects using fluorescence data
+
+
+Abstract: The last two decades have seen major changes in the way microscopy data are acquired and analysed. Automated microscopes and improved sensors have made it possible to collect large amounts of data, from which quantitative information can be extracted thanks to advances in image analysis and computer vision. In particular, segmentation algorithms allow detecting objects of interest such as cells in an image. An outstanding challenge is however the automated annotation of segmented objects, for example based on a fluorescence image of a structure of interest. Rule-based algorithms can detect and segment objects, but they are often limited to precise cases such as detection of fluorescent spots, and can be challenging to apply to the detection of more complex patterns.
+Here, we propose a deep-learning based algorithm that classifies segmented objects based on a matching fluorescence image. We demonstrate the usefulness of this approach by using it to classify E. coli cells labelled with a RecA fluorescent fusion protein. RecA is implicated in the repair of DNA double-strand breaks, and has been reported to either be diffuse in the cell, form fluorescent foci, or flexible filaments [1, 2]. Our Unet-based model was able to classify these three different types of structures with high accuracy, thus enabling high-throughput annotation of large datasets.
+
+[1] Bell et al. Trends in Biochemical Sciences, 2016
+[2] Wiktor et al. Nature, 2021
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","New Tools\n"]
+
+Additional Keywords: 

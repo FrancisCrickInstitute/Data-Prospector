@@ -1,0 +1,26 @@
+Institution:
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+Facility for Imaging by Light Microscopy, Imperial College London, UK
+Electron Microscopy, Francis Crick Institute, London, UK
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+ICH Light Microscopy Facility, UCL, London, UK
+Laboratory for Molecular and Cell Biology, UCL, London, UK
+
+Title: Train the Trainers in Bioimage Analysis: a community initiative from the RMS DAIM
+
+Abstract:
+The Royal Microscopical Society Data Analysis in IMaging (RMS DAIM), with the support of the Crick and Partners Networking Fund, has organised a “Train the Trainers in Bioimage Analysis” workshop in June 2025 at University College London.
+The Train the Trainers initiative aimed to establish and disseminate guidelines on how to organise courses and train researchers in bioimage analysis. Attendees of the Train the Trainer session became part of a network that provides local expertise and creates efficient channels for the dissemination of knowledge and good practices in bioimage analysis.
+The event was free, and travel and accommodation support was available for attendees outside the London area (max £100 pp).
+Participants were selected based on their expertise and role as trainers in bioimaging facilities or research groups. The target audience included researchers with knowledge of bioimage analysis principles who wished to improve their skills in providing training.
+Here, we present our experience in organising such an event, our take-home messages and feedback from the attendees.
+
+
+Themes: ["Imaging","Data processing and visualisation","Communities","Open science and FAIR data"]
+
+Keywords: training, bioimage analysis, community
+
+Gender of presenting author: Prefer not to say
+
+Special requirements: no

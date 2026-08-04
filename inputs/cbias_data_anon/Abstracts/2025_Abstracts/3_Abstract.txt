@@ -1,0 +1,21 @@
+Institution:
+Advanced Research Computing Centre, UCL, London, UK
+Advanced Research Computing Centre, UCL, London, UK
+Mechanical Engineering Department & Advanced Research Computing Centre, UCL, London, UK
+scalable minds GmbH, Potsdam, Germany
+scalable minds GmbH, Potsdam, Germany
+scalable minds GmbH, Potsdam, Germany
+
+
+Title: The HEFTIE Project: tools and training for getting started with OME-Zarr
+
+Abstract:
+As bio-imaging datasets grow larger, there is increasing need for specialised, chunked file formats such as OME-Zarr. These formats split large, N-dimensional images into small 'chunks' that can be accessed individually. This allows massive datasets (terabytes in size) to be browsed on a standard laptop from local or remote cloud storage. While adoption of these formats is growing in the bioimaging community, they remain challenging to use for newcomers. To enable more researchers to use OME-Zarr, the HEFTIE project has created three freely available resources. First, we ran benchmarks for read time, write time and compression ratio for various combinations of datasets and compression algorithms. Our findings are summarised into an online report, which will help researchers to select appropriate values when writing their images to OME-Zarr. Second, we created an online textbook to explain the key concepts of OME-Zarr images, along with worked examples in Python. Third, we added and improved features for visualizing and annotating large OME-Zarr images to Webknossos, including selective segment visibility and rotating orthogonal viewports.
+
+Themes: ["Data processing and visualisation","Open science and FAIR data"]
+
+Keywords: OME-Zarr, training, visualisation
+
+Gender of presenting author: Woman
+
+Special requirements: 

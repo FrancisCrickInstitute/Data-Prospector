@@ -1,0 +1,12 @@
+
+
+Institution: The Alan Turing Institute
+
+Title: Bridging into AI: open source tools for computer vision 
+
+
+Abstract: Computer vision (CV) has made a huge impact in many scientific disciplines, and the continuous development of new methods will allow researchers to bridge their work across increasingly diverse use cases and domain areas. At the Alan Turing Institute we have developed Scivision – an open-source software package, a catalog of data and models, and a community of CV experts and users. This platform enables discovery and reuse of CV models and datasets, allowing researchers to explore new techniques for data analysis as well as facilitating discovery of sample datasets for CV algorithm development. The Scivision catalog includes several models relevant to bioimaging, and we are seeking contributions of models and datasets utilising any imaging modality. This presentation will provide a demonstration of the Scivision web interface and highlight newly-released Scivision features.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Web/Cloud Interfaces\n","New Tools\n","Modelling","Multi-Disciplinary","Open Science"]
+
+Additional Keywords: 

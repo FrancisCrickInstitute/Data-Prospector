@@ -1,0 +1,22 @@
+Institution:
+The Institute of Cancer Research & The Royal Marsden Hospital, UK
+The Institute of Cancer Research & The Royal Marsden Hospital, UK | Department of Computer Science, City, University of London, UK
+The Institute of Cancer Research & The Royal Marsden Hospital, UK
+The Institute of Cancer Research & The Royal Marsden Hospital, UK
+Queen’s University Belfast, Northern Ireland
+The Institute of Cancer Research & The Royal Marsden Hospital, UK | Queen’s University Belfast, Northern Ireland
+
+Title: TMAAP: Tissue MicroArray Alignment Platform
+
+Abstract:
+Tissue Microarrays (TMA) are routinely used in clinical and research settings, where cohorts of digital pathology samples need to be assembled at scale and mapped to their relevant metadata. While clinical TMA cohorts have canonically consisted of a few samples per patient, the emergence of topographically informed targeted TMA assays leveraging multi-site sampling is giving rise to ever-increasing cohort sizes. However, most common TMA mapping solutions have struggled to keep up with this size explosion given their reliance on user input for each TMA slide in the cohort.
+
+Here we propose a high-throughput TMA Alignment Platform (TMAAP) that can scale to cohorts consisting of thousands of samples and enables downstream digital pathology analyses with minimal user input and in an accessible manner. Based on robust signal processing methods, TMAAP identifies the core layout on TMA slides and map them to their relevant patient and sample IDs. Mapping alignment scores inform the confidence of the ID assignations, which can be visually inspected through a customised interface of the multi-dimensional image viewer napari and can also be used to configure and run TMAAP.
+
+We validate TMAAP’s performance by applying it to the Epi700 colorectal cancer cohort, consisting of over 30 thousand individual immunohistochemistry (IHC) and hematoxylin & eosin core images. TMAAP can accurately map these images to tumour and stromal samples for each patient. Following downstream IHC quantification, we then recapitulate known clinical and molecular features across all patients; including expected biological interactions between IHC targets and greater degrees of immune involvement in microsatellite instable and BRAF MT tumours. A high-throughput tool that requires no manual supervision, TMAAP’s napari interface combines ease of use with readily auditable core alignment results. TMAAP is thus poised to tackle increasing TMA cohort sizes and its modular nature will facilitate integration with additional tools.
+
+Themes: ["BioMedical Applications of Image Analysis","Community Initiatives"]
+
+Keywords: Digital Pathology, Pathomics, Napari, Tissue Microarray, TMA
+
+Gender of presenting author: Man

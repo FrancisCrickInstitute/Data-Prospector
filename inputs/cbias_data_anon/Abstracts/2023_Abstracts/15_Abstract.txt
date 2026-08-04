@@ -1,0 +1,17 @@
+
+
+Institution: Institut Pasteur, Université de Paris Cité, Image Analysis Hub, Paris, France
+
+Title: A high-content AI-powered pipeline for malaria drug discovery
+
+
+
+Abstract: Malaria-causing Plasmodium sporozoites are deemed the most vulnerable parasite stage affecting humans and as such have long been considered ideal targets for preventive prophylaxis. Sporozoites rely on a specific type of motility, termed gliding, to migrate from the skin inoculation site, enter the blood, and actively invade hepatocytes in the liver. While motility is an excellent proxy for sporozoite fitness, exploring such dynamic phenotypes in the context of a drug screen is not trivial. To address this challenge, we have devised an innovative drug screening pipeline (Sporozoite Motility Profiling Assay, or SMPA) that leverages live imaging and AI to profile in vitro sporozoite motile behaviors. To that end, we used inexpensive bright-field microscopy to produce movies of sporozoites for each well of a 384-well plate. The movies were preprocessed by background illumination correction and noise removal. The individual sporozoites were then segmented and tracked using TrackMate [1]. To classify the motile stages of tracked sporozoites, we averaged consecutive image frames among the tracks to create featured images that were used to train a convolutional neural network. Finally, the track features across different motile stages were computed by GeNePy3D [2] and were then used to identify phenotypic clusters. The robustness of SMPA has been shown on movies of human and rodent sporozoites across different strains and conditions.
+
+[1] Ershov D., Phan MS., Pylvänäinen J.W. et al. TrackMate 7: integrating state-of-the-art segmentation algorithms into tracking pipelines. Nat Methods 19, 829–832 (2022). https://doi.org/10.1038/s41592-022-01507-1
+
+[2] Phan MS and Chessel A. GeNePy3D: a quantitative geometry python toolbox for bioimaging. F1000Research 2021, 9:1374. https://doi.org/10.12688/f1000research.27395.2
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning"]
+
+Additional Keywords: Live Imaging, Quantitative Biology, Malaria

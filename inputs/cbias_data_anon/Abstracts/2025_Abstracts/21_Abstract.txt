@@ -1,0 +1,21 @@
+Institution:
+European Molecular Laboratory, European Bioinformatics Institute, Hinxton, UK
+Royal Microscopy Society, Oxford, UK
+University of Dundee, Dundee, UK
+King’s College, London, UK
+University of Dundee, Dundee, UK
+European Molecular Laboratory, European Bioinformatics Institute, Hinxton, UK
+European Molecular Laboratory, European Bioinformatics Institute, Hinxton, UK
+
+Title: Training the next cohort of bioimaging data stewards
+
+Abstract:
+Working with biological images can pose significant challenges requiring research technical professionals (RTPs) with appropriate technical expertise. This project aims to address these challenges by working to build image data stewardship skills, role recognition and career pathways within the UK community. We will provide direct training support for RTPs integrating their data generation, curation and annotation work into the permanent scientific record. While doing so we aim to develop a comprehensive curriculum in image data management and stewardship, and deliver it via courses, workshops and train-the-trainer events. From a survey we conducted to identify the needs and challenges of the bioimaging community in the UK and a follow up session during the Microscience Microscopy  Congress 2025, we were able to identify critical skill gaps and thus prepare an appropriate training curriculum. Our proposed training curriculum encompasses four training modules: “Imaging Data Management & Metadata in imaging”, “Image Data Transfer, Storage and Sharing”, “Public Repository Submission and Data Re-use”, and “Train-the-Trainer Programme”.
+
+Themes: ["None of the above"]
+
+Keywords: data stewardship, data management, training
+
+Gender of presenting author: Woman
+
+Special requirements: No

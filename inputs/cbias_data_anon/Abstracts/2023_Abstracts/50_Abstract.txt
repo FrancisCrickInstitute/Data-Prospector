@@ -1,0 +1,14 @@
+
+
+Institution: The University of Sheffield
+
+Title: Knot What You Might Think - Automated Tracing of DNA Topology
+
+
+Abstract: The inherent heterogeneity of many biomolecular structures, such as DNA, is driven by its inherent flexibility. The flexibility of DNA allows it to self-interact within the cell, often on interacting with cellular proteins, intertwining its strands into complex topologies. This inherent property of DNA is essential to its biological function but, alongside its small (nanometre) scale, can present challenges for the visualisation of its structure. Atomic force microscopy (AFM) is unique in its ability to image single molecules in liquid with sub-molecular resolution, without the need for labelling or averaging. Enabling us to probe biomolecular structures in native-like states. However there remains a lack of generalised automated analysis tools for AFM, which can take raw data as input, and provide effective structural characterisation. Furthermore, the range of potential conformations makes high throughput characterisation difficult, and much is done by hand. 
+
+Here I present a new pipeline for our open-source AFM image analysis software TopoStats (https://github.com/AFM-SPM/TopoStats.git) which enables single molecule analyses of DNA topology. By focusing on DNA crossings, we can determine crossing direction at each point and therefore explicitly determine topology. This is achieved by adapting skeletonisation algorithms to take advantage of an inherent advantage of AFM data, that it provides an accurate measure of height at each point. By biasing the segmentation towards higher regions we shown that we obtain more accurate molecular traces while retaining the simplicity of single pixels. We use local area-based convolutions to identify crossing points and their emerging branches. We then pair branch vectors to enable quantitative per-node statistics such as crossing angles, branch numbers and from empirical calculation, a classification to identify which branch lies atop another. This work provides an open source, high-throughput, automated methodology to identify and calculate the statistics of complex, intertwined molecules, including information as to their crossing statistics. By including this tool in our wider AFM analysis toolbox, TopoStats, we hope this software will be of use to the wider community in classifying the topology of complex biomolecular species such as DNA catenanes and knots.
+
+Keywords: ["New Tools\n","Open Science","Quality Control\n"]
+
+Additional Keywords: 

@@ -1,0 +1,18 @@
+Institution:
+Hawk Biosystems, Science technology park, Derio, Spain
+Hawk Biosystems, Science technology park, Derio, Spain
+Hawk Biosystems, Science technology park, Derio, Spain
+The Francis Crick Institute, London, United Kingdom
+
+Title: PD-1/PD-L1 and CTLA4/CD80 functional interactions quantification in NSCLC patients’ samples predicts immune checkpoint inhibitors response
+
+Abstract:
+PD-1/PD-L1 immune checkpoint blockade (ICB) has emerged as a new pillar in NSCLC immunotherapy. Yet, a majority of patients do not respond to treatment due to primary or acquired resistance. Whilst PD-L1 TPS analysis (reporting on PD-L1 expression), remains the gold standard for patients stratification to ICB, the approach is clearly unsatisfactory and enhanced predictive biomarkers are needed. We hypothesised that the quantification of functional immune checkpoint engagement in the tumour microenvironment would better predict the response to ICB than PD-L1 expression. Therefore, QF-Pro®, a newly developed imaging platform based on amplified FRET/FLIM technology was used to directly measure PD-1/PD-L1 and CTLA4/CD80 interactions in NSCLC tumour samples. In two independent retrospective clinical studies we showed that high engagement of both PD-1/PD-L1 and CTLA4/CD80 immune checkpoints could predict patient response to PD-1/PD-L1 inhibitors. These results provide preliminary evidence that measurement of immune checkpoint interactions could be used as new biomarkers in the clinic to identify responders. On a broader spectrum, the imaging and quantification of functional biomarkers within patient FFPE biopsies would provide another layer of information to the genetic and mutational landscape essential in the path to personalised medicine.
+
+Themes: ["Imaging"]
+
+Keywords: Functional imaging, Spatial biology, Quantitative interaction
+
+Gender of presenting author: Woman
+
+Special requirements: none

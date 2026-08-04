@@ -1,0 +1,15 @@
+Institution:
+Randall Centre for Cell & Molecular Biophysics, King's College London, UK
+
+Title: Enabling memory efficient artifact assessment for SMLM images
+
+Abstract:
+Single molecule localisation microscopy is a powerful technique for imaging beyond the diffraction limit. However, the images can be prone to artifacts when the activation density is too high, when multiple fluorophore appearances are accidentally fitted as one. A method, HAWK, was developed to detect these artifacts, however it requires the generation of a new dataset many times the size of the original. This requires such a high amount of memory that it makes the method inaccessible to many users.
+
+We have developed an on-the-fly data processing approach which allows pre-processing steps, including HAWK, to be carried out on SMLM datasets followed by standard localisation fitting. This allows any size of dataset to be processed without growing memory demands. We are developing plugins in ImageJ and Napari as well as a standalone executable. By incorporating other important SMLM approaches (SQUIRREL, FRC) we aim to create an integrated package for SMLM data assessment which will allow users to test for all the major types of analysis-induced artifacts in SMLM images.
+
+Themes: ["Community Initiatives"]
+
+Keywords: SMLM, super-resolution, quality assessment
+
+Gender of presenting author: Prefer not to say

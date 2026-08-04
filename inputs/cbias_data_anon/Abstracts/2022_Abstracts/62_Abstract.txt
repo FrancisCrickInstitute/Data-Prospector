@@ -1,0 +1,15 @@
+
+
+Institution: University of Cambridge
+
+Title: Single-particle tracking in organelles: bridging the gap between local molecular dynamics and cellular trafficking
+
+
+
+Abstract: The field of single-molecule tracking has an immense potential as it can theoretically resolve with millisecond and nanometre resolution where and what individual molecules do in live cells. Unleashing this potential has proven very challenging however because of technical, experimental and analytical difficulties that limit the imaging area, time resolution and duration for which a molecule can be reliably followed. I will discuss our progress toward solving these problems in the context of characterising protein motion in the Endoplasmic Reticulum (ER) and mitochondria, two organelles forming extensive networks throughout the cell.
+
+I will present our new methodological developments to automatise, improve and assess trajectory reconstruction at very high temporal resolutions to produce longer and more reliable trajectories. These methods consist in improving the accuracy of detected fluorescent spots by merging the results obtained from multiple detectors; Refining the spots linking step by integrating the organelle structure to build an empirical distance measure and performing simulations in reconstructed geometries to evaluate the trajectories certainty. We validated these approaches by resolving the predicted change to the dynamics at the ER membrane upon addition of oleic acid as well as studying protein dynamics in the mitochondrial matrix.
+
+Keywords: ["Object Tracking","Modelling","High-Throughput","Big Data\n","Multi-Disciplinary"]
+
+Additional Keywords: single-molecule

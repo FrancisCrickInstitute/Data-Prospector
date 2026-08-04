@@ -1,0 +1,13 @@
+
+
+Institution: University of Edinburgh
+
+Title: Deep morphological analysis of single-cell images captured by Imaging Flow Cytometry
+
+
+
+Abstract: The study used deep learning frameworks for exploring the morphological diversity of cells dissociated from connective tissue using imaging flow cytometry (IFC). We show that the morphology of single cells dissociated from retina, bone marrow, choroid and colon tissues are predictive of molecular phenotypes such as DNA content and protein expression. We demonstrate this by using deep convolutional networks to predict a range of fluorescent markers indicative of molecular content. We find that morphological markers predictive of DNA content are partially shared across datasets allowing for generalist algorithms to predict markers on novel tissues. Finally, we introduce the use of self-supervised learning to extract meaningful morphological features from IFC datasets without requiring fluorescent stain labels during training. We show that the features extracted by self-supervised learning are more informative of cell molecular phenotypes than features extracted using traditional image analysis techniques. We show that trained deep learning models can be used to build morphological cell atlases that are indicative of cell molecular phenotypes.
+
+Keywords: ["AI & Machine/Deep Learning","New Tools\n","High-Throughput","Open Science","Segmentation"]
+
+Additional Keywords: Early-career researcher

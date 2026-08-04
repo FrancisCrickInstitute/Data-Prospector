@@ -1,0 +1,20 @@
+
+
+Institution: Center for Advanced imaging
+
+Title: Data-management-driven image analysis
+
+
+
+Abstract: Microscopy data size and acquisition techniques are growing at remarkable rates. Meanwhile, research data management (RDM) practices lag behind: data is stored on personal computers or on external hard drives and link to experimental metadata is often missing. In response, multiple initiatives have emerged. Ours, I3D:bio[1] (Information Infrastructure for BioImage Data), aims to facilitate the deployment of OMERO[2] servers, the most popular solution for the management of microscopy images[3]. Using the Python or Java API, other image analysis tools (Fiji, napari, QuPath) can connect to an OMERO server to apply processing pipelines and make use of the annotations. While OMERO is efficient at displaying multi-dimensional images in a web browser, accessing whole large images with an API is non-optimal. Instead, we show here how to substitute the access of data through OMERO.server by directly accessing the raw file, preferably stored in a Next Generation File Format[4] (NGFF), by 3rd party applications like napari[5] or MoBie[6]. As the NGFF file was imported in OMERO with the so-called in-place import, all the annotations and benefits of data management are preserved.
+
+[1]https://www.i3dbio.de
+[2]Allan,C.,Burel,JM.,Moore,J. Nature Methods 2012
+[3]Schmidt,C,Hanne,J,Moore,J F1000Research 2022
+[4]Moore,J.,Allan,C.,Besson,S. Nature Methods (2021)
+[5]napari contributors (2019). doi:10.5281/zenodo.3555620
+[6]Pape,C.,Meechan,K.,Moreva,E. Nature Methods 2023
+
+Keywords: ["Web/Cloud Interfaces\n","Open Science"]
+
+Additional Keywords: data management, omero

@@ -1,0 +1,12 @@
+
+
+Institution: King's College London
+
+Title: High content image analysis of nuclear features unveils glia-to-neuron reprogramming stages in pseudotime 
+
+
+Abstract: Combining live imaging and high content image analysis (HCIA), we identify physical obstacles that challenge glia-to-neuron conversion. Our HCIA python pipeline uncovered specific morphological changes in the nuclear morphology of Neurog2-induced cells that allowed pseudotime of clustered induced cells into three stages of reprogramming. In the first stage, the induced cells began an EMT-like adhesive change, causing a massive change in the cell body to initiate cell migration. Surprisingly, a significant nuclear shrinkage becomes a hallmark of a second stage that recruits chromatin into the nuclear envelope and imposes mechanical stress decreasing cell viability. Finally, the surviving cells went to a third stage and showed nuclear relaxation aligned to the expression of the neuronal marker Beta3 tubulin and neurite outgrowth. In sum, our multiparametric analysis strategy paved the way for the application of cell identity recognition via practical imaging of the nuclei capable of classifying cell states that usually are determined through immunochemistry.
+
+Keywords: ["Segmentation","New Tools\n","High-Throughput","AI & Machine/Deep Learning"]
+
+Additional Keywords: High content image analysis

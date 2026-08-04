@@ -1,0 +1,13 @@
+
+
+Institution: Independent (possibly Glasgow University - please confirm nearer time)
+
+Title: MeioQuant - using Gradio to make image analysis pipelines accessible for the Meiosis community
+
+
+Abstract: During meiosis, crossovers form, generating new combinations of genetic material. Immuno-cytology is often used to detect the position and abundance of crossover-associated proteins along the chromosomes. Existing image analysis pipelines are either manual, or consist of a series of Python scripts, requiring installation and lacking a user-friendly interface.
+We present MeioQuant, a semi-automated pipeline for quantifying the position and abundance of crossover-associated proteins. It is implemented as an online Gradio demo, freely available on the HuggingFace hub (https://huggingface.co/spaces/JFoz/MeioQuant). This pipeline is able to identify bright foci, indicative of the presence of proteins, on or near the chromosomes, and quantify their intensity and positions. We further discuss the benefits and drawbacks of sharing image analysis pipelines in this way.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","Web/Cloud Interfaces\n"]
+
+Additional Keywords: 

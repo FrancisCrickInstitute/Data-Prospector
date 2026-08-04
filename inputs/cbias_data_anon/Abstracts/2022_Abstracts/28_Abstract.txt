@@ -1,0 +1,13 @@
+
+
+Institution: City, University of London
+
+Title: Evaluation of training data, ground truth and shape variability in the semantic segmentation of HeLa cells observed with electron microscopy
+
+
+
+Abstract: This work performed semantic segmentation of the nuclear envelope and plasma membrane of HeLa cells observed with serial block face scanning electron microscopy (SBFSEM) with a U-Net architecture and compared against a traditional image processing algorithm (IPA). A region of interest (ROI) of 2,000×2,000×300 voxels from a dataset of 8,192×8,192x517 voxels was manually delineated as ground truth (GT) to generate Data-Label patches to train the U-Net. Results of the U-Net were compared quantitatively with accuracy (ACC) and Jaccard similarity index (JI) for the ROI. ACC and JI were lower than the IPA on top and bottom slices and it was noticed that this was due to multiple nuclei being segmented by the U-Net, whilst the IPA focused only on the central cell. With a new GT, results improved slightly when training data increased from 36,000 to 135,000 training pairs and these results were comparable with the IPA. The whole image was assessed visually due to a lack of GT. U-Net provided good results for only certain cells, whilst the IPA provided consistent results, presumably because training data came from a single cell. Future work will focus on using the IPA to generate training data without the need for manual delineations.
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning"]
+
+Additional Keywords: 

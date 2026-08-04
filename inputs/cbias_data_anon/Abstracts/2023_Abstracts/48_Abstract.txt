@@ -1,0 +1,12 @@
+
+
+Institution: University of Cambridge
+
+Title: Development of an automated pipeline for segmentation and organelle contact analysis from Volume Electron Microscopy data
+
+
+Abstract: Volume electron microscopy (vEM) is a high-resolution imaging technique capable of revealing the 3D structure of cells, tissues, and model organisms. This imaging modality is gaining prominence due to its ability to provide a comprehensive view of cells at the nanometre-scale. The visualization and quantitative analysis of individual subcellular structures in vEM volumes requires segmentation of each 2D electron micrograph slice of the 3D dataset, which is an extremely laborious process de facto limiting its applications and throughput. To address these limitations, deep learning approaches have been recently developed for automated segmentation based on a Panoptic-DeepLab (PDL) architecture, which allows segmentation on two levels: class-based (semantic) and object-specific (instance). Here, we present an automated segmentation workflow using Empanada-Napari plugins for the 3D reconstruction of airway cells and the efferent ductules of the male reproductive system. Remarkably, we demonstrate that our models, trained on relatively small datasets (consisting of only 4-8 samples per organelle), yield outstanding results. We also present a strategy to successfully extract target cells of interest from automatically fully segmented volumes using custom developed Python scripts. This strategy allows for a fast, downstream single cell quantitative analysis of relevant metrics such as volume, surface area, number of organelles etc. Additionally, we adopted analysis methods to explore the spatial relationships between distinct organelles within the cell volume, identifying points of contact. Altogether, our tools allow effective quantitative analyses of vEM data providing an unprecedented view into the cellular processes and functions of mammalian cells.
+
+Keywords: ["AI & Machine/Deep Learning","Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: 

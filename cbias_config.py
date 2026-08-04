@@ -3,11 +3,20 @@
 Analyses four years (2022-2025) of attendee registrations, post-event feedback surveys, and abstract
 submissions to answer year-on-year trend questions (see inputs/cbias_report/task_report.md).
 
-NOTE: `docker_image` below does not exist yet. This repo's Dockerfile only builds `bia-analysis:latest`
-(numpy/scipy/scikit-image/scikit-learn/pandas/bioio/bioio-tifffile - no matplotlib, no openpyxl). Build
-a `cbias-analysis:latest` image with pandas, numpy, matplotlib, and openpyxl (needed for the .xlsx
-feedback files) before execution-validation will work for this config - same gap already documented for
-`trello_config.py`'s `python-analysis:latest`.
+The data this points at (inputs/cbias_data_anon/, produced by anonymize_cbias_data.py from the raw,
+gitignored inputs/cbias_data/) has had direct identifiers - names, emails, phone numbers, precise
+location, ticket barcodes/seats, submission authorship - stripped or generalised. See
+anonymize_cbias_data.py's module docstring for exactly what was removed and why. A handful of Abstract/
+References fields may contain a literal "[EMAIL REDACTED]"/"[PHONE REDACTED]"/"[NAME REDACTED]"
+placeholder where something was scrubbed inline - treat these as ordinary text, not an error.
+
+NOTE: `docker_image` below is defined by the Dockerfile's `cbias-analysis` target (kept in sync with
+AVAILABLE_LIBRARIES below) but is not built automatically - build/rebuild it locally before
+execution-validation will work for this config, and again whenever the Dockerfile's package list
+changes:
+    docker build --target cbias-analysis -t cbias-analysis:latest .
+`trello_config.py`'s `python-analysis:latest` has the same build-it-yourself requirement, but no
+Dockerfile target exists for it yet.
 """
 
 import re
@@ -21,28 +30,33 @@ AVAILABLE_LIBRARIES = """
 Available libraries for imports:
 - Standard library: os, sys, re, csv, json, pathlib, datetime, collections, string
 - NumPy: for numerical computing
-- Pandas: for data manipulation and analysis (pandas.read_excel works - openpyxl is installed)
+- Pandas: for data manipulation and analysis
 - Matplotlib: for plotting and visualization
+- SciPy: for statistical tests and scientific computing
+- scikit-learn: for clustering, dimensionality reduction, and other ML techniques
+- NLTK: for text tokenization/stopword removal on free-text feedback and abstract fields (punkt,
+  punkt_tab, and stopwords corpora are pre-downloaded; other corpora are not available)
+- Seaborn: for statistical plotting on top of Matplotlib
+- textstat: for readability metrics on free-text fields
 """
 
 DOMAIN_NOTES = """
-Analyse four years (2022-2025) of CBIAS data, in three sub-directories under the data directory (or
-INPUT_FOLDER env var):
+Analyse four years (2022-2025) of anonymised CBIAS data, in three sub-directories under the data
+directory (or INPUT_FOLDER env var). This is anonymised data (see the module docstring) - some
+identifying columns/fields present in the original raw data have been removed entirely; don't assume
+fields like attendee name, email, or precise location exist.
 
-- Attendees/CBIAS_<year>_Attendees.csv - one row per registration. Columns drift slightly by year:
-  2022-2024 use "Attendee Surname" / "Purchaser town/city" / "Purchaser county"; 2025 renames these to
-  "Attendee last name" / "Purchaser city" / "Purchaser state". Read each file's own header rather than
-  assuming one fixed schema across years.
-  IMPORTANT: 3 of the 4 CSVs are NOT valid UTF-8 (they contain Latin-1 bytes from accented characters in
-  names/towns) - try encoding="utf-8" and fall back to encoding="latin-1" on UnicodeDecodeError; never
-  assume plain UTF-8 will work for all four files.
+- Attendees/CBIAS_<year>_Attendees.csv - one row per registration. Columns: Order date, Purchaser
+  country, Event name/ID/start date/start time/timezone/location, Ticket quantity/tier/type, Currency,
+  Ticket price, Guest. All four files are plain UTF-8.
   "Ticket type" holds the registration category: Academic, Academic - early bird, Industry,
   Industry - early bird, Online Only, Sponsors. Treat "X" and "X - early bird" as the same category X
   (e.g. match on a substring/prefix) when computing category distributions; "Industry" plus
   "Industry - early bird" together are the industry-participation signal.
 
-- Feedback/CBIAS <year> Attendee Survey(...).xlsx - one row per respondent, one file per year. This is a
-  raw Microsoft Forms export: each survey question appears as a real answer column plus two
+- Feedback/CBIAS <year>Attendee Survey(...).csv - one row per respondent, one file per year (converted
+  from the original Microsoft Forms xlsx export to CSV during anonymisation - read with
+  pandas.read_csv, not read_excel). Each survey question appears as a real answer column plus two
   auto-generated companion columns ("Points - <question>", "Feedback - <question>") that are
   quiz-scoring artifacts and almost always empty - ignore columns starting with "Points - " or
   "Feedback - " and read the plain question-text column for actual responses. Question wording drifts
@@ -53,20 +67,22 @@ INPUT_FOLDER env var):
   (e.g. "Strongly agree"), not numbers - map them to an ordinal scale before averaging.
 
 - Abstracts/<year>_Abstracts/<n>_Abstract.txt - one plain-text file per submission, "Label: value"
-  lines. The field set differs by year: 2022-2023 files have Name/Email/Institution/Title/Authors/
-  Affiliation/Abstract/Keywords/Additional Keywords; 2024-2025 files drop "Name" and "Affiliation" and
-  add "Themes" and "Gender of presenting author" (2025 sometimes also has "Special requirements"). Parse
+  lines, where a field's value may wrap onto further lines before the next label. Author-identifying
+  fields (Name, Email, Authors, Presenting author) have been removed from every year during
+  anonymisation - do not expect them. Remaining fields present across all years: Institution, Title,
+  Affiliation/Affiliations, Abstract, Keywords, Additional Keywords. 2024-2025 files additionally add
+  "Themes" and "Gender of presenting author" (2025 sometimes also has "Special requirements"). Parse
   leniently by known field-label prefixes rather than assuming a fixed field order or a complete set per
-  file - a few files also have one-off extra fields (e.g. "References", "Presenting author"). The
-  "Keywords" / "Additional Keywords" value is a Python-list-literal string (e.g.
+  file - a few files also have one-off extra fields (e.g. "References", "doi"). The "Keywords" /
+  "Additional Keywords" value is a Python-list-literal string (e.g.
   ["Segmentation","Object Tracking"]) with occasional stray "\\n" inside entries - strip whitespace after
   parsing.
 """
 
 _ABSTRACT_FIELD_LABELS = [
-    "Name", "Email", "Institution", "Title", "Authors", "Affiliation", "Affiliations",
-    "Abstract", "Keywords", "Additional Keywords", "Themes", "Gender of presenting author",
-    "Special requirements", "References", "Presenting author", "doi",
+    "Institution", "Title", "Affiliation", "Affiliations", "Abstract", "Keywords",
+    "Additional Keywords", "Themes", "Gender of presenting author", "Special requirements",
+    "References", "doi",
 ]
 _ABSTRACT_FIELD_PATTERN = re.compile(
     r"^(" + "|".join(re.escape(label) for label in _ABSTRACT_FIELD_LABELS) + r"):", re.MULTILINE
@@ -78,14 +94,6 @@ _FEEDBACK_METADATA_COLUMNS = {
     "id", "start time", "completion time", "email", "name", "total points",
     "quiz feedback", "last modified time",
 }
-
-
-def _read_attendees_csv(path: Path) -> pd.DataFrame:
-    """Read an attendee CSV, falling back to latin-1 since 3 of the 4 years aren't valid UTF-8."""
-    try:
-        return pd.read_csv(path, encoding="utf-8")
-    except UnicodeDecodeError:
-        return pd.read_csv(path, encoding="latin-1")
 
 
 def _feedback_question_columns(columns: list[str]) -> list[str]:
@@ -105,7 +113,7 @@ def extract_input_metadata(directory: str) -> str:
 
     attendees = []
     for f in sorted(base.glob("Attendees/*.csv")):
-        df = _read_attendees_csv(f)
+        df = pd.read_csv(f, encoding="utf-8")
         ticket_counts = df["Ticket type"].value_counts(dropna=False) if "Ticket type" in df.columns else {}
         attendees.append({
             "file": f.name,
@@ -115,8 +123,8 @@ def extract_input_metadata(directory: str) -> str:
         })
 
     feedback = []
-    for f in sorted(base.glob("Feedback/*.xlsx")):
-        df = pd.read_excel(f)
+    for f in sorted(base.glob("Feedback/*.csv")):
+        df = pd.read_csv(f, encoding="utf-8")
         feedback.append({
             "file": f.name,
             "respondents": len(df),
@@ -140,9 +148,23 @@ def extract_input_metadata(directory: str) -> str:
 
 CONFIG = PipelineConfig(
     orchestrator_model="claude-opus-4-8",
-    worker_model="claude-sonnet-5",
-    compiler_model="claude-opus-4-8",
+    # worker/compiler: deliberately routed to DeepSeek (not the all-Anthropic default this config
+    # used to have). This was withheld until inputs/cbias_data/ was anonymised - see
+    # anonymize_cbias_data.py and the module docstring above - since these two roles see the most
+    # data volume (one call per function, and every compile/execute retry). Judged acceptable once
+    # direct identifiers were stripped; requirements_evaluator_model stays on Anthropic below since
+    # it's the final quality gate and is passed images.
+    worker_model="deepseek-v4-pro",
+    compiler_model="deepseek-v4-pro",
     requirements_evaluator_model="claude-sonnet-5",
+    # D2 ideation (generate_angles): same reasoning as worker/compiler above - anonymised data,
+    # cheap high-volume tier.
+    angle_model="deepseek-v4-pro",
+    # D5 judging: frontier Anthropic tier, NOT DeepSeek like worker/compiler/angle_model above -
+    # once req_score is gone these two judges (insight/soundness) are the entire quality bar
+    # (DIVERGER_PLAN.md §5), which outweighs the anonymisation-driven cost reasoning that applies
+    # to the high-volume roles above.
+    judge_model="claude-opus-4-8",
     docker_image="cbias-analysis:latest",
     available_libraries=AVAILABLE_LIBRARIES,
     domain_notes=DOMAIN_NOTES,

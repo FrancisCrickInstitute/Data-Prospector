@@ -1,0 +1,17 @@
+
+
+Institution: 
+
+Title: Peta-scale microscopy – challenges, solutions and possibilities 
+
+
+Abstract: Modern developmental biology increasingly relies on large, high-resolution datasets that for instance enable connectomics studies or allow to investigate molecular mechanisms in the context of entire organs and organisms. Creating such datasets requires powerful microscopy setups combined with state-of-the-art computational methods for data handling, reconstruction, and analysis. In this talk, we will cover two large-scale projects that highlight the challenges, solutions, and possibilities for the emerging field of peta-scale microscopy. 
+
+Focused ion beam scanning electron microscopy (FIB-SEM) can be used to image very large samples such as an entire Drosophila central nervous system (CNS) at an isotropic resolution of 8nm, as necessary for the reconstruction of the connectome, the map of all neural connections. We have pioneered a pipeline that performs image stitching using distributed global optimization based on machine learning and computer vision techniques to assemble a complete dataset of the Drosophila CNS. Following neuron segmentation using flood-filling machine learning networks, the final connectome is extracted using substantial manual proofreading. Currently, we are adapting the pipeline for novel Multi-SEMs developed by the Hess lab to eventually scale up to the mouse connectome, for which manual proofreading of segmentation results is likely to be the biggest challenge. We will thus highlight our current efforts at developing graph neural network-based approaches to significantly reduce manual proofreading effort.
+
+Lightsheet microscopy is another emerging technology that now enables imaging of very large, fixed samples such as adult mouse brains at single-cell and single-molecule resolution. Previously, we developed the BigStitcher software that efficiently handles and interactively reconstructs large lightsheet acquisitions up to the terabyte range. However, new types of image acquisitions use modes such as stage-scanning lightsheet microscopy on expanded tissues of mice, monkey and eventually human samples, and thus pose new challenges in terms of dataset size and the complexity of the reconstruction process. We will present our newest solutions for efficiently handling, aligning, and interactively visualizing, as well as performing accurate single-molecule spot detection in peta-scale lightsheet datasets.
+
+
+Keywords: 
+
+Additional Keywords: 

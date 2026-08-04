@@ -1,0 +1,13 @@
+Institution:
+Centre for Developmental Neurobiology, King’s College London, London, UK
+
+Title: Synapse Segmentation Using Pixel-based Analysis of iGluSnFR3 Fluorescence Intensity
+
+Abstract:
+The Intensity-based Glutamate-Sensing Fluorescent Reporter (iGluSnFR) system is a sensitive imaging tool that offers spatially and temporally resolved detection of excitatory neurotransmitter release events. We employed the recently developed iGluSnFR3 probe to study synaptic activity in hIPSC-derived neurons. In our analyses of single-plane images, we found that the axonal trafficking of the probe was misidentified as synapses by current tools, and errors were observed in event detection. To overcome this, we developed an image processing pipeline that employs stringent pixel selection and pixel clustering approaches to detect spatial and temporal peaks from synaptic activities. This pipeline involves an initial screening of pixels by thresholding the maximum delta F over F, removing pixels with low signal-to-noise ratio or a drifting baseline, detecting events for each pixel using thresholding, and hierarchical clustering of events by distance. The synaptic release events identified from this pipeline showed good agreement to those identified from manual inspection. This pipeline can potentially be applied to images of other probes that share the same problem of probe trafficking. 
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: presynaptic neurotransmitter release, image segmentation, signal processing
+
+Gender of presenting author: Woman

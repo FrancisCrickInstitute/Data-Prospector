@@ -1,0 +1,17 @@
+Institution:
+King's College London, London, UK
+King's College London, London, UK
+King's College London, London, UK
+
+Title: Spatial data analysis for human lung tissue characterisation in fibrotic disease
+
+Abstract:
+Spatial multiplexed imaging allows for both identification of multiple cell types or structures within the same sample and the relationships between these. We have undertaken 19-plex antibody imaging of control and interstitial lung disease (ILD)/idiopathic pulmonary fibrosis (IPF) human tissue samples to study the transitions of cell types in fibrotic disease. The commercial spatial data platform Visiopharm® was employed to interrogate cell types and relationships across all samples.  Distal lung tissue poses a challenge for such analysis as its honeycomb structure creates ‘blank’ spaces, which must be retained to interpret the physiology of the tissue. Visiopharm®’s integrated applications (APPS) were customised to run scripted classifications, post-processing steps and output variable calculations on images preceding analytical workflows. Nuclear segmentation was achieved using DAPI, distinguishing between background, nuclei and cell cytoplasmic border in the lung tissue. Further classification using set markers for e.g. airways (E-cadherin), blood vessels (CD31) and basement membrane (Collagen IV) compartmentalised lung tissue sample into key areas, where epithelial, endothelial and stromal cells reside. Phenotypic analysis via thresholding was subsequently performed using Visiopharm®’s guided workflow tool, and visualised with the data exploration and QC tool, highlighting important relationships between cell types, in healthy vs disease states.
+
+Themes: ["Data processing and visualisation","Applications"]
+
+Keywords: Spatial, analysis, multiplex, immunofluorescence
+
+Gender of presenting author: Woman
+
+Special requirements: 

@@ -1,0 +1,12 @@
+
+
+Institution: UCL
+
+Title: Interpretable computational pathology solution to characterise vascular networks in ccRCC
+
+
+Abstract: Clear cell Renal Cell Carcinoma is profoundly angiogenic, characterised by complex yet heterogenous vascular networks. Blood vessels are an important constituent part of the tumour microenvironment (TME) and, in addition to immune cells, are the target of drug therapies in advanced disease via anti-angiogenic and immunotherapy respectively. The TME plays an important role in determining disease progression and response to therapy, acting as a selective pressure on the tumour cells thus influencing evolutionary trajectory. This selective pressure is sculpted by cross-talk between blood vessels, immune cells and the tumour cells themselves.  Whilst the details of these carefully orchestrated cellular interactions is not understood their final read-out is reflected in tissue morphology, which can be assessed using an H&E stained slide (routinely used in clinical diagnostic histopathological workflows). Accurately capturing vascular networks from routine tests integral to clinical workflows is a powerful tool for understanding disease biology in large cohorts and presents an opportunity to develop an implementable biomarker to predict overall survival or outcome to drug therapies. Morphology is a qualitative evaluation of a shape, whereas topography provides quantitative feature dimensions, and both have benefits and limitations. Here we reconcile these two methods for assessing vascular networks to develop an interpretable computational pathology solution to study the blood vessels in ccRCC. Further, we have built a deep-learning model to segment blood vessels from H&E-stained slides. By combining these tools we have developed a computational pathology pipeline able to robustly characterise vascular networks directly from digital H&E slides. Our pipeline is a powerful tool to study ccRCC vasculature in large cohorts with multi-regional sampling to capture intratumoral heterogeneity and ultimately could form the basis of a computational pathology biomarker to predict outcome to anti-angiogenic or immunotherapy.
+
+Keywords: ["AI & Machine/Deep Learning","Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","Multi-Disciplinary","New Tools\n"]
+
+Additional Keywords: Computational Histopathology, Deep Learning, Explainable AI, Interpretability

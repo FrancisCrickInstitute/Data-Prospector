@@ -1,0 +1,14 @@
+Institution:
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+Warwick Medical School, University of Warwick, UK
+
+Title: Multi-scale modelling of single molecule dynamics helps interpret live cell imaging data
+
+Abstract:
+Recent advances in light microscopy have enabled single molecules to be imaged and tracked within living cells and this approach is impacting our understanding of cell biology. Computer modeling and simulation are important adjuncts to the experimental cycle since they aid interpretation of experimental results and help refine, test and generate hypotheses. Object-oriented computer modeling is particularly well-suited for simulating random, thermal, movements of individual molecules as they interact with other molecules and subcellular structures, but current models are often limited to idealized systems consisting of unit volumes or planar surfaces. Here, a simulation tool is described that combines a 3-dimensional, voxelated, representation of the cell consisting of subcellular structures (e.g. nucleus, endoplasmic reticulum, cytoskeleton, vesicles, and filopodia) combined with numerical floating-point precision simulation of thousands of individual molecules moving and interacting within the 3-dimensional space. Simulations produce realistic time-series video sequences comprising single fluorophore intensities and realistic background noise which can be directly compared to experimental fluorescence video microscopy data sets.
+
+Themes: ["Smart Microscopy","BioMedical Applications of Image Analysis"]
+
+Keywords: modelling, image ananlysis, single molecule microscopy
+
+Gender of presenting author: Man

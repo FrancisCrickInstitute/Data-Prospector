@@ -1,0 +1,15 @@
+
+
+Institution: University College London
+
+Title: Focus Quality Evaluation of Microscope images with deep learning
+
+
+
+Abstract: Acquiring a significant quantity of high-quality image data is a foundational step for training any accurate image model. This often necessitates automated collection of imaging data (e.g. whole slide scanning microscopes) that may result in occasional out-of-focus images or regions being acquired, and the inclusion of these in the final dataset may affect the final training outcomes. However, finding these data in numerous images would be a considerable time-consuming, laborious task, and the naked eye is incapable of precisely quantifying the degree to which an image is out of focus. Therefore, developing an image model that could measure the blurring of an image is desirable. This would allow researchers to rapidly and efficiently remove the confounding data from the dataset during the workflow, thus improving the quality of the dataset and the training results.
+
+We would like to propose a model that uses CNN as the core framework, trained with scanned 8-bits RGB human kidney biopsies brightfield images, using the images as input and the output values as an evaluation of the degree of focus of the images.
+
+Keywords: ["AI & Machine/Deep Learning","Quality Control\n"]
+
+Additional Keywords: 

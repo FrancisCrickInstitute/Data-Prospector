@@ -1,0 +1,17 @@
+Institution:
+University of Bath, UK
+
+Title: EDITS: Event Detection In Time and Space - Machine learning-enabled identification of unique cell division and death events in unlabelled brightfield microscopy time series
+
+Abstract:
+Microscopy time series capture dynamic processes such as cell division and cell death that are often missed in end-point assays. This temporal information is critical for distinguishing mechanisms of action, for example separating cytotoxic from cytostatic effects, and for understanding clonal or subpopulation behaviour. Fluorescent probes and tracking methods are widely used but can perturb cellular physiology (ROS generation, phototoxicity, breakdown products) and require additional imaging channels and computationally intensive analysis, limiting scalability for high-throughput screening. Brightfield microscopy offers a simple, cost-effective, and minimally invasive alternative with a high informational content. Although segmentation in unlabelled brightfield images has advanced with models such as CellPose and CellSAM, training models on static images can lead to errors that would be avoidable given temporal context.
+
+We present a workflow for detecting cell events in brightfield time series using: (1) self-supervised pre-training to learn dense image representations (Time-Arrow Prediction model) and (2) U-Net classification on these features to identify division and death events. We have built an accessible, user-friendly pipeline with no coding needed to enable model training and testing, and have used this workflow to explore hyperparameter effects and characterise classification errors to guide refinement. This approach identifies image regions containing cell events with a high degree of accuracy. Future work focuses on event triangulation across longer timescales, generalisability testing, multi-class classification via human-in-the-loop active learning, testing alternative self-supervised models, and proof-of-concept drug screening.
+
+Themes: ["Data processing and visualisation","Modelling","Applications"]
+
+Keywords: machine learning, microscopy, cell fate
+
+Gender of presenting author: Woman
+
+Special requirements: no

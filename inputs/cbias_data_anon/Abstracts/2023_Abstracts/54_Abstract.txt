@@ -1,0 +1,14 @@
+
+
+Institution: University of York
+
+Title: Enhancing Live-Cell Segmentation in Ptychography Imaging: A Multi-Stage Framework for Error Correction
+
+
+Abstract: Accurate segmentation of live-cell images into individual cells is challenging due to diverse morphologies, life-cycle stages, and inter-cellular interactions. This paper presents a multi-stage method to enhance current state of the art segmentation in ptychography imaging. Initially, a segmentation algorithm handles basic cases but struggles with complexity. In this paper we introduce a segmentation-error correction framework that identifies segmentation errors and subsequently categorises them into three distinct error types, each requiring specific treatment to segment accurately. Tailored methods correct these errors, especially benefiting mitotic cell segmentation.
+
+Notably, this approach integrates classification and semantic segmentation convolutional neural networks, substantially improving accuracy, particularly in challenging mitotic scenarios and in highly confluent cell populations. The feedback loop between post-correction segmentation and the error classifier ensures ongoing error assessment, refining results iteratively. Through experiments on various datasets, this multi-stage method proves effective in improving segmentation accuracy, highlighting its utility in advancing cell analysis. This work showcases the potential of machine learning integration into already successful segmentation for more robust cell image segmentation.
+
+Keywords: ["AI & Machine/Deep Learning","Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: Segmentation, Error Correction, Ptychography  

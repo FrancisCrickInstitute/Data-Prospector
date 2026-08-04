@@ -1,0 +1,286 @@
+Order date,Purchaser country,Event name,Event ID,Event start date,Event start time,Event timezone,Event location,Ticket quantity,Ticket tier,Ticket type,Currency,Ticket price,Guest
+2023-05-08 18:03:56,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-05-09 17:47:45,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-09 17:47:45,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-09 19:42:10,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-11 11:51:14,PT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-11 13:41:39,AT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-05-15 13:05:21,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-16 12:18:17,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-16 12:19:49,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-16 21:41:28,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-05-17 15:53:25,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-18 16:10:45,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-05-19 13:34:17,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-23 15:14:29,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-26 14:31:37,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-28 01:49:14,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-29 09:32:28,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-05-30 10:15:18,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-05-31 12:48:20,NL,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry - early bird,GBP,140.0,No
+2023-06-01 05:58:42,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-01 10:41:39,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-01 20:47:33,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-05 14:06:43,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-07 14:23:33,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-08 15:46:23,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-08 16:30:41,FR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-09 11:45:19,CH,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-15 17:40:09,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-16 07:43:54,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-06-16 07:45:47,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-06-20 13:25:38,NL,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-20 14:11:47,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-20 14:11:47,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-20 14:23:25,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-20 14:53:29,NL,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-22 10:13:28,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-22 10:59:22,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-22 14:09:07,KR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-22 17:17:45,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-23 14:59:43,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-23 20:33:52,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-26 10:16:25,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-26 10:17:54,GR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-26 11:09:23,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-26 11:54:21,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-06-26 12:25:08,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-26 13:47:34,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-26 15:20:37,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-26 15:46:22,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-27 08:54:54,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-27 10:34:48,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-27 14:28:42,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-28 18:27:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 09:08:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 09:36:00,CH,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 09:37:22,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 09:51:18,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 11:17:18,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 12:11:52,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 15:36:44,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 16:15:26,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 17:04:51,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 19:38:12,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-29 20:31:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 03:39:03,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-06-30 10:09:53,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-06-30 11:49:02,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-06-30 15:48:05,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 15:57:26,NO,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 16:12:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 17:52:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 18:44:50,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 18:44:50,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 20:17:36,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 21:25:21,NL,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-06-30 22:08:17,NL,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic - early bird,GBP,70.0,No
+2023-07-03 23:28:23,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-07-04 09:55:42,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-07-17 10:36:46,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-07-17 15:36:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-07-18 13:42:11,FR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-07-20 14:08:41,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-07-20 20:08:53,MX,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-07-21 14:19:00,DK,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-07-24 13:12:07,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-07-26 15:29:44,PT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-07-27 11:42:37,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-07-28 13:15:34,FR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-02 15:47:33,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-08-04 11:18:53,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-05 02:43:12,AU,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-07 07:55:41,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-07 11:39:31,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-08-10 11:39:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-10 11:39:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-10 15:18:57,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-10 17:08:49,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-16 23:37:13,FR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-17 11:56:44,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-18 15:37:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-18 15:37:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-18 15:37:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-18 15:37:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-18 15:37:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-22 08:37:21,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-08-24 09:03:47,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-24 10:46:50,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-24 13:31:30,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-24 14:03:45,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-25 07:17:44,JP,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-29 17:21:40,CA,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-08-30 02:06:13,TW,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-08-30 09:00:39,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-30 09:38:06,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-08-30 10:15:07,KR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-30 11:45:20,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-30 18:49:40,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-31 08:38:58,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-31 09:32:56,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-31 10:40:20,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-08-31 15:59:46,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-01 16:45:01,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-01 16:57:27,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-01 17:08:46,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-09-01 17:30:19,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-01 21:31:13,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-02 08:07:22,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-02 18:35:15,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-02 23:01:25,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-03 09:48:08,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-03 13:19:50,SE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-03 15:41:02,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-03 16:39:00,BE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-03 19:10:29,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-03 21:24:36,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-04 12:23:09,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-05 09:36:58,BE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-05 16:06:48,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-06 10:50:43,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-08 16:18:37,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-10 12:06:52,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-11 09:39:13,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-11 11:51:49,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-12 15:39:30,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-14 10:17:43,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-09-18 10:30:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-18 11:02:01,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-20 19:33:41,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-21 13:48:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-21 13:48:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-22 14:22:19,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-25 21:25:17,CA,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-26 11:53:47,AT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-26 19:39:03,FR,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-09-27 09:15:40,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-27 12:18:04,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-27 12:54:04,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-27 13:16:19,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-27 13:16:19,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-28 12:35:21,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-09-30 18:14:13,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-02 09:46:26,AT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-02 10:16:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-02 11:49:58,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-03 11:45:58,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-03 23:02:48,,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-04 11:59:38,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-04 11:59:38,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-05 15:57:52,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-09 08:47:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-09 16:23:37,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-10 12:24:17,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-11 12:31:49,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-11 13:58:39,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-12 09:05:21,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-12 13:15:02,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-13 10:55:14,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-13 14:27:59,CH,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-13 14:49:30,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-13 14:53:42,CA,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-13 15:00:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-13 15:49:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-13 19:11:17,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-16 09:50:22,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-16 11:38:47,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-16 14:47:41,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-16 21:07:48,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-18 09:29:38,PK,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-18 11:33:15,IT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-10-18 11:33:15,IT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-10-19 14:43:27,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-20 14:53:57,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-23 14:56:14,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-23 15:35:20,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-25 11:03:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-27 14:54:28,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-27 14:54:33,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-27 14:54:33,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-27 15:35:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-27 16:16:38,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-10-30 09:37:38,AT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-10-31 11:26:08,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-01 10:11:00,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-01 13:03:31,CZ,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-01 14:23:52,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-02 10:51:56,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-02 10:53:59,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-02 12:03:51,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-03 11:53:15,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-03 14:58:46,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-04 00:42:05,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-07 14:52:21,IL,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-07 15:21:30,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-11-07 18:12:02,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-08 09:28:04,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-08 09:28:04,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-08 15:17:37,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-08 15:26:09,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-08 15:26:09,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-08 15:27:27,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-08 15:36:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-09 12:03:25,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-10 12:46:40,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-11-10 13:33:36,BE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-11-11 14:06:42,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-11 20:29:27,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-11-13 10:31:43,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-13 13:00:18,US,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Industry,GBP,190.0,No
+2023-11-13 16:13:27,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-13 16:41:26,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-13 17:15:34,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-13 18:51:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-13 18:51:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-14 03:29:03,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-14 09:41:18,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-14 09:41:18,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-14 12:25:02,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-14 13:49:54,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-14 16:51:30,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-14 16:51:30,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-15 10:04:35,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 10:28:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 11:16:09,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-15 14:14:59,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-16 09:06:05,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-16 09:30:03,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 11:32:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 11:32:11,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 12:24:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 12:24:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 12:35:37,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 12:35:37,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 12:41:16,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-16 12:44:14,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-16 13:52:13,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-16 17:09:12,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 17:11:44,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 17:11:44,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 17:11:44,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Sponsors,GBP,0.0,No
+2023-11-16 17:32:54,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-16 17:46:10,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-17 09:02:07,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-17 09:07:58,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-17 10:14:29,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-17 12:11:46,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Academic,GBP,90.0,No
+2023-11-17 12:12:52,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-17 17:53:32,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-19 19:06:14,IT,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 06:49:26,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 09:20:42,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 09:20:42,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 09:20:42,DE,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 09:35:46,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 09:39:08,GB,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 10:07:35,DK,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+2023-11-20 10:44:08,ES,Crick Bioimage Analysis Symposium 2023,630197326167.0,2023-11-20,11:00:00,Europe/London,The Francis Crick Institute,1,,Online Only,GBP,10.0,No
+,,,,,,,,284,,,,16380.0,

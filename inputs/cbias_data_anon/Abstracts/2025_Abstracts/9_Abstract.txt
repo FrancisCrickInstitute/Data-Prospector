@@ -1,0 +1,28 @@
+
+Institution:
+European Molecular Biology Laboratory, Cell Biology and Biophysics Unit, Heidelberg, Germany
+European Molecular Biology Laboratory, Cell Biology and Biophysics Unit, Heidelberg, Germany
+European Molecular Biology Laboratory, Cell Biology and Biophysics Unit, Heidelberg, Germany
+Unaffiliated
+European Molecular Biology Laboratory, Cell Biology and Biophysics Unit, Heidelberg, Germany
+European Molecular Biology Laboratory, Cell Biology and Biophysics Unit, Heidelberg, Germany
+European Molecular Biology Laboratory, Cell Biology and Biophysics Unit, Heidelberg, Germany
+
+
+Title: Microscopy Nodes: versatile and effective 3D rendering in Blender
+
+Abstract:
+Microscopy Nodes is a Blender add-on designed for effective visualization of multimodal 3D microscopy data, which can be essential for communicating biological results. While traditional scientific 3D rendering software often lacks the flexibility of non-scientific tools, Microscopy Nodes aims to transform microscopy visualization by seamlessly integrating data into the popular consumer graphics software Blender. This tool bridges the gap between the microscopist and Blender’s powerful and versatile 3D visualization.
+
+To achieve this, Microscopy Nodes implements simple loading of bioimage files from commonly used tif and OME-Zarr formats, large volume support, and intuitive tools and default settings for intuitively interacting with microscopy datasets in Blender. Microscopy Nodes allows users to combine annotations and segmentations with their microscopy data in a 3D scene and create fully-customizable animations with these elements. These animations are further enhanced by Blenders’ state-of-the-art render engines, producing highly effective volumetric data representations.  Importantly, the workflows handle many types of microscopy data: from large real-time light-sheet datasets to FIB-SEM electron microscopy volumes. 
+
+Blender and Microscopy Nodes are free and open-source software. Combined with public OME-Zarr archives - like IDR and BIAR - we enable advanced 3D microscopy visualization for all, including both the scientific and non-scientific community.
+
+
+Themes: ["Data processing and visualisation","Open science and FAIR data"]
+
+Keywords: 3D rendering, data visualization, OME-Zarr
+
+Gender of presenting author: Woman
+
+Special requirements: no

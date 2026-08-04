@@ -1,0 +1,19 @@
+Institution:
+Facility for Imaging by Light Microscopy, Imperial College London, ICTEM Building, Du Cane Road 72, London W120NN, UK
+
+Title: Integrated Mathematical Modelling of Image Analysis, Deep Learning, and Data Analysis Using Category Theory Tools
+
+Abstract:
+This work introduces a categorical formulation of imaging by modeling physical systems as objects in a category, with their observable properties expressed solely through morphisms. Inspired by Leibniz's monads, these objects are treated as opaque units, and internal dynamics are represented by endomorphisms. Dynamic behavior is modeled using endofunctors, forming the foundational Concrete Object Category (ConObjCat). Imaging is modeled as a functor from this category to an Image Category (ImageCat), mapping both objects and their internal processes (foreground and background) to image representations.
+
+Image analysis is structured as a chain of categorical transformations, starting from ConObjCat and progressing through ImageCat, GroupImageCat (segmentation), GeomModelCat (geometric modeling), DataCat (structured data), and MarkovCat (statistical inference). Each category can be instantiated differently depending on the task—e.g., as vector spaces, graphs, manifolds, or AI architectures. The framework enables rigorous comparisons between analysis pipelines via categorical isomorphisms.
+
+By grounding imaging and analysis in category theory, the framework enables modular, transparent, and reproducible pipelines. It supports modern functional programming (Haskell, Python, JAX) and offers a unified foundation for imaging algorithms, theoretical exploration, and educational purposes in the context of AI and scientific imaging workflows.
+
+Themes: ["Modelling","Open science and FAIR data"]
+
+Keywords: modelling, category theory, functional programming
+
+Gender of presenting author: Prefer not to say
+
+Special requirements: No

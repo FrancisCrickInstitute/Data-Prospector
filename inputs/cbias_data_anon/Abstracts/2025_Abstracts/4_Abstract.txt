@@ -1,0 +1,23 @@
+Institution:
+Neuroinformatics Unit and Margrie Lab
+Sainsbury Wellcome Centre
+University College London, London, UK
+
+Title: Automated analysis of multi-photon calcium imaging with photon-mosaic
+
+Abstract:
+photon-mosaic is a package in development for the automated analysis of multi-photon calcium imaging datasets. It provides a toolbox of commonly used processing and analysis methods, allowing users to create their own pipelines.
+
+The package will integrate the well-established suite2p pipeline (for registration, cell identification, and spike detection) and will offer a structured framework for evaluating different signal processing methodologies—-such as neuropil subtraction, spike deconvolution, and de-trending-—along with relevant validation tests, quality metrics, and visualisations. These choices, typically left to the researcher's discretion, will be systematically incorporated to improve reproducibility and analysis quality.
+
+Additionally, photon-mosaic will include pre-processing steps to modify raw imaging movies before registration, with the goal of support diverse datasets, such as three-photon recordings.
+
+By leveraging Snakemake, photon-mosaic aims to enable scalable execution on high-performance computing clusters and facilitate systematic evaluation of how different parameter choices affect analysis results through comprehensive metrics and visualisations.
+
+Themes: ["Imaging","Data processing and visualisation","Open science and FAIR data","Applications"]
+
+Keywords: calcium-imaging, multiphoton, pipeline, snakemake, neuroscience, 
+
+Gender of presenting author: Woman
+
+Special requirements: 

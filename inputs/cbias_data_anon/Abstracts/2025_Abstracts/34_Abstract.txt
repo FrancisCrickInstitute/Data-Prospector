@@ -1,0 +1,19 @@
+Institution:
+Advanced Light Microscopy Facility, Francis Crick Institute, London, UK
+Advanced Light Microscopy Facility, Francis Crick Institute, London, UK
+Advanced Light Microscopy Facility, Francis Crick Institute, London, UK
+
+Title: Optimising quantitative methods to assess the efficacy of clearing protocols for light-sheet microscopy
+
+Abstract:
+Light-sheet microscopy enables the rapid, three-dimensional, and multi-channel imaging of large biological samples. However, the light scattering properties of biological tissue often limit imaging depth and resolution, necessitating complex sample preparation protocols. Optical tissue clearing significantly reduces light scattering, boosting the signal-to-noise ratio and providing crucial spatial information for deep imaging. Despite the importance of this technique, a wide range of clearing protocols exist in the literature, with few quantitative comparisons. This lack of quantitative comparison is often due to the heterogeneity of analysis methods and a lack of computational expertise among life scientists, leading to difficulties in scientific communication.
+
+Here, we present a user-friendly, open-source analytical pipeline for the quantitative assessment of tissue clearing efficacy. Using samples cleared with different protocols, we summarise and quantify key parameters such as imaging depth, signal preservation, and morphological changes. We illustrate the utility of our pipeline with a simple proof of concept. This approach provides a standardised framework for the quantitative comparison of clearing protocols, assisting researchers in selecting the most appropriate method for their specific needs and making advanced microscopy techniques more accessible to the broader scientific community.
+
+Themes: ["Imaging","Data processing and visualisation"]
+
+Keywords: Optical tissue clearing (OTC), Light-sheet microscopy, Pipeline
+
+Gender of presenting author: Man
+
+Special requirements: No

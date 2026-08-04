@@ -1,0 +1,25 @@
+Institution:
+Sainsbury Wellcome Centre, UCL, London, UK
+Sainsbury Wellcome Centre, UCL, London, UK; Centre for Advanced Research Computing, UCL, London, UK
+Sainsbury Wellcome Centre, UCL, London, UK
+Sainsbury Wellcome Centre, UCL, London, UK; Gatsby Computation Neuroscience Unit, UCL, London, UK
+Sainsbury Wellcome Centre, UCL, London, UK, Centre for Advanced Research Computing, UCL, London, UK
+Centre for Advanced Research Computing, UCL, London, UK
+Sainsbury Wellcome Centre, UCL, London, UK; Gatsby Computation Neuroscience Unit, UCL, London, UK
+
+
+Title: Expanding the BrainGlobe ecosystem - brainglobe-stitch and brainglobe-registration
+
+Abstract:
+The BrainGlobe Initiative provides open-source computational tools for seamless neuroanatomical analysis and visualisation of brain microscopy data. The BrainGlobe Atlas API allows our tools to be uniquely interoperable by providing a consistent interface to multiple anatomical atlases within and across species. By interfacing with napari via widgets, we provide an easy-to-use graphical interface for all steps of an analysis pipeline, from data preprocessing to visualising outputs.
+
+Our team are continually working on addressing the needs of the community. Efforts are underway to broaden the types of microscopy data that can be registered into the BrainGlobe ecosystem with brainglobe-registration. Currently, our tools support registering 3D whole brain imaging datasets to any BrainGlobe atlas. brainglobe-registration uses elastix to register 2D brain slices and 3D brain sub-volumes along with whole brain datasets to BrainGlobe atlases. Additionally, we are developing brainglobe-stitch, a package for stitching tiled light sheet datasets. This package focuses on stitching terabyte-scale datasets on desktop hardware. The fused images are exported as either a BigDataViewer-compatible HDF5 file or as an OME-zarr.
+
+Together, brainglobe-stitch and brainglobe-registration expands upon the efforts of the BrainGlobe Initiative to enable an end-to-end data processing pipeline, from microscope to manuscript.
+
+
+Themes: ["None of the above"]
+
+Keywords: microscopy, registration, stitching
+
+Gender of presenting author: Man

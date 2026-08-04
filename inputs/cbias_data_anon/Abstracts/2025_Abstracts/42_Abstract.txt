@@ -1,0 +1,18 @@
+Institution:
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+
+Title: Lost in translation: navigating the path from bench to bioimage analysis
+
+Abstract:
+Biological research demands greater interdisciplinarity as imaging datasets grow increasingly complex. The need for specialisation has widen the gap between experimental and computational worlds, creating barriers that obstruct scientific progress and reproducibility. 
+As a cell biologist recently turned bioimage analyst, I have experienced the challenges of navigating different scientific languages firsthand. Just over a year ago I was a wet lab scientist who enrolled in the RMS Introduction to Image Analysis course. One year later, I found myself teaching that same course – a journey that highlighted both the obstacles and opportunities in our field.
+Through the lens of my journey, I emphasize the need for accessible training to not only improve individual skills, but also to demystify computational tools for wet lab scientists and help fight the reproducibility crisis. Bridging the gap requires more than technical training – it demands cultural translation. By designing accessible training programs and emphasizing community outreach, we can create pathways for scientists to navigate between experimental design and bioimage analysis, ultimately strengthening the reproducibility and impact of research in the life sciences. 
+
+
+Themes: ["None of the above"]
+
+Keywords: training, analysis, barriers
+
+Gender of presenting author: Woman
+
+Special requirements: 

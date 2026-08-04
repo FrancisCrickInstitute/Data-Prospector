@@ -1,0 +1,16 @@
+Institution:
+Randall Centre for Cell & Molecular Biophysics, King's College London, UK
+Randall Centre for Cell & Molecular Biophysics, King's College London, UK
+
+Title: Detecting and classifying artifacts associated with AI-based image restoration
+
+Abstract:
+Light microscopy is a powerful tool for examining cellular architecture and dynamics; as image-based experiments become progressively more delicate and complex, there is an urgent demand for reliable, reproducible analysis workflows that accurately translate experimental results into biological conclusions. In this study we investigate artefacts associated with AI-based methods of image restoration and use principal component analysis of a high-dimensional image feature space to determine the nature of this class of artefacts. In addition, we show that standard metrics (PSNR, SSIM, RMSE) used to assess the quality of restoration often do not indicate the presence of these artefacts and do not give a reliable prediction of image performance in model analysis workflows.
+
+Themes: ["Data processing and visualisation"]
+
+Keywords: microscopy, image processing, artefacts
+
+Gender of presenting author: Woman
+
+Special requirements: No

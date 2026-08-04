@@ -1,0 +1,18 @@
+
+
+Institution: Francis Crick Institute/UCL
+
+Title: Cell competition: who makes the first move?
+
+
+Abstract: Cell competition: who makes the first move? 
+
+My PhD project focuses on understanding cell competition from a single-cell perspective. I use time lapse microscopy and deep learning image analysis to reverse engineer the mechanisms of two different forms of competition. 
+Cell competition is a biological quality-control phenomenon fundamental to tumorigenesis prevention and healthy development. The outcomes of cell competition are well established on a population wide level, but the single-cell mechanisms are yet to be fully identified.
+In this project I have aimed to answer the question of which populations are driving the competition; is it the winner cells fighting off the losers, the losers sacrificing themselves, or a combination of both? 
+I employ bespoke image analysis scripts to visualise, segment, classify and track large volumes of single-cell image data in order to yield a quantitative assessment of cellular activity.
+In doing so I aim to further define the characteristics of competition and to ask what really constitutes competition in the first place.
+
+Keywords: ["Segmentation","Object Tracking","AI & Machine/Deep Learning","High-Throughput","3D/4D/ ... nD Data\n","Big Data\n","Multi-Disciplinary","Open Science"]
+
+Additional Keywords: 

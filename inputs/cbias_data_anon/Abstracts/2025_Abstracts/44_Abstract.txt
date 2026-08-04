@@ -1,0 +1,22 @@
+Institution:
+BioImaging Facility, The Netherlands Cancer Institute
+BioImaging Facility, The Netherlands Cancer Institute
+
+Title: Foci Analyzer: large-scale nuclear and cellular foci detection using Fiji and QuPath
+
+Abstract:
+Quantifying nuclear and cellular foci is important for studying various biological processes, including DNA damage response, protein aggregation, receptor clustering, as well as the detection of vesicles, centromeres, and FISH probes.
+
+Foci Analyzer (https://imagej.net/plugins/foci-analyzer) is an extensive Fiji macro designed to detect, analyze and visualize foci in 2D and 3D fluorescence microscopy images of cells and tissue. The script utilizes CLIJ2 and MorpholobJ for efficient and reliable foci detection and quantification across different imaging modalities (confocal, widefield) and resolutions. The output data includes detailed statistics of individual foci and measurements per cell. For images with two channels, colocalization analysis is performed and displayed in insightful overlap maps.
+
+We recently combined Foci Analyzer with QuPath, enabling foci analysis on very large images. After cell segmentation in annotated regions, image tiles are exported from QuPath and analyzed in Fiji. The results are then imported back into QuPath, where nuclei can be classified based on, for example, their number of foci.
+
+
+Themes: ["Data processing and visualisation","Applications"]
+
+Keywords: foci, fluorescence microscopy, Fiji, QuPath
+
+Gender of presenting author: Man
+
+Special requirements: We would like to present a poster.
+Special requirements: a prime spot, of course! ;-)

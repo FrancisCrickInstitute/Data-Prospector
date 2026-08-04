@@ -1,0 +1,33 @@
+Institution:
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+Bioimaging and Optics Platform, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+Developmental Biology Unit, European Molecular Biology Laboratory (EMBL), Heidelberg, Germany
+Cell Biology and Biophysics Unit, European Molecular Biology Laboratory (EMBL), Heidelberg, Germany
+School of Basic Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Basic Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+Cell Biology and Biophysics Unit, European Molecular Biology Laboratory (EMBL), Heidelberg, Germany
+Cell Biology and Biophysics Unit, European Molecular Biology Laboratory (EMBL), Heidelberg, Germany & Center for Organismal Studies (COS), University of Heidelberg, Heidelberg, Germany
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland & Friedrich Miescher Laboratory of the Max Planck Society, Tübingen, Germany
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+School of Life Sciences, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland & Center for Scalable Data Analytics and Artificial Intelligence (ScaDS.AI), TU Dresden, Dresden, Germany
+
+Title: Spotiflow: accurate and efficient spot detection for fluorescence microscopy with deep stereographic flow regression
+
+Abstract:
+Identifying spot-like structures in large and noisy microscopy datasets is a critical step for many biological applications, from transcript detection in two- and three-dimensional imaging-based transcriptomics (iST) to cell detection in light-sheet fluorescence microscopy (LSFM). Despite recent advances in computer vision, most commonly used spot detection methods still rely on classical algorithms, such as Laplacian of Gaussian (LoG), which require tedious parameter tuning and often struggle to generalize across conditions.
+We present Spotiflow, a deep learning method for subpixel-accurate spot detection. Spotiflow is trained via two synergetic tasks: multi-scale heatmap regression and a novel “stereographic flow” prediction, in which analytically invertible embeddings of a local vector field are regressed to achieve subpixel precision. Both tasks naturally extend to arbitrary dimensions, enabling end-to-end trainable spot detection both in 2D and 3D imaging data.
+Spotiflow is robust across diverse imaging conditions, efficient in time and memory, and optimized for modest hardware, even with very large inputs. We demonstrate its utility for transcript detection in iST, cell detection in LSFM as well as efficient detection in terabyte-scale datasets. We also show that its increased detection accuracy translates into meaningful improvements in biological insights from live imaging. To facilitate adoption, we provide several pre-trained 2D and 3D models accessible via a CLI, a Python API, and a napari plugin.
+
+Themes: ["Applications","Data processing and visualisation","Imaging"]
+
+Keywords: microscopy, spot detection, deep learning
+
+Gender of presenting author: Man
+
+Special requirements: None

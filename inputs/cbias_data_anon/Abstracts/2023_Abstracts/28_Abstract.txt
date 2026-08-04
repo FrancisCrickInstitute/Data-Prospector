@@ -1,0 +1,18 @@
+
+
+Institution: Rosalind Franklin Institute
+
+Title: IceMage and GeoLlama: new tools for fast automated analyses of cryo-electron tomography bioimages
+
+
+
+
+Abstract: Cryo-electron tomography (cryoET) is a popular high-resolution imaging technique for studying complex three-dimensional biomolecular structures. Samples are frozen and often lamellae are fabricated in situ to provide physiological structure and cellular context [Dubochet et al., Q Rev Biophys 1988]. Here we present two new cryoET data processing tools, IceMage and GeoLlama, which are designed to quantify the amount of non-vitreous ice (NVI) and thickness of lamellae from images acquired. 
+NVI artefacts in cryo-frozen samples render parts of acquired micrographs unusable for further downstream processing. IceMage uses wavelet transforms and thresholding to identify regions in a micrograph with NVI and has been calibrated against manual annotations from scientists. It aids decisions of acceptance or rejection, with potential for future automation, by reporting the proportion of the micrograph affected by NVI.
+GeoLlama estimates the thickness of lamellae by performing Fourier analysis on reconstructed tomograms to gauge the tilt angle of the lamella relative to the tomograms, then using structure tensors of the samples to determine their breadth and thickness. This geometrical information can be used to study, for instance, the relationship between damage on bio-features and their distance to the lamella surface [Berger et al., Nature Comms 2023].
+Both tools will be integrated into the program suite Ot2Rec [Yee et al., Biological Imaging 2023] for fully automated processing of cryoET data.
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n"]
+
+Additional Keywords: Cryo-ET

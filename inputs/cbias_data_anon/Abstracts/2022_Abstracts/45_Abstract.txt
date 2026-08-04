@@ -1,0 +1,16 @@
+
+
+Institution: University of Sheffield
+
+Title: Finding MoRI (Molecules of Relevant Interest) for AFM with Machine Learning
+
+
+Abstract: Atomic force microscopy (AFM) is unique in its ability to image single molecules in liquid with sub-molecular resolution, without the need for labelling or averaging.  Enabling us to probe biomolecular structures in native-like states.  However, the lack of automated analysis tools in AFM, and slow integration of machine learning (ML) pipelines limits the analysis of the powerful data produced.  One limiting factor for the design and integration of these tools is AFM specific data issues, including; varied image contents and small datasets (compared to e.g. Cryo EM).  Raw AFM images undergo many “cleaning” steps where poorly generalisable threshold methods make identifying desired molecules of interest (MoIs) difficult within a dataset.  Initial trials using weakly-supervised random forests, and a recursive DBSCAN algorithm, can identify multiple MoIs in one pass with higher accuracy and less user oversight than the gold-standard[1,2] software.  Once MoIs are identified, we encounter a second problem - the inherent heterogeneity of many biomolecular structures.  In molecules such as DNA, heterogeneity is driven by its inherent flexibility[3], but how can one distinguish between one conformation and another?  Here, we guide ML instance segmentation labelling via surveys to empirically distinguish DNA minicircle conformations.  Neural networks should then localise, classify and segment large AFM datasets to help unravel the role of structure in DNA interactions.
+
+[1] - David Nečas, Petr Klapetek, Gwyddion: an open-source software for SPM data analysis, Cent. Eur. J. Phys. 10(1) (2012) 181-188
+[2] - Beton, J. G. et al. TopoStats – A program for automated tracing of biomolecules from AFM images. Methods 193 (2021) 68–7
+[3] - Irobalieva, R. N. et al. Structural diversity of supercoiled DNA. Nat Commun 6, 8440 (2015).
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning"]
+
+Additional Keywords: 

@@ -1,0 +1,20 @@
+Institution:
+Randall centre for cell and molecular biophysics, Kings College London, UK
+Randall centre for cell and molecular biophysics, Kings College London, UK
+Randall centre for cell and molecular biophysics, Kings College London, UK
+Randall centre for cell and molecular biophysics, Kings College London, UK
+
+Title: Combining assessment methods to gain new insights into SMLM reconstruction accuracy
+
+Abstract:
+Single Molecule Localisation Microscopy (SMLM) has become a common method in the Bio-imaging toolbox. Despite this familiarity, a universal way of assessing reconstruction quality does not yet exist. Users are increasingly aware or the possibility of reconstruction artefacts and that the resolution is affected by more than just the localisation precision. Currently the three most effective tools for assessing SMLMS images are HAWKMAN, SQUIRREL and FRC but these are each intended to principally assess different aspects of the reconstruction. However, correct interpretation of the results of one tool can depend on the other types of artefact present, complicating the assessment of reconstruction quality.
+Here we demonstrate a method and a software tool that incorporates slightly modified versions of these techniques into a combined analysis able to detect a variety of reconstruction artefacts. We demonstrate with simulated and experimental data how the results from individual methods can aid in the interpretation of results from another. For example, knowledge of sharpening bias from HAWKMAN enables detection of non-linearity in SQUIRREL and warns of inaccurate resolution estimates from FRC. We show work toward a single ImageJ/Napari plugin that can automate this interaction and produce an assessment report of an SMLM image, quantifying the artefacts and resolution, giving researchers confidence in the accuracy of their reconstruction.
+
+
+Themes: ["Imaging","Data processing and visualisation"]
+
+Keywords: SMLM, Image quality assesment, resolution, reconstryction artefacts, super-resolution
+
+Gender of presenting author: Man
+
+Special requirements: No

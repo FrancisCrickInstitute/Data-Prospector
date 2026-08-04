@@ -1,0 +1,13 @@
+
+
+Institution: Mechanobiology and Biophysics laboratory, The Francis Crick Institute + Randall Centre for Cell and Molecular Biophysics, King's College London
+
+Title: A deep-learning based approach to particle fusion for enhanced resolution in localization microscopy
+
+
+Abstract: Single-molecule localization techniques now allow for the study of the nanoscale architectures of protein complexes in-situ. Many such protein complexes occur multiple times within a cell, meaning that data from different images of the same protein could be used to build up a more accurate model of the complex, as is currently done in cryo-EM. However, synthesising multiple views of 3D images without strongly constraining the model is challenging. Here we explore a deep-learning based approach to single-particle fusion of localization microsocpy data using a convolutional neural network and a differentiable renderer. This allows for model-free reconstruction of protein complex architecture from single-molecule localization data. The accuracy of the reconstruction is affected by the localization accuracy, the proportion of the protein which is labelled, the accuracy of the rotational fit of the model to the data, and the biological variability of the structure. Due to the use of the nuclear pore complex as a standard in super-resolution imaging, there are multiple datasets of this structure across different nanoscale fluorescence imaging techniques. We have used these datasets both to test the performance of our algorithm and, inversely, to explore the performance of the different techniques relative to each other.
+
+
+Keywords: ["AI & Machine/Deep Learning"]
+
+Additional Keywords: 

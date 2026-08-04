@@ -26,32 +26,54 @@ EVALUATOR_SYSTEM = """You are an expert code reviewer and validator. Your role i
 - Provide actionable feedback for improvement
 - Your verdict determines if the code is production-ready"""
 
-CRITERIA_SYSTEM = """You are an expert requirements analyst. Your role is to distill a task report into a concise, checkable success rubric.
+# D3b: distills the report into TWO separate outputs for two different consumers, so ideation
+# (generate_angles, and later the D5 judges) stops paying cached tokens on script-delivery rubric
+# text ("runs without errors", "clean code") that has nothing to do with whether an idea is good.
+CRITERIA_SYSTEM = """You are an expert requirements analyst. Your role is to distill a task report into two separate, non-overlapping outputs for two different consumers: IDEATION CRITERIA (the substance an analysis idea must engage with) and a DELIVERABLE RUBRIC (the mechanical bar a finished script must clear).
 - Extract only what the report actually asks for - never invent requirements it doesn't state
 - Be concrete about counts, formats, and file types wherever the report is concrete
 - If the report is silent on a dimension (e.g. it never mentions visualizations), say so rather than assuming a default
-- This rubric is the single source of truth other agents will design and grade against"""
+- Keep the two outputs cleanly separated: guiding questions, stakeholders, anti-targets, and data-availability constraints belong ONLY in the ideation criteria; run-without-errors, file-saving, and code-cleanliness belong ONLY in the deliverable rubric
+- Anywhere the report specifies an anti-target list (things already explored / explicitly out of scope), carry it into the ideation criteria VERBATIM - ideation depends on knowing exactly what NOT to repeat, and paraphrasing risks losing the specifics"""
 
 # Message prompts for LLM invocations (generic templates with placeholders for domain-specific content)
 CRITERIA_PROMPT = """
-Read this task report and extract a concise success rubric: the concrete, checkable criteria a finished script must satisfy.
+Read this task report and extract two separate outputs.
 
 Report: {report}
 
 Input Data: {input_data}
 
-Identify:
+FIRST - IDEATION CRITERIA: the substance a candidate analysis IDEA must engage with, not whether
+code runs. Identify:
+1. The guiding questions or stakeholders the analysis should serve, if the report states them
+2. Any anti-target list - analyses already explored, or explicitly out of scope - carried over
+   VERBATIM where the report is specific
+3. Data availability constraints relevant to judging whether an idea is even answerable
+4. What "non-obvious" or "insightful" means for this report, if it says so
+
+SECOND - DELIVERABLE RUBRIC: the concrete, checkable criteria a finished script must satisfy once
+an idea has already been chosen. Identify:
 1. What the script must compute/produce (metrics, tables, summaries, etc.) and how many/which, if the report specifies
 2. What artifacts it must save to disk, if any (file types, minimum counts, naming)
 3. Structural or presentation requirements the report states (console output format, labeling, etc.)
-4. Anything the report explicitly says to avoid or keep out of scope
+4. Anything the report explicitly says to avoid or keep out of scope, at the CODE level
 
-<criteria>
-[Concise bullet-point rubric, grounded only in what the report actually asks for]
-</criteria>
+If the report is silent on a dimension for either output, say so rather than assuming a default.
+
+<ideation_criteria>
+[Concise bullet-point rubric for judging analysis IDEAS - guiding questions, stakeholders, anti-targets, data constraints]
+</ideation_criteria>
+
+<deliverable_rubric>
+[Concise bullet-point rubric for judging a REALIZED script - what it must compute, save, and how it must look]
+</deliverable_rubric>
 """
 
-ORCHESTRATOR_PROMPT = """
+# Split in two so _run_one_design can cache the prefix: report/input_data/criteria are identical
+# across every design and iteration in a run, while feedback (grows each iteration), stance, and
+# seed_section vary - see the cache_prefix argument to llm_call.
+ORCHESTRATOR_PROMPT_PREFIX = """
 You are an experienced solutions architect. Design a minimal, focused approach for this task.
 
 Report: {report}
@@ -60,7 +82,9 @@ Input Data: {input_data}
 
 Success Criteria (the finished script must satisfy every item below - no more, no less):
 {criteria}
+"""
 
+ORCHESTRATOR_PROMPT_SUFFIX = """
 {feedback}
 
 Approach for this design: {stance}
@@ -100,17 +124,24 @@ Return your response in this format:
 </tasks>
 """
 
-WORKER_PROMPT = """
-Implement the {function} function. Be direct—no defensive coding.
-
-Architecture: {description}
-Input: {input}
-Output: {output}
+# Split in two so _call_worker can cache the prefix: original_report/input_data/library_notes/
+# domain_notes are identical across every task in a design (and across the whole run), while
+# function/description/input/output vary per task - see the cache_prefix argument to llm_call.
+WORKER_PROMPT_PREFIX = """
+Shared context for this script (task, input data, and constraints):
 
 Task: {original_report}
 Data: {input_data}
 Libraries: {library_notes}
 Domain: {domain_notes}
+"""
+
+WORKER_PROMPT_SUFFIX = """
+Implement the {function} function. Be direct—no defensive coding.
+
+Architecture: {description}
+Input: {input}
+Output: {output}
 
 CRITICAL RULES:
 1. Implement ONLY the function '{function}', no helpers
@@ -131,7 +162,10 @@ def function_name(args):
 The tags are metadata markers only—do not include them in the actual Python code.
 """
 
-COMPILER_PROMPT = """
+# Split in two so compile_script can cache the prefix: it's identical across the (up to 3)
+# sequential compile/execute retries for one design, since only error_feedback changes between
+# attempts - see the cache_prefix argument to llm_call.
+COMPILER_PROMPT_PREFIX = """
 Integrate these functions into one complete, executable Python script.
 
 Architecture: {analysis}
@@ -140,7 +174,9 @@ Functions:
 {functions}
 
 Libraries: {library_notes}
-{seed_section}{error_feedback}
+{seed_section}"""
+
+COMPILER_PROMPT_SUFFIX = """{error_feedback}
 RULES:
 1. Write complete Python code (imports → functions → main() call)
 2. One-line docstrings only
@@ -171,14 +207,19 @@ if __name__ == '__main__':
 The <response> tags are METADATA MARKERS ONLY—do not include them in the Python code itself.
 """
 
-REQUIREMENTS_VALIDATOR_PROMPT = """
+# Split in two so validate_requirements can cache the prefix: report + criteria are identical
+# across every design's validation call in a run, while the script/execution output vary per
+# design - see the cache_prefix argument to llm_call.
+REQUIREMENTS_VALIDATOR_PROMPT_PREFIX = """
 Check if this successfully-executed script's actual output satisfies the success criteria below.
 
 Task: {report}
 
 Success Criteria:
 {criteria}
+"""
 
+REQUIREMENTS_VALIDATOR_PROMPT_SUFFIX = """
 Script: {content}
 Execution Output: {execution_result}
 
@@ -207,4 +248,232 @@ beyond what the criteria calls for, or if the code is not clean (one-line docstr
 If every criterion is met="true" and there's nothing else to flag: "All requirements met. Data gaps
 for future analysis: [list 2-3 things that would help, if applicable]"
 </feedback>
+"""
+
+# --- D2/D3a/D3b: Angle generation (ideation) --------------------------------------------------
+# Human-owned - see DIVERGER_PLAN.md guardrails ("Do not invent objective prompts"). The wording
+# of these three constants determines the quality of every angle the pipeline ever proposes; left
+# empty deliberately. Split per the caching convention (DIVERGER_PLAN.md §4): PREFIX is
+# report/ideation_criteria/input_data (identical across every angle-generation call in a run) -
+# ideation_criteria is the IDEATION half of the D3b criteria split (guiding questions, stakeholders,
+# anti-targets, data constraints) - the deliverable rubric (script-delivery mechanics) is withheld
+# from ideation entirely and held for D6. SUFFIX is stance/guiding_question/existing_angles
+# (per-call/per-iteration - both cycling axes vary call to call, so they must live here, not in the
+# cached prefix).
+#
+# generate_angles() in pipeline.py logs a loud warning and falls back to the minimal built-in
+# placeholder below when any of these three are empty, so the plumbing stays runnable while
+# they're unfilled - that fallback is NOT a substitute for real ideation prompt design.
+ANGLE_GENERATION_SYSTEM = (
+    "You are an experienced data analyst, adept at identifying novel insights from both structured and unstructured "
+    "data. You generate candidate data-analysis angles as structured XML. Each angle is a distinct question or method, "
+    "not a full analysis plan. While novelty is encouraged, the calculation must be feasible with the given data. "
+    "Avoid over-extrapolating or making assumptions not supported by the data."
+)
+ANGLE_GENERATION_PROMPT_PREFIX = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+ANGLE_GENERATION_PROMPT_SUFFIX = """
+{existing_angles}
+
+For this call, your assigned angle of attack is:
+- Approach/stance: {stance}
+- Guiding question or stakeholder to focus on: {guiding_question}
+
+Propose {n} distinct candidate analysis angle(s) that concretely reflect the stance and question
+above - do not default back to whichever opportunity in the data looks most obvious or most
+concrete if it conflicts with this assignment. Each angle is an idea for a specific analysis - not
+code, not a full script design - identified by what it would compute and why it might be
+interesting, and it must be genuinely different from anything already listed above (if non-empty). However, do not 
+suggest analysis angles that cannot be supported by the underlying data - candidate analyses must be feasible,
+not just interesting.
+
+Return your response as one <angles> block containing exactly {n} <angle> blocks:
+
+<angles>
+<angle>
+<id>short slug, e.g. angle-1</id>
+<variables_involved>which fields/columns this angle uses</variables_involved>
+<hypothesis>what pattern or relationship this angle expects to find</hypothesis>
+<question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
+<why_non_obvious>why this isn't just the first/obvious thing to check</why_non_obvious>
+<rough_method>one or two sentences on how it'd be computed</rough_method>
+<requires>comma-separated list of any Python libraries this method would need beyond numpy/pandas/matplotlib, if any (e.g. "networkx, scikit-learn, scipy"); this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available</requires>
+</angle>
+</angles>
+"""
+
+ANGLE_GENERATION_SYSTEM_FALLBACK = (
+    "You generate candidate data-analysis angles as structured XML. Each angle is a distinct "
+    "question or method, not a full analysis plan."
+)
+
+ANGLE_GENERATION_PROMPT_PREFIX_FALLBACK = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+
+ANGLE_GENERATION_PROMPT_SUFFIX_FALLBACK = """
+{existing_angles}
+
+For this call, your assigned angle of attack is:
+- Approach/stance: {stance}
+- Guiding question or stakeholder to focus on: {guiding_question}
+
+Propose {n} distinct candidate analysis angle(s) that concretely reflect the stance and question
+above - do not default back to whichever opportunity in the data looks most obvious or most
+concrete if it conflicts with this assignment. Each angle is an idea for a specific analysis - not
+code, not a full script design - identified by what it would compute and why it might be
+interesting, and it must be genuinely different from anything already listed above (if non-empty).
+
+Return your response as one <angles> block containing exactly {n} <angle> blocks:
+
+<angles>
+<angle>
+<id>short slug, e.g. angle-1</id>
+<variables_involved>which fields/columns this angle uses</variables_involved>
+<hypothesis>what pattern or relationship this angle expects to find</hypothesis>
+<question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
+<why_non_obvious>why this isn't just the first/obvious thing to check</why_non_obvious>
+<rough_method>one or two sentences on how it'd be computed</rough_method>
+<requires>comma-separated list of any Python libraries this method would need beyond numpy/pandas/matplotlib, if any (e.g. "networkx, scikit-learn, scipy"); this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available</requires>
+</angle>
+</angles>
+"""
+
+# --- D5: Insight + soundness judging --------------------------------------------------------
+# Human-owned - see DIVERGER_PLAN.md guardrails ("Do not invent objective prompts") AND D5's own
+# note: "Both prompts are human-owned - they are the product." Once req_score is gone, these two
+# judges ARE the entire quality bar - the machinery is trivial, the wording is the whole game.
+# Split per the caching convention (DIVERGER_PLAN.md §4): PREFIX is report/ideation_criteria/
+# input_data - the SAME triple generate_angles already caches, since D3b folded the anti-target
+# list into ideation_criteria. SUFFIX is the individual angle being judged ({angle_text}).
+#
+# judge_insight()/judge_soundness() in pipeline.py log a loud warning and fall back to the minimal
+# built-in placeholders below when their three constants are empty, so the plumbing stays runnable
+# while they're unfilled - the fallback is NOT a substitute for real judge prompt design.
+INSIGHT_JUDGE_SYSTEM = (
+    "You judge whether a proposed data-analysis angle is genuinely non-obvious, grounded in what "
+    "the data can actually support - not whether the angle's own self-description claims novelty."
+)
+INSIGHT_JUDGE_PROMPT_PREFIX = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, ANTI-TARGETS - analyses already explored, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+INSIGHT_JUDGE_PROMPT_SUFFIX = """
+Judge the non-obviousness of this candidate analysis angle. Do NOT take its own why_non_obvious
+field as evidence - judge independently against the anti-target list above and your own knowledge
+of what's obvious to try first with this kind of data. An angle that overlaps the anti-target list,
+even if phrased differently or using a different library/method, is NOT non-obvious.
+
+Angle:
+{angle_text}
+
+<score>[0.0-1.0, where 0.0 = exactly what the anti-target list already covers, 1.0 = genuinely novel and non-obvious]</score>
+<reasoning>[1-2 sentences justifying the score, referencing the anti-target list or data if relevant]</reasoning>
+"""
+
+
+INSIGHT_JUDGE_SYSTEM_FALLBACK = (
+    "You judge whether a proposed data-analysis angle is genuinely non-obvious, grounded in what "
+    "the data can actually support - not whether the angle's own self-description claims novelty."
+)
+
+INSIGHT_JUDGE_PROMPT_PREFIX_FALLBACK = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, ANTI-TARGETS - analyses already explored, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+
+INSIGHT_JUDGE_PROMPT_SUFFIX_FALLBACK = """
+Judge the non-obviousness of this candidate analysis angle. Do NOT take its own why_non_obvious
+field as evidence - judge independently against the anti-target list above and your own knowledge
+of what's obvious to try first with this kind of data. An angle that overlaps the anti-target list,
+even if phrased differently or using a different library/method, is NOT non-obvious.
+
+Angle:
+{angle_text}
+
+<score>[0.0-1.0, where 0.0 = exactly what the anti-target list already covers, 1.0 = genuinely novel and non-obvious]</score>
+<reasoning>[1-2 sentences justifying the score, referencing the anti-target list or data if relevant]</reasoning>
+"""
+
+SOUNDNESS_JUDGE_SYSTEM = (
+    "You judge whether a proposed data-analysis angle's claimed pattern is likely a real, "
+    "defensible finding given the data volume available, or a sampling artifact / overclaim. You also judge "
+    "whether the angle is implementable, given the underlying data."
+)
+SOUNDNESS_JUDGE_PROMPT_PREFIX = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+SOUNDNESS_JUDGE_PROMPT_SUFFIX = """
+Judge whether this candidate analysis angle's claimed pattern is defensible given the data volume
+actually available (see Input Data above). Distinguish three cases, not two - a boolean sound/unsound
+call collapses "needs a caveat" and "cannot be supported at all" into the same bucket, which is not
+useful when almost nothing on a small dataset is unconditionally solid:
+- "unsupportable": the claim cannot be supported at all - e.g. a "trend" over only 2 data points, a
+  field that does not exist in the data for the years/groups being compared, a subgroup of 2-3, a
+  method that isn't actually computable from what's available.
+- "caveat": the claim is supportable but only with an explicit caveat about its limitations (small n,
+  partial-year coverage, a confound not controlled for). Expect this to be the NORMAL case for a
+  dataset this size, not a rare one.
+- "solid": the claim is well-supported with no material caveat needed. Expect this to be rare.
+
+Angle:
+{angle_text}
+
+<verdict>[unsupportable, caveat, or solid - exactly one of these three words, nothing else]</verdict>
+<caveat>[if verdict is "caveat", the specific limitation to carry forward and display alongside the
+angle later (e.g. "n=37 respondents in 2022, treat as indicative, not conclusive"); leave empty if
+verdict is "solid" or "unsupportable"]</caveat>
+<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if not solid]</reasoning>
+"""
+
+SOUNDNESS_JUDGE_SYSTEM_FALLBACK = (
+    "You judge whether a proposed data-analysis angle's claimed pattern is likely a real, "
+    "defensible finding given the data volume available, or a sampling artifact / overclaim."
+)
+
+SOUNDNESS_JUDGE_PROMPT_PREFIX_FALLBACK = """
+Report: {report}
+
+Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
+{ideation_criteria}
+
+Input Data: {input_data}
+"""
+
+SOUNDNESS_JUDGE_PROMPT_SUFFIX_FALLBACK = """
+Judge whether this candidate analysis angle's claimed pattern is defensible given the data volume
+actually available (see Input Data above), or whether it needs an explicit caveat, or cannot be
+supported at all (e.g. a "trend" over only 2 data points, a field only present in a subset of years,
+a tiny subgroup).
+
+Angle:
+{angle_text}
+
+<verdict>[unsupportable, caveat, or solid - exactly one of these three words]</verdict>
+<caveat>[if verdict is "caveat", the specific limitation to note; empty otherwise]</caveat>
+<reasoning>[1-2 sentences justifying the verdict]</reasoning>
 """

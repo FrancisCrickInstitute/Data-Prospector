@@ -1,0 +1,29 @@
+Institution:
+Rosalind Franklin Institute & King's College London, UK 
+
+Rosalind Franklin Institute, Oxford, UK 
+
+University of Birmingham, Birmingham, UK 
+
+Rosalind Franklin Institute, Oxford, UK 
+
+King’s College London & University of Birmingham, UK 
+
+Rosalind Franklin Institute, Oxford, UK 
+
+Title: Hybrid hydrogels for tissue mimics: Multimodal cryogenic imaging to understand structure 
+
+Abstract:
+High drug attrition rates in clinical trials underscore the limitations of animal models in accurately predicting human responses. Micro-engineered tissue systems offer promising alternatives, yet their success is constrained by the lack of reliable, reproducible scaffold materials for 3D in vitro modelling. This project explores a range of bio-matrices—including collagen gels, organic hydrogels and novel organic–inorganic hybrid hydrogels—developed for bone and tissue regeneration purposes, to evaluate their potential as advanced scaffolds for periodontitis treatment. 
+
+We employ a multimodal cryogenic imaging approach testing cryo-focused ion beam scanning electron microscopy (cryo-FIB/SEM), cryo-transmission electron microscopy (cryo-TEM), and cryo-soft X-ray tomography (cryo-SXT) to understand their utility in characterising the ultrastructure of these bio-matrices in their fully hydrated, near-native state. Each technique provides complementary resolution and field-of-view advantages, enabling detailed mapping of scaffold morphology and in future, cell–matrix interactions. Structural data will inform computational models to simulate hydrogel mechanical properties, porosity, and cell interactions. 
+
+This interdisciplinary workflow integrates advanced microscopy, materials science, and computational simulation to guide the design of functional 3D scaffolds. Beyond applications in periodontal regeneration, the approach lays the foundation for building next-generation in vitro models to support drug discovery and personalised medicine. 
+
+Themes: ["Imaging"]
+
+Keywords: Cryogenic Microscopy (Cryo-ET, Cryo-SXT, Cryo-FIB/SEM), Biomaterials, Segmentation 
+
+Gender of presenting author: Woman
+
+Special requirements: NA

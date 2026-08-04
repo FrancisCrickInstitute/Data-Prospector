@@ -1,0 +1,28 @@
+Institution:
+Chan Zuckerberg Biohub San Francisco, San Francisco, CA, USA
+Chan Zuckerberg Initiative, Redwood City, CA, USA
+Chan Zuckerberg Initiative, Redwood City, CA, USA
+Chan Zuckerberg Initiative, Redwood City, CA, USA
+Chan Zuckerberg Initiative, Redwood City, CA, USA
+Chan Zuckerberg Biohub San Francisco, San Francisco, CA, USA
+Chan Zuckerberg Biohub San Francisco, San Francisco, CA, USA
+Chan Zuckerberg Biohub San Francisco, San Francisco, CA, USA
+Chan Zuckerberg Initiative, Redwood City, CA, USA
+Chan Zuckerberg Biohub San Francisco, San Francisco, CA, USA
+
+Title: inTRACKtive: a web-based tool for interactive cell tracking visualization
+
+Abstract:
+Tracking live cells in developing tissues has become increasingly powerful. The combination of light-sheet microscopy with AI-enabled cell tracking approaches can capture cellular dynamics across 2D and 3D over long timescales. However, existing visualization tools for cell tracking data are often limited to native software, require technical coding expertise, or lack support for interactive exploration of large datasets, creating a barrier to broad adoption.
+
+We present inTRACKtive, a novel, web-based tool for intuitive, interactive visualization and sharing of large-scale cell tracking datasets. inTRACKtive enables users to explore 2D and 3D tracking data directly in their browser—without software installation or large data downloads—by leveraging a Zarr-based format for efficient lazy loading. Users can select and trace individual or groups of cells, color them by arbitrary attributes such as velocity or gene expression, and share their exact viewing configuration simply by hyperlink.
+
+We used inTRACKtive to build the Virtual Embryo Zoo, an online resource showcasing tracked embryonic development across six model organisms. The platform empowers researchers to conduct virtual fate-mapping experiments, disseminate results, and contribute their own data. By lowering technical barriers, inTRACKtive opens new possibilities for collaboration and accelerates biological discovery.
+
+Themes: ["Data processing and visualisation"]
+
+Keywords: Cell tracking, data visualization, fate mapping
+
+Gender of presenting author: Man
+
+Special requirements: 

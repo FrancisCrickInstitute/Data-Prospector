@@ -1,0 +1,19 @@
+
+
+Institution: Univ. Grenoble Alpes – CEA – CNRS, Laboratory of Chemistry and Biology of Metals, Grenoble, France 
+
+Title: Analysis of Liver Sinusoidal Endothelial Cell fenestration from 3D electron microscopy data
+
+
+
+Abstract: The analysis of liver architecture holds significant interest in enhancing our understanding of tissue organization and advancing our insight into liver physiology. Focused ion beam scanning electron microscopy (FIB-SEM) is a 3D electron microscopy (3DEM) technique enabling to reach isotropic voxel size of 3nm. Here, we aim to analyse the ultrastructure of the liver in different contexts.
+
+Sample preparation is an integral part to acquire high-quality images by 3DEM. The optimised mouse liver block preparation method led to images with such contrast that it offered the possibility to segment, in particular, liver sinusoidal endothelial cells (LSEC). Due to the characteristics of the dataset and the hardware conditions, an optimal approach was required. Ilastik, an open source software package, contains several workflows, each one being adapted to specific data properties. The Carving workflow is based on identifying objects by their contour features, using the watershed method, while the Pixel classification workflow is an automatic method using a random forest classifier. In this work, we developed an original process combining these two workflows that led us to the first 3D reconstruction of LSEC. 
+
+To extend this LSEC segmentation process to the analysis of various liver samples, we now need to implement a deep learning approach, using nnU-Net. Finally, once segmentation masks will be acquired, quantitative measurements on LSEC fenestrae will be explored through an automatic approach. Quantitative measurements will be performed on liver from mouse with different genetic background to study the influence of morphogenetic proteins on the liver endothelium.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","New Tools\n","Multi-Disciplinary"]
+
+Additional Keywords: Focused Ion Beam - Scanning Electron Microscopy (FIB-SEM)
+Liver
+nnU-Net

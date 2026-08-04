@@ -1,0 +1,12 @@
+
+
+Institution: UCL
+
+Title: Bayesian Deep learning-based predictions of multiple phenotypes in clear cell renal cell carcinoma
+
+
+Abstract: Clear Cell Renal Cell Carcinoma (ccRCC) is the most common type of kidney cancer and is the 10th most common cause of cancer related death. It is clinically challenging to diagnose because the histological features are very diverse and the biological drivers for this heterogeneity are unclear. Here we leverage the TRACERx Renal dataset to develop an artificial intelligence (AI) model to predict four fundamental histological axes: tumour composition, grade, architecture, and cytomorphology. Such a tool would enable scalable histological analysis of digital histological datasets to understand the biological meaning of these features, until now precluded by small cohorts and low throughput of manual histological review. The Bayesian Neural Network model was developed as follows. First, the annotated areas on each whole slide image were captured for image processing. Second, the selected regions were cropped into tiles. Third, the AI model was trained using multi-label deep convolutional neural network, and predictions were scaled using Matthews Correlation Coefficients as AI scores. Next, we verified the AI model using a validation cohort. Finally, we evaluated the accuracy of the prognostic predictions of the AI model and revealed that the AI model detected various phenotypes with high accuracy with estimated uncertainty map. To show the proposed model is generalized and independent of the dataset, we tested on TCGA-KIRC dataset for tissue composition, including independent cohorts from Kasturba Medical College (KMC), Mangalore, India for grade. These results demonstrate that our work serves as a paradigm for deconvoluting tumor complexity and illustrates how morphological analyses can improve our understanding of ccRCC.
+
+Keywords: ["AI & Machine/Deep Learning"]
+
+Additional Keywords: Computational Histopathology

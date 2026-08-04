@@ -1,0 +1,19 @@
+Institution:
+Cambridge Institute for Medical Research, Cambridge, UK
+Cambridge Institute for Medical Research, Cambridge, UK
+Cambridge Institute for Medical Research, Cambridge, UK
+Cambridge Institute for Medical Research, Cambridge, UK
+Cambridge Institute for Medical Research, Cambridge, UK
+
+Title: A versatile platform for multispectral organelle imaging and analysis
+
+Abstract:
+Our cells depend on a complex network of organelles to function—constantly moving, remodelling, and interacting—and dysfunction in this network has been increasingly implicated in a wide range of diseases.  However, research in this field has traditionally focused on only one or two organelles at a time, missing out on systems-level insights from the wider organelle landscape.  Multispectral fluorescence microscopy has recently emerged as a significant advancement, allowing more organelles to be imaged simultaneously in living cells, but the cumbersome nature of these experiments has limited uptake outside of dedicated imaging labs.  To address this problem, we have designed a multicistronic plasmid for one-step fluorescent labelling of five organelle types in live cells.  This works across multiple cell types, can be stably integrated using the PiggyBac transposon system, and can be readily combined with other standard labelling approaches to study additional proteins or structures of interest in the context of the organelle network.  In addition, we have created a simple, modular, and customisable pipeline for analysing organelle morphology, distribution, and interactions using this plasmid, and show how it can be used to capture the state of this intracellular network under different experimental conditions.
+
+Themes: ["Imaging","Data processing and visualisation"]
+
+Keywords: microscopy, multispectral, organelles, cell biology
+
+Gender of presenting author: Woman
+
+Special requirements: No.

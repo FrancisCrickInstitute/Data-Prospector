@@ -1,0 +1,12 @@
+
+
+Institution: Imperial College London
+
+Title: Adaptive binning and phasor processing of low-count FLIM images
+
+
+Abstract: Fluorescence Lifetime Imaging Microscopy (FLIM) is a powerful technique capable of reporting on the microenvironment of fluorescent probes, with the unique advantages of being independent of the optical setup and dye concentration, enabling quantitative studies of several biological processes and structures. In particular, the combination of FLIM with viscosity-sensitive molecular rotors (MRs) has been exploited to investigate the effect of chemical and physical stresses on the viscosity and lateral organization of model and cellular lipid membranes. However, the differential partition and/or low quantum yield of some MRs require significant binning of the FLIM image for the accurate fitting of the fluorescence decay traces; potentially introducing artifacts which prevent the correct identification of small membrane domains. Here, we aim to address this issue by combining an adaptive binning strategy with phasor processing of the decay traces. Using Gaussian Mixture Models (GMM), our processing pipeline enables the unsupervised extraction and lifetime-classification of different ROIs, such as model lipid vesicles (GUVs) and cells.
+
+Keywords: ["Segmentation","High-Throughput"]
+
+Additional Keywords: 

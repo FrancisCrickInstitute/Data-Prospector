@@ -1,0 +1,12 @@
+
+
+Institution: University of Zurich
+
+Title: Fractal: An Open-Source Framework for Processing OME-Zarr Images
+
+
+Abstract: Analyzing large amounts of microscopy images in a FAIR manner is an ongoing challenge. The large diversity of image storage formats and processing approaches has made the exchange of workflows complicated. The work on an OME next-generation file format offers the chance to create more shareable workflows. At the BioVisionCenter at the University of Zurich, we are developing Fractal (https://fractal-analytics-platform.github.io), an open-source framework for processing images in the OME-Zarr format. Fractal makes it easy to build modular processing tasks to convert images into OME-Zarrs and apply processing to them at scale. Among other things, Fractal allows users to orchestrate the image analysis of TBs of high content images on high performance clusters, to perform instance segmentation and to extract high-dimensional measurements of multiplexed, 3D image data. We are providing a web front-end for users to easily interact with Fractal and submit image analysis jobs to a slurm cluster. And by relying on the napari image viewer, Fractal enables researchers to interactively visualize terabytes of remote image data and the results of their image processing workflows.
+
+Keywords: ["Web/Cloud Interfaces\n","Open Science","Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n"]
+
+Additional Keywords: OME-Zarr

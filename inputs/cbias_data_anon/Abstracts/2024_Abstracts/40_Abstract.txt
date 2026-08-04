@@ -1,0 +1,19 @@
+Institution:
+Peter Gorer Department of Immunobiology, King's College London, London, UK
+Peter Gorer Department of Immunobiology, King's College London, London, UK
+
+
+Title: Development of a Robust Image Analysis Method for Quantifying NETosis 
+
+Abstract:
+Particulate matter (PM) air pollution poses significant global health risks, driving respiratory and cardiovascular diseases and causing millions of premature deaths annually. PM infiltrates airways causing irreversible lung damage, therefore understanding its impact on the lung immune system is crucial.
+Our study aims to understand the immunogenic impact of PM on neutrophils, innate immune cells known to infiltrate lungs in chronic respiratory diseases. Our focus is on PM-induced NETosis, programmed cell death which releases neutrophil extracellular traps (NETs), web-like structures of decondensed chromatin decorated with antimicrobial proteins. NETs are crucial for fighting infection, however excessive formation can cause significant lung damage.
+Currently, there is no standardised method to quantify NET formation, leading to inconsistent and inaccurate data in the literature. A common method stains for extracellular DNA using cell-impermeable DNA dyes, which although effective cannot distinguish between different forms of cell death. We propose a simple, robust image analysis script for single-colour microscopy images that enables identification of NETs by calculation the area of extracellular DNA, effective as NETosis disperses DNA unlike other cell deaths. 
+Our method is universally applicable, making it especially suitable for low- and middle-income countries (LMICs) with limited access to specialised equipment. Given higher pollution exposure in LMICs and the short lifespan of neutrophils, local and immediate NET quantitation is crucial for ensuring accurate and timely results.
+
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: NETosis, Analysis, Quantification
+
+Gender of presenting author: Woman

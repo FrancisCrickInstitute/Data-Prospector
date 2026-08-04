@@ -1,0 +1,13 @@
+
+
+Institution: Rosalind Franklin Institute
+
+Title: Improved Image Alignment Algorithm for Volume Electron Microscopy
+
+
+
+Abstract: Over the past decade, volume electron microscopy has been extensively used in biomedical research to study the 3D structure of cells and tissues at high resolution. This includes technologies such as serial block-face scanning electron microscopy (SBF-SEM) and focused ion beam scanning electron microscopy (FIB-SEM), both of which generate a series of images that can be stacked to recreate the volume of the biological sample. Regardless of the image acquisition procedure, the series of images obtained will inevitably show some misalignment. Image registration, or image alignment is therefore a crucial step before other image analysis tasks. Although multiple alignment software exist, they present various drawbacks, such as limited alignment options and the need for manually selected landmarks. In this work, an automated feature-based image alignment method is under development. It employs the scale-invariant feature transform (SIFT) algorithm to autonomously extract similar features shared by adjacent slices. After outlier filtering, a transformation between the slices is found using least squares optimization. And lastly, users will be able to select the transformation mode so that it is in line with the shifts expected based on the physical process of image acquisition.
+
+Keywords: ["New Tools\n","Open Science"]
+
+Additional Keywords: Image Registration, Electron Microscopy

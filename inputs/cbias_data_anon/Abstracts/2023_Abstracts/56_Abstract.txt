@@ -1,0 +1,22 @@
+
+
+Institution: Imperial College London
+
+Title: Label-free cell cycle stage classification using phase imaging with machine learning
+
+
+
+
+Abstract: Traditional cell cycle stage classification relies on fluorescence microscopy, utilising biosensors like PCNA or FUCCI for dynamic assessment [1][2]. Unfortunately, phototoxicity and photobleaching limit the efficacy of fluorescence-based approaches during extended live cell time-lapse experiments. We present a label-free cell cycle determination workflow using inexpensive, open-source quantitative phase imaging (QPI), implemented with polarisation differential contrast microscopy (pDPC) [3], combined with machine learning. 
+For this, we acquired timelapse fluorescence microscopy data of PCNA-mScarlet expressing cells, and also acquired QPI images at each timepoint. The fluorescence data served as a ground truth for cell cycle stage, facilitating training of a ResNet-50 architecture for identification of cell-cycle specific features solely from QPI images. This required co-registration of the two images, coupled with segmentation (CellPose) and tracking (TrackMate) of individual cells over time. Automatic fluorescence image feature extraction was undertaken using custom Python scripts to produce an annotated ground truth dataset. 
+This approach demonstrates high accuracy (~90%) when classifying live cells into G1, S, G2 and M stages using only QPI images. pDPC can enable QPI on almost any fluorescence microscope, widely enabling studies of single-cell dynamics throughout the cell cycle, e.g., to probe heterogeneity in image-based high-throughput drug screening. 
+
+1. 	Zerjatke T, Gak IA, Kirova D, Fuhrmann M, Daniel K, Gonciarz M, et al. Quantitative Cell Cycle Analysis Based on an Endogenous All-in-One Reporter for Cell Tracking and Classification. Cell Rep. 2017 May 30;19(9):1953–66. 
+2. 	He YR, He S, Kandel ME, Lee YJ, Hu C, Sobh N, et al. Cell Cycle Stage Classification Using Phase Imaging with Computational Specificity. ACS Photonics. 2022 Apr 20;9(4):1264–73. 
+3. 	Kalita R, Flanagan W, Lightley J, Kumar S, Alexandrov Y, Garcia E, et al. Single-shot phase contrast microscopy using polarisation-resolved differential phase contrast. J Biophotonics. 2021 Dec 1;14(12):e202100144. 
+
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Multi-Disciplinary","Open Science"]
+
+Additional Keywords: 

@@ -1,0 +1,27 @@
+Institution:
+Université Côte d’Azur, Inserm, CNRS, IBV/Morpheme, Nice, France
+Université Côte d’Azur, CNRS, INRIA, I3S/Morpheme, Valbonne, France
+Anatomopathology Department and CRB, Centre Antoine Lacassagne, Nice, France
+Université Côte d’Azur, INRIA, CNRS, I3S/Morpheme, Valbonne, France
+Université Côte d’Azur, Inserm, CNRS, IBV, Nice, France
+Université Côte d’Azur, CNRS, Inserm, IPMC, Valbonne, France
+Head and Neck Oncology Department, Gustave Roussy, Villejuif, France
+UNICANCER, Paris, France
+Université Côte d’Azur, CNRS, INRIA, I3S/Morpheme, Nice, France
+Université Côte d’Azur, Inserm, CNRS, IBV/Morpheme, Nice, France
+
+Title: Quantitative analysis of the tumor extracellular matrix as Predictor of Immunotherapy Response in Head and Neck Cancer
+
+Abstract:
+Head and neck squamous cell carcinomas (HNSCC) exhibit high relapse rates despite standard treatments and advances in anti-PD1 therapy. This project addresses the urgent need for predictive biomarkers of treatment response by focusing on the tumor extracellular matrix (ECM), a key regulator of cancer progression and immune responses.
+
+In this study, we propose analytical techniques that integrate quantitative immunofluorescence data with structural information from histopathology images. Our analysis involves extracting descriptors such as tumor regions, stromal areas, and molecular positions from microscopy images to calculate relevant statistics for each image. These data are then linked with clinical parameters, to reveal response-specific spatial distribution patterns of ECM constituents (fibronectin,  tenascin, collagen), as well as clustering, dispersion, or exclusion patterns of immune cells.
+
+Our approach quantitatively analyzes ECM features and correlates them with clinical data to identify potential biomarkers for immunotherapy response. Additionally, we aim to implement machine learning technologies to automate these analyses in future studies, with a particular focus on signaling in carcinoma-associated fibroblasts, the primary producers and architects of the ECM, in therapy resistance and tumor progression. This work promises to enhance the predictive power of biomarkers and inform more effective treatment strategies for HNSCC patients.
+
+
+Themes: ["BioMedical Applications of Image Analysis","AI: What Can('t) it do?"]
+
+Keywords: Bioimage analysis, Quantitative, Cancer
+
+Gender of presenting author: Man

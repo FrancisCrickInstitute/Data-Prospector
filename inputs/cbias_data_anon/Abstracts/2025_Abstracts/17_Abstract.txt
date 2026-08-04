@@ -1,0 +1,18 @@
+Institution:
+Laboratory for Molecular and Cell Biology, University College London, London, UK
+Laboratory for Molecular and Cell Biology, University College London, London, UK
+Sainsbury Wellcome Centre & Advanced Research Computing Centre, University College London, London, UK
+
+
+Title: Creating the first Drosophila wing disc atlas 
+
+Abstract:
+The wing imaginal disc of the fruit fly, Drosophila melanogaster, is a key model for understanding how organs develop. Researchers use it to study the genetic and mechanical principles of tissue growth and patterning. However, a major challenge is the natural variation in the size and shape of these tissues, which makes standardized comparisons difficult. Identifying specific functional regions also requires complex and repetitive labeling.To address this, the field has lacked a standardized anatomical tool, similar to the digital brain atlases used in neuroscience. Our team developed the first three-dimensional, population-averaged digital atlas of the Drosophila wing disc. We created this atlas by adapting methods from neuroanatomy, using 16 confocal microscopy images of wing discs from third instar larvae. This atlas provides a representative anatomical template and a map of its key structural regions.We demonstrated that new images of wing discs can be registered to this template, enabling automated segmentation and alignment of data from different individuals into a common coordinate space. This open-source resource provides the research community with a shared framework to standardize data analysis and spatially integrate diverse experimental results. This will enable more robust quantitative comparisons across laboratories, fostering a more unified, system-level understanding of organ development.
+
+Themes: ["Data processing and visualisation","Communities","Open science and FAIR data","Applications"]
+
+Keywords: digital atlas, wing imaginal disc, common coordinate framework 
+
+Gender of presenting author: Man
+
+Special requirements: yes if selected I will very appreciate if you can provide accommodation for 2 nights.

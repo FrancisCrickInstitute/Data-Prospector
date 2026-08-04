@@ -1,0 +1,15 @@
+
+
+Institution: The Rosalind Franklin Institute
+
+Title: Building re-usable bioimage analysis tools for others: Insights from developing an automated image processing pipeline for cryo-electron tomography
+
+
+Abstract: Deriving insights from biological images is a challenging task requiring an understanding of biology, image processing, and microscopy. Many of the tools developed to analyse these images can be adapted for use in areas beyond the original study, which improves reproducibility of scientific results across domains. However, building tools to be re-used by others introduces additional considerations. How do we balance the interests of users, developers, and the wider research community? How do we deploy these solutions in other institutions with different computing systems? How do we train new users to use our tools?
+
+Cryo-electron tomography is typically used to derive the 3D structure of a species-of-interest from multiple appearances of the species in the images. This is called sub-tomogram averaging, and there are several independent software tools available for each stage of the processing pipeline. We developed Ot2Rec, which is an image processing pipeline enabling users to mix-and-match different software tools at each stage and compare the results. As research software engineers developing Ot2Rec for structural biology users, we have learned valuable lessons worth sharing with the bioimage analysis community. These include the importance of user engagement at all stages of development, software engineering practices for maintainability, and design decisions to improve user- and developer-friendliness. 
+
+
+Keywords: ["Big Data\n","Multi-Disciplinary","Open Science","Teaching/Training"]
+
+Additional Keywords: software engineering; research software engineering; automation;

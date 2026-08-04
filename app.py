@@ -11,7 +11,8 @@ from pathlib import Path
 from pipeline import generate_and_optimize
 
 
-async def main(report_path: str, data_dir: str, output_dir: str, max_iterations: int, designs_per_iteration: int):
+async def main(report_path: str, data_dir: str, output_dir: str, max_iterations: int,
+               designs_per_iteration: int, angles_per_iteration: int):
     """Run the pipeline on a task report with domain-specific configuration."""
     with open(report_path, 'r', encoding='utf-8') as f:
         report_content = f.read()
@@ -23,8 +24,13 @@ async def main(report_path: str, data_dir: str, output_dir: str, max_iterations:
         max_iterations=max_iterations,
         output_dir=output_dir,
         designs_per_iteration=designs_per_iteration,
+        angles_per_iteration=angles_per_iteration,
     )
 
+    # TODO(diverger): D2 onward, generate_and_optimize returns a text summary of generated angles,
+    # not a script - this still writes it under analysis_script_<ts>.py (misleading filename/
+    # extension) so the write path stays untouched. D7 formally ripples the real structured
+    # gallery result into app.py per DIVERGER_PLAN.md; deliberately not anticipated here.
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = Path(output_dir) / f"analysis_script_{timestamp}.py"
@@ -65,16 +71,24 @@ if __name__ == "__main__":
         "--max-iterations",
         type=int,
         default=2,
-        help="Maximum redesign iterations (default: 2). Total full design attempts run is "
-             "max-iterations x designs-per-iteration, each with its own orchestrator + compiler "
-             "calls (Opus for both, in the trello config) - this multiplies fast."
+        help="Maximum ideation iterations (default: 2). Each iteration generates "
+             "angles-per-iteration candidate angles as text (D2) - no code, no Docker."
     )
     parser.add_argument(
         "--designs-per-iteration",
         type=int,
         default=3,
-        help="Independent parallel design attempts fanned out per iteration (default: 3); "
-             "the best-scoring one is kept. Set to 1 for the classic single-design-per-iteration behavior."
+        help="D1/pre-D2 relic: unused as of D2 (ideation no longer generates full designs). "
+             "Kept only as a CLI-compatible no-op and as the default reference point for "
+             "--angles-per-iteration below; re-roled in D6 as the top-k realized-angle count."
+    )
+    parser.add_argument(
+        "--angles-per-iteration",
+        type=int,
+        default=12,
+        help="Candidate analysis angles generated per iteration (default: 12 - deliberately "
+             "higher than the old --designs-per-iteration default of 3, since ideation-only "
+             "generation (D2) is much cheaper than full design + compile + Docker execution."
     )
 
     args = parser.parse_args()
@@ -91,7 +105,7 @@ if __name__ == "__main__":
     elif args.config == "cbias":
         from cbias_config import CONFIG
         report_default = "./inputs/cbias_report/task_report.md"
-        data_dir_default = "./inputs/cbias_data"
+        data_dir_default = "./inputs/cbias_data_anon"
     else:
         raise ValueError(f"Unknown config: {args.config}")
 
@@ -99,4 +113,5 @@ if __name__ == "__main__":
     report_path = args.report or report_default
     data_dir = args.data_dir or data_dir_default
 
-    asyncio.run(main(report_path, data_dir, args.output_dir, args.max_iterations, args.designs_per_iteration))
+    asyncio.run(main(report_path, data_dir, args.output_dir, args.max_iterations,
+                     args.designs_per_iteration, args.angles_per_iteration))

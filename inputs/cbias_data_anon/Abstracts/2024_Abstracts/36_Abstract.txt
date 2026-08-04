@@ -1,0 +1,21 @@
+Institution:
+1- Laboratory of Nanoscale Biology and Laboratory of Molecular and Chemical Biology of Neurodegeneration, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+2- Laboratory of Nanoscale Biology and Laboratory of Molecular, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+3- Laboratory of Nanoscale Biology and Laboratory of Molecular, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+4- Cell Biology and Biophysics Unit, European Molecular Biology Laboratory, Heidelberg, Germany
+5- Laboratory of Molecular and Chemical Biology of Neurodegeneration, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+6- Department of Bionanoscience and Kavli Institute of Nanoscience Delft, Delft University of Technology, Delft, Netherlands
+7- Cell Biology and Biophysics Unit, European Molecular Biology Laboratory, Heidelberg, Germany
+8- Laboratory of Molecular and Chemical Biology of Neurodegeneration, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+9- Laboratory of Nanoscale Biology and Laboratory of Molecular, École Polytechnique Fédérale de Lausanne (EPFL), Lausanne, Switzerland
+
+Title: Unraveling the dynamics and kinetics of protein  aggregation using intelligent, self-driving microscopy
+
+Abstract:
+Time-lapse microscopy has been used to assess the aggregation kinetics of Huntingtin exon 1 — the protein which causes Huntington’s disease (HD) — and the transition from the start of aggregation to the formation of larger and brighter inclusions was observed to be fast, occurring on the order of a few minutes. This rapid transition happens unpredictably in different locations of the sample at varying times during a 48-hour window. It is therefore complicated to capture with optimized spatiotemporal resolution. While high-throughput screening can be used to study a large field-of-view over extended periods of time this comes at the cost of low magnification, spatial and temporal resolution. To tackle this issue, we have developed a self-driving microscope, which detects an event-of-interest – the onset of inclusion formation – using deep learning, and adapts the imaging settings to acquire the aggregation event with high specificity and optimal spatiotemporal resolution. Understanding the cellular mechanisms that occur within this process and the interactions that are involved would help us better understand the pathological process and gain a better idea of what exactly could be causing neurotoxicity in HD, which would in turn create a clearer pathway for possible treatments and early diagnostics. We have applied this method to detect the onset of aggregation and then capture the process using Brillouin microscopy to study the biomechanical properties of protein aggregates as they are forming, which has been a challenge in the field due to the slow speed of Brillouin microscopy instruments. We have also developed a AI-driven segmentation model to detect aggregates from brightfield or quantitative phase images, which we then used to measure and compare the dry mass of different kinds of aggregates, revealing correlations between their masses and ultrastructure. These two approaches, the self-driving microscope and the label-free segmentation method, will push the boundaries of current microscopes and enable neurobiology researchers to test drug and small-molecule candidates more accurately and efficiently.
+
+Themes: ["Smart Microscopy","AI: What Can('t) it do?","BioMedical Applications of Image Analysis"]
+
+Keywords: self-driving, microscopy, label-free, neurodegeneration, protein aggregation, brillouin, biomechanics
+
+Gender of presenting author: Man

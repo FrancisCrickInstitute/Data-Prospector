@@ -1,0 +1,17 @@
+Institution:
+Dept. of Cell and Developmental Biology, University College London, London, UK
+Dept. of Cell and Developmental Biology, University College London, London, UK
+Dept. of Cell and Developmental Biology, University College London, London, UK
+
+Title: Building and interpreting an image-based atlas of a complex developmental system
+
+Abstract:
+Embryonic development requires tight coordination between cellular morphodynamics and cell fate decisions. To quantitatively chart this interplay, we are building an image-based multi-modal atlas of the zebrafish cranial neural crest, a model embryonic cell population that displays complex collective behaviors. By mapping single-cell segmentations of high-resolution confocal volumes into a common coordinate system based on lightsheet-imaged in toto reference embryos, we obtain an integrated dataset that combines 3D cell and nuclear shape information with gene expression and tissue-scale contextual features. However, extracting real biological insight from such large and complex datasets remains a major challenge in the field. We are therefore developing tools to facilitate biological reasoning about our atlas, including transformation of data from its global coordinate system to a more biologically meaningful local 'tissue frame of reference', mapping of expert knowledge into the atlas to enable context-aware analysis, and interactive visualizations that bridge morphospace, fate space, and physical space. In the longer term, we envision the mapping of simulation results from models of neural crest migration and fate choice into the atlas, making it a platform that seamlessly connects data and theory.
+
+Themes: ["Data processing and visualisation"]
+
+Keywords: developmental biology, atlas integration, data interpretation
+
+Gender of presenting author: Man
+
+Special requirements: 

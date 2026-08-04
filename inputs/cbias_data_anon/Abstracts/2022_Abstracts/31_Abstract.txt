@@ -1,0 +1,14 @@
+
+
+Institution: The Rosalind Franklin Institute
+
+Title: Development of Quality Metrics to Assess Imaging Methods Using Cryo-plasma FIB-SEM as a Case Study 
+
+
+Abstract: Serial focused ion beam scanning electron microscopy (FIB-SEM) enables imaging and assessment of sub-cellular structures on the mesoscale (10 nm to 10 µm).  When applied to vitrified samples, serial FIB-SEM is also a means to target specific structures in cells and tissues while maintaining constituents’ hydration shells for in-situ structural biology downstream. However, the application of serial FIB-SEM imaging of non-stained cryogenic biological samples is limited due to low contrast, curtaining and charging artefacts. To address these challenges, a cryogenic plasma FIB-SEM (cryo-pFIB-SEM) system has been developed.
+
+Here, we assess various imaging regimes with this new technique using novel and newly-applied quality metrics to understand the impact of imaging choices on resolution, alignment and charging, and to provide a blueprint for future use and automation of this method. All software is currently open-source and will be available as Napari plugins in future. 
+
+Keywords: ["Object Tracking","New Tools\n","Quality Control\n","Open Science"]
+
+Additional Keywords: 

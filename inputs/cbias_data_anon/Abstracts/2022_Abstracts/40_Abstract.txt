@@ -1,0 +1,15 @@
+
+
+Institution: University Côte d'Azur (UCA) / Institute of Biology Valrose CNRS UMR 7277INSERM U1091
+
+Title: Users 2.0: Implementation of the latest image analysis tools to enhance the extraction of biologically relevant information from experimental results
+
+
+Abstract: Quantification of bio-images has become an essential prerequisite for proper interpretation of biological data. Over the past few years the development of microscopy image analysis tools and methods has grown exponentially, together with advances and implementation of big-data analysis, AI based workflows and cloud based solutions. Here, we would like to highlight the relevance of embracing these new analysis methods and open a discussion on the importance of choosing/developing image analysis pipelines that best extract biologically relevant information from experimental results.
+Utilizing an experimental system consisting of cultured endothelial cells to explore the functions of the RNA binding protein SAM68 and its role in the coordination of adhesive interactions, we will showcase how image analysis tools and methods have allowed us to (i) segment the nuclei of complex and overlapping cell clusters using AI-trained networks, (ii) segment, mathematically describe and quantify cell adhesion complexes, (iii) semi-automatically segment various cell shapes, and finally (iv) analyze large image data (whole coverslip scans) to quantify extracellular matrix deposition/remodeling.
+Image analysis tools and methods that will be featured - Stardist, ZerocoastDL4Mic, ImageJ (Weka plugin), Icy (active contour plugin), HALO® software.
+
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning","New Tools\n","Big Data\n"]
+
+Additional Keywords: 

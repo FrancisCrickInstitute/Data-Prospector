@@ -1,0 +1,20 @@
+Institution:
+Advanced Light Microscopy, Francis Crick Institute, London, UK 
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+Advanced Light Microscopy, Francis Crick Institute, London, UK; Uniwersytet Jagiellonski Collegium Medicum, Krakow, PL
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+Cardiff University, Cardiff, UK
+Advanced Light Microscopy, Francis Crick Institute, London, UK
+
+Title: Enhancing research through image analysis workshops: experiences and best practices
+
+Abstract:
+Modern microscopy systems allow researchers to generate large volumes of image data with relative ease. However, the challenge of analyzing these data effectively is often hindered by a lack of computational skills. This bottleneck negatively impacts both research reproducibility and efficiency, as researchers frequently rely on manual or semi-automated analysis methods. Interactive image analysis workshops offer a valuable solution, equipping researchers with the skills and tools needed to automate image processing tasks. In this paper, we share our experiences and best practices from conducting such workshops, which emphasize the use of open-source software like ImageJ, FIJI, and Python-based tools such as JupyterLab and napari. We discuss key considerations for workshop design, logistics, and outcomes, while highlighting common pitfalls to avoid. Using two recent workshops as case studies, we also present strategies for optimizing participant engagement and learning. Our insights offer practical guidance for planning and conducting image analysis workshops and serve as a starting point for researchers looking to establish similar training initiatives and enrich their local imaging communities.
+
+Themes: ["Communities","Open science and FAIR data"]
+
+Keywords: training, workshops, open-science
+
+Gender of presenting author: Woman
+
+Special requirements: N/A

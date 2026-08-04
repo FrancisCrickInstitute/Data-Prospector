@@ -1,0 +1,16 @@
+
+
+Institution: Saarland University
+
+Title: Single-cell insights: Analyzing cancer cell death and killer cell efficiency
+
+
+
+Abstract: Personalized immune therapy for cancer stands at the cutting-edge of medical advancements. Evaluating the efficacy of novel therapeutic treatments hinges on the assessment of the killing efficiency of human killer cells, specifically targeted at cancer cells. Previous research has unveiled heterogeneity among individual killer cells, ranging from less effective to highly potent "serial killers". While population-based assessment is a widely adopted method for analyzing overall killing, it falls short in providing insights into the performance of individual killer cells—a critical factor for successful therapy. Approaches utilizing droplets or microwells allow relatively easy tracking of individual cells. However, while these methods enable analysis at the single-cell level, they are limited to small, isolated groups of cells and do not capture true population-level dynamics.
+
+Building upon a novel time-resolved single-cell cytotoxicity assay developed in our lab, we are able to image large cell populations in standard well plates and perform single-cell analysis. Our automated analysis pipeline incorporates background correction, precise tracking, and analysis of both, individual target and killer cells. It enables us to perform motion analysis, accurate cell-death classification, and contact analysis. By evaluating the efficiency of individual killer cells, we can identify potential "super killers" with exceptional cytotoxic capabilities. On top of that, we have developed a user-friendly graphical analysis application allowing to run all analyses with a simple press of a button.
+
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n","Big Data\n","Multi-Disciplinary"]
+
+Additional Keywords: 

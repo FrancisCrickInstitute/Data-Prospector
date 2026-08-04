@@ -1,0 +1,20 @@
+Institution:
+Department of Anatomy and Physiology, University of Melbourne, Australia
+Department of Anatomy and Physiology, University of Melbourne, Australia
+Department of Anatomy and Physiology, University of Melbourne, Australia
+Department of Anatomy and Physiology, University of Melbourne, Australia
+Ian Holmes Imaging Centre, Bio21 and Department of Biochemistry and Pharmacology, University of Melbourne, Australia
+Department of Anatomy and Physiology, University of Melbourne, Australia 
+Department of Anatomy and Physiology, University of Melbourne, Australia
+
+Title: Development of a machine learning segmentation model and post-processing Python pipeline for quantitative 3D ultrastructural analysis of axons in a mixed visceral nerve
+
+Abstract:
+Peripheral nerves that control internal organs (visceral nerves) comprise primarily thin unmyelinated axons intermingled with larger myelinated axons. We aimed to define the 3D ultrastructural properties of the pelvic nerve, the major nerve that controls pelvic organs (urogenital organs, large intestine) and is an important target for neuromodulation and therapeutic development. We performed scanning block-face electron microscopy on samples of rat pelvic nerve, then developed a pipeline (3D-VAx) to define axon ultrastructural parameters through this entire volume, including analysis of nodes of Ranvier and paranode regions of the myelinated axons. Our pipeline first auto-segmented myelin, myelinated and unmyelinated axons, achieved by a novel machine learning approach trained using a small number of human annotations. To validate model accuracy, in the node region of selected myelinated axons we compared 3D spatial morphometric characteristics between 3D-VAx segmentation results and human annotations. This demonstrated a significant advance over currently used U-Net models. Additional capabilities of 3D-VAx include node auto-detection, total count estimation and computation of the centroid B-spline and perpendicular cross section in tortuous axons. Development of this pipeline provided new insights into the structure of the pelvic nerve and established a powerful approach for analyzing peripheral nerves in 3D. 
+
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: scanning block-face electron microscopy, 3D image analysis, machine-learning, peripheral nerve
+
+Gender of presenting author: Woman

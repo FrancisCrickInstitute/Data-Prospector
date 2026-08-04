@@ -1,0 +1,13 @@
+
+
+Institution: University of Sheffield
+
+Title: Identifying The Optimal And Most Accurate Cell Tracking Algorithm For Analysis Of Epithelial Dynamics in the Zebrafish Otic Vesicle
+
+
+Abstract: The adult zebrafish inner ear contains the three semicircular canals of the vestibular system. This complex structure is formed from a simple ball of epithelial cells in a highly orchestrated dynamic process involving many different cell types and structures. Morphogenesis of the semicircular canal system begins when projections of tissue move into the lumen of the otic vesicle and fuse to form pillars of epithelium. These pillars span the vesicle and progressively enlarge to contribute to the adult canal structure.
+We are investigating the epithelial cell movements and cell shape changes that accompany or drive this morphogenesis using live fluorescence imaging of transgenic wild-type and mutant zebrafish. We use a combination of image analysis pipelines (Origami, 3D-UNet, Matlab, ACME, Fiji and arivis Vision4D) to measure 3D cell shapes and to track cell movements during key stages of inner ear development. Accurate object tracking within light-sheet and confocal microscopy datasets is essential to understand the cell movements within the complex 3D epithelial tissues and to avoid time-consuming manual track curation. To find the optimal analysis pipeline yielding the most accurate cell tracking, we are comparing the performance of several open-source and commercial cell tracking algorithms (TrackMate, Btrack, Elephant, arivis Vision4D, LapTrack, LIM tracker) using a standardised set of segmented otic epithelial images. The accuracy of each tracking output will be compared to manual ground truth tracking. Additionally, the need for tuning of tracking parameters and the range of track measurements (speed, directionality, displacement etc.) will be compared for each algorithm. In this way, we aim to identify the optimal pipeline for accurate tracking of otic epithelial cell movement during zebrafish ear development.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: light-sheet microscopy, morphogenesis

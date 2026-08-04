@@ -1,0 +1,12 @@
+
+
+Institution: University of Sheffield
+
+Title: Combining FIJI and ilastik to provide a versatile and adaptable approach to automated Bacteria cell classification and cell volume determination
+
+
+Abstract: When studying bacteria cells’ phenotype, one of the most common and well stablished approaches is to perform fluorescence microscopy. These images are used to determine the bacterial cells’ volume as well as classify the cells based on their division stage on the cell cycle. Traditionally, this analysis process was performed manually, introducing user bias, systematic errors, and low throughput (spending weeks to measure n=500 cells). Recently there has been a few examples of semi-automated or fully automated analysis for microbiology phenotyping (e.g. eHooke). However, these routines are highly specific to the experimental setup and therefore limited to having the same type of raw data and the same labelling protocol. These differences usually vary between groups, making the current programs not versatile enough for the whole community. Here we present a wholesome approach that can be adapted to each specific experiment. Using FIJI macros to standardise the raw data and the user-friendly machine learning approach of pixel classification provided by ilastik to segment, classify and measure the cells. This powerful combination of FIJI and ilastik applied to bacterial cells provides an automated method with higher throughput of n = 800 cells in 1h, which is a gamechanger for the microbiology community.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Multi-Disciplinary","Open Science"]
+
+Additional Keywords: Bacteria cells, high throughput, automated analysis

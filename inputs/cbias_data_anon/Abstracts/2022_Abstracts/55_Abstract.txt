@@ -1,0 +1,12 @@
+
+
+Institution: Heinrich Heine Universität
+
+Title: Bioimage analysis for research data management
+
+
+Abstract: Microscopy data size, quantity and acquisition techniques are growing at a fast pace, while research data management (RDM) practices are lagging: data is stored on personal computers and external hard drive, data is sparsely annotated and experimental metadata is often not linked, while the specificity of research fields hampers the search for standards. In response, initiatives have emerged. Ours named “I3D:bio” aims to facilitate the deployment of OMERO servers, a popular solution to handle microscopy images. Thus, our purpose is to generalize the availability of OMERO so to expose researchers to it, while producing RDM guidelines. But in order to convince researchers to adopt and invest time in OMERO, scientists must find clear advantages for it. Many popular image analysis tools (imageJ, CellProfiler, napari, ilastik, QuPath) already have plugins to communicate with OMERO servers, and we as bioimage analyst understand the usefulness of annotated data and how to make use of it. My goal is therefore to promote OMERO as an endpoint for image analysis and encourage more image analysis tool to be developed primarily for OMERO. By proposing more workflow around OMERO, we then hope to obtain a faster adhesion of researchers to RDM through the use of OMERO.
+
+Keywords: ["Open Science"]
+
+Additional Keywords: Research data management

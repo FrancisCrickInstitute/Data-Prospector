@@ -1,0 +1,14 @@
+
+
+Institution: TU Darmstadt
+
+Title: FrOoDo: Robust artefact detection and image quality control in AI-driven computational pathology
+
+
+Abstract: As rapidly developing deep learning methods minimize laborious image processing, they are able to significantly speed up the diagnosis prediction in the field of computational pathology.  However, for accurate classification or precise segmentation a robust model is crucial. 
+Often deep learning models show excellent results from one laboratory setting, however minor differences in staining protocols or image acquisition can lead to specific artefacts. Such artefacts fall into out-of-distribution data range and thereby tangle the automated deep learning image processing causing confident failures. 
+To address this problem, we have developed a framework for out-of-distribution detection (FrOoDo) for detecting such artefacts in an ad-hoc fashion. Furthermore, we added advanced artefacts simulations to improve our frameworks reliability and showcase the necessity for prediction quality control. Our results show that while all artefacts have an increasingly adverse effect on the prediction performance w.r.t their severity. FrOoDo is perfect for reliable detection of more severe artefacts, thus allowing for the more accurate disease prediction. As our framework builds a foundation for quality control for in computational pathology, we want to extend FrOoDo to biomedical images and explore more applications in the future. Code is available at github.com/MECLabTUDA/FrOoDo.
+
+Keywords: ["AI & Machine/Deep Learning","Quality Control\n","Open Science"]
+
+Additional Keywords: 

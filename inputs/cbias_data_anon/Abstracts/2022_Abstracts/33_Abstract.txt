@@ -1,0 +1,12 @@
+
+
+Institution: University of Warwick
+
+Title: MiCellAnnGELo: an open-source VR tool for surface annotation in microscopy
+
+
+Abstract: New and emerging microscopy technology is enabling the capture of dynamic 3D biological processes at an unprecedented level of detail. The current fast-paced development of AI technologies has the potential to enable many breakthrough discoveries by aiding in the analysis of these data. However, many problems that can be solved by deep learning require large volumes of high quality manually annotated training data. Manual annotation of 3D movies using a 2D screen is time-consuming and prone to errors due to the tedious nature of the task. To make annotation easier and more engaging, we present MiCellAnnGELo (Microscopy and Cell Annotation Graphical Experience and Labelling Tool), an open-source virtual reality (VR) tool that allows users to annotate segmented surfaces from 3D microscopy movies in a VR environment. The VR interface is streamlined to enable users to quickly and easily annotate their data, with intuitive controls for annotating, adjusting visualisation parameters, and moving between time frames. A key feature of MiCellAnnGELo is the ability to “paint” the surfaces, allowing the user to quickly label surfaces and create training data for deep learning.
+
+Keywords: ["3D/4D/ ... nD Data\n","New Tools\n","Open Science"]
+
+Additional Keywords: Virtual Reality

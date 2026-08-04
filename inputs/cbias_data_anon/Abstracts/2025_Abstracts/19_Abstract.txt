@@ -1,0 +1,17 @@
+Institution:
+1.Discipline of Anatomy, School of Medicine, College of Medicine, Nursing and Health Sciences, University of Galway, Galway, Ireland
+2. School of Medicine Studentship Funding, School of Medicine, College of Medicine, Nursing and Health Science, University of Galway, Galway, Ireland
+3. Science Foundation Ireland under grant SFI/12/RC/2278, Advanced Materials and Bioengineering Research (AMBER) Centre, Royal College of Surgeons in Ireland, National University of Ireland Galway, and Trinity College Dublin, Ireland
+
+Title: Understanding the foreign body response to implantable soft robotic medical devices for the treatment of chronic diseases.
+
+Abstract:
+Implantable medical devices elicit a process called the Foreign Body Response (FBR), in which a fibrotic capsule develops around the devices.  This prevents effective device function, which is of particular importance in drug release. Using actuation (soft robotics) can improve drug delivery, but the effect of actuation on the cells needs further exploration. This study aimed to characterise the fibrotic capsule surrounding a subcutaneous soft robotic cannula for treatment of type 1 diabetes. Cannulas were subcutaneously implanted into male C57BL/6 mice (N =4, static control; N =4, intermittent actuation). Mice were euthanised at four timepoints (day 3, 5, 15, 23), tissue harvested from the device site, processed, sectioned and stained for immunohistochemical analysis of neutrophils, macrophages and granule proteins (Myeloperoxidase and Neutrophil Elastase (NE)). Quantitative analyses of neutrophil numbers and granule protein release observed a reduction in NE release after day 5 in both actuating devices and static controls although no statistical significance was observed.  More macrophages were observed at day 5 in the actuated group compared to static control which was statistically significant   (P=0.0018**).  Future FBR research may benefit from cellular analyses using live cell imaging, as static images cannot determine what stage of the immune response is occurring.
+
+Themes: ["Imaging"]
+
+Keywords: Immunology, soft-robotics, cells
+
+Gender of presenting author: Woman
+
+Special requirements: N/A

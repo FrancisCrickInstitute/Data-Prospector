@@ -1,0 +1,15 @@
+Institution:
+(all) Cell Biology and Biophysics Unit, European Molecular Biology Laboratory
+
+Title: DeepClarity: Deep learning enables cross-modality super-resolution in volumetric fluorescence microscopy
+
+Abstract:
+Volumetric imaging is essential for elucidating biological structure and function, yet high-resolution acquisition remains impractical for large-scale samples due to limits in speed and phototoxicity. We present DeepClarity, a cross-modality super-resolution framework that enhances volumetric image quality by learning high-resolution features from two-dimensional projection images of a target modality, without explicit modeling of the image formation process or paired source–target training data. The architecture integrates a volumetric super-resolution module within a generative adversarial framework, guided by discriminators operating on projections taken on the three principal planes (XY, XZ, YZ). Reference projections can be acquired from a high-resolution modality or synthesized from structural priors, enabling flexible training. To mitigate artifacts and suppress hallucinations, we incorporate an approximate forward imaging operator and projection–reconstruction consistency losses. We demonstrate efficacy across confocal→STED, confocal→Airyscan, and confocal→synthetic transformations, and introduce a confidence metric to quantify local reconstruction precision. Our results indicate high-fidelity volumetric reconstructions at high throughput, offering a practical route to overcome longstanding trade-offs between resolution, acquisition speed, and phototoxicity in biological imaging.
+
+Themes: ["Imaging","Data processing and visualisation","Applications"]
+
+Keywords: deep learning, microscopy, cross-modality
+
+Gender of presenting author: Man
+
+Special requirements: the powerpoint presentation may include some video clips or animations (gifs). 

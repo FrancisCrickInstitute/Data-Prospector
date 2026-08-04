@@ -1,0 +1,12 @@
+
+
+Institution: King's College London
+
+Title: Augmenting z-resolution to isometry using a generative adversarial network
+
+
+Abstract: The machine learning-based method of the generative adversarial network (GAN) is a powerful image processing approach and increasingly popular. The challenge posed by using adversarial systems for image augmentation is the lack of a direct link between the input image and the output image, meaning that the algorithms are particularly prone to hallucinating structure. On the other hand, generative CNNS tend to reproduce specific structures from input images, making it likely that frequently observed structures will be reproduced regardless of whether they are present. Here we present AFFIRM3D (AI For Forging Isotropic Resolution in 3D Micrographs), a transductive GAN which both uses an adversarial approach and also uses a direct loss, designed to constrain to the general properties of the image rather than reproduce specific structures. The result is a GAN that increases the z-resolution of a 3D fluorescence microscopy image to match its xy-resolution.
+
+Keywords: ["AI & Machine/Deep Learning","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: 

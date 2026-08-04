@@ -1,0 +1,13 @@
+
+
+Institution: Nagoya University School of Medicine
+
+Title: Two-Photon Microscopy Image Deconvolution via Deep Neural Network and Physics-Based Generative Model
+
+
+
+Abstract: Two-photon microscopy (TPM) images blur in the axial direction, posing challenges for analyzing cellular three-dimensional structures. Deconvolution methods are commonly employed to deblur these images; however, these traditional methods require meticulous hyperparameter tuning, are vulnerable to noise, and often fail to achieve sufficient resolution. In this study, we built a deep neural network (DNN) that deblurs and improves the resolution of TPM images. The DNN was trained to solve the inverse problem of the TPM image acquisition process approximated by a physics-based generative model. First, we tested our model with simulation images and actual images of beads, and we found that our model estimated their volumes with higher accuracy. Second, we adapted our model to in-vivo TPM images of mice brains, and our model inferred precise three-dimensional structures. Though our model has fewer hyperparameters than previous methods, our model worked even in images with a low signal-to-noise ratio. Although a long training time is a limitation of our method, it is shorter than other DNN-based methods. We aspire for our model to assist in the observation of microscopic structures, such as axon spines, that were previously challenging using conventional methods.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Modelling"]
+
+Additional Keywords: Two-Photon Microscopy

@@ -1,0 +1,17 @@
+
+
+Institution: The Rosalind Franklin Institute
+
+Title: Boosting biological image segmentation quality with LeopardGecko
+
+
+
+
+Abstract: Volumetric imaging of biological samples provides both a view of the feature of interest and contextual information about how that feature is situated in 3D relative to neighbouring features, leading to structural and functional insights at the protein, organelle, cell or even tissue level. Segmentation of the 3D datasets is a necessary step to produce visualizations and quantitative measurements. It is common nowadays to use machine learning or semi-automatic approaches to generate these annotations. Computational complexity is often simplified by applying convolution neural networks to the 2D slices rather than the whole 3D volume. The software volume-segmantics (https://github.com/DiamondLightSource/volume-segmantics , 10.21105/joss.04691) cleverly makes machine learning predictions in 2D by slicing volumetric data along different axes and rotations, then recombining all data to a single 3D segmentation. However, this is not the best segmentation that can be achieved from the available (ground truth) information. 
+
+LeopardGecko (https://github.com/rosalindfranklininstitute/LeopardGecko) is a collection of software tools that works alongside volume-segmantics (or another multi-predictor tool), by collecting its generated multi-axis and multi-rotation predictions and optimizing them further. This is done by guiding a user to make priority choices based in statistical information and visualisation, or by using a fully automated approach that utilises an additional neural network. This presentation will demonstrate quality metric improvements achieved when annotating several in-house and public microscopy datasets, and elaborates the different approaches to using LeopardGecko.
+
+
+Keywords: ["AI & Machine/Deep Learning","Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: volumetric

@@ -1,0 +1,13 @@
+
+
+Institution: Instituto de Biotecnología y Biomedicina (BioTecMed), Universitat de València, Valencia Spain.
+
+Title: Advancing Myelin Research through Deep Learning-powered Bioimage Analysis
+
+
+
+Abstract: The myelin sheath around axons plays a major role in the function, protection, and maintenance of nerves. It is formed by specialized cells that wrap their processes around the axons. During the process, myelin formation and compaction starts in the outermost layer and progresses inwards, but it never reaches the innermost region facing the axon, where a structure of uncompacted myelin known as inner tongue remains in adult myelinated axons. Electron microscopy (EM) is the gold standard for the evaluation of myelin formation (development), degeneration (disease) and remyelination (tissue regeneration) by looking at, for example, compact myelin thickness or inner tongue size. We have developed AimSeg, a bioimage analysis tool that combines an instance segmentation of fibres with the semantic segmentation of the elements involved in myelin analysis, i.e., axon, inner tongue, and myelin. Initially developed using Fiji and ilastik with random forest pixel classification, we are extending AimSeg to incorporate a CNN model based on U-Net. We have trained the model on a diverse dataset acquired using different EM techniques, species, and tissues from multiple research groups, with the goal of providing a generalist solution that quickly and accurately determines the major metrics for myelin analysis in EM.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","New Tools\n"]
+
+Additional Keywords: 

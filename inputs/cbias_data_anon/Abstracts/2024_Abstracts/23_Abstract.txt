@@ -1,0 +1,22 @@
+Institution:
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Peter MacCallum Cancer Centre, Melbourne, VIC, Australia
+Department of Biochemistry and Pharmacology, University of Melbourne, Parkville, VIC , Australia
+
+Title: Multiomic Advancement in High-Throughput Screening: From Imaging Phenome to Precision Medicine in 2D, 3D, and Beyond
+
+Abstract:
+The integration of advanced high-content microscopy, sequencing technologies, and other high-throughput platforms has created a powerful framework for exploring drug responses in multiomic dimensions. This study presents an integrated approach that combines high-throughput imaging with RNA sequencing across various cellular models, including adherent cells, organoids, and advanced 3D immune co-culture systems. Using 2D adherent cell models treated with tool compound libraries, we have integrated cell painting-based morphological profiling with parallel transcriptomic data. This multi-layered strategy offers a much deeper understanding of cellular responses, using transcriptomic data to validate phenotypic clusters. We then applied this strategy to tumour spheroids growing in 3D matrices with the same library. To push the boundary, building on this foundation, we developed a high-throughput, time-resolved CAR-T cell-mediated cytotoxicity assay in which live-cell imaging captures kinetic differences between CAR-T and unarmed T cells and tracks individual spheroids, preserving the tumour heterogeneity response to CAR-T therapy. Guided by the kinetic data, co-cultured cells were recovered at specific time points for RNA sequencing and integrative analysis. This presentation will discuss these different applications and outcomes, alongside the challenges of multiomic data integration, particularly the temporal differences between phenotypic (phenome) and transcriptomic (transcriptome) data. In addition, we will also talk about the potential of our assay to incorporate additional omics layers, such as the surfaceome, secretome, and metabolome.
+
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: High-Throughput Screening, imaging multiomics, advanced 3D immune co-culture
+
+Gender of presenting author: Man

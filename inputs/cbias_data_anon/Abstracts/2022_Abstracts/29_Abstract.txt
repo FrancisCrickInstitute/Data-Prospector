@@ -1,0 +1,21 @@
+
+
+Institution: TU Dresden
+
+Title: Motion-based segmentation for particle tracking: A fully-convolutional neuronal network that analyses movement
+
+
+
+Abstract: For single-particle tracking it is often necessary to separate particles of interest from background particles based on their movement pattern. Here we introduce a fully convolutional deep neuronal network that employs convolutional long-short-term-memory layers [1] and is able to perform image segmentation based on the motion pattern of particles. Training was performed with 500 manually annotated 28x128 pixel frames. The segmentation result was then used as input for a conventional single particle tracking algorithm [2]. With this network it was possible to reliably separate images of microtubules propelled by kinesin-1 motor proteins along guiding channels from images of microtubules diffusing in the background. Furthermore, microtubules moving in a different orientation than the guiding channels during training did not show up during inference. In conclusion, the deep-learning-based image segmentation resulted in almost twice as many (2800 vs. 1500) usable tracks compared to conventional filtering after tracking. Individual tracks were 35 % longer (23 (14 −45) frames compared to 17 (11 −29) frames (25th −75th percentile)). Overall, tracking results based on deep-learning assisted image segmentation were more accurate (relative error decreased from 22 % to 16 %) and required less manual filtering.
+
+References
+[1] X. Shi, Z. Chen, H. Wang, D.-Y. Yeung, W.-k. Wong, and W.-c. Woo.
+2015. Convolutional LSTM Network: A Machine Learning Approach for
+Precipitation Nowcasting. arXiv:1506.04214 [cs].
+[2] F. Ruhnow, D. Zwicker, and S. Diez. 2011. Tracking single particles and
+elongated filaments with nanometer precision. Biophysical Journal, 100
+(11):2820–2828.
+
+Keywords: ["Segmentation","Object Tracking","AI & Machine/Deep Learning","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: 

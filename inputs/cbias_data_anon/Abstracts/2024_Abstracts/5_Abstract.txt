@@ -1,0 +1,27 @@
+Institution:
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+The Jackson Laboratory for Genomic Medicine, Farmington, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+The Jackson Laboratory for Genomic Medicine, Farmington, CT USA
+The Jackson Laboratory for Genomic Medicine, Farmington, CT USA
+The Jackson Laboratory for Genomic Medicine, Farmington, CT USA
+UC Davis School of Veterinary Medicine, Davis, CA USA
+Flint Animal Cancer Center, Colorado State University, Fort Collins, CO USA
+The Jackson Laboratory for Genomic Medicine, Farmington, CT USA
+Department of Neurosurgery, Yale School of Medicine, New Haven, CT USA
+
+Title: High-content CRISPR-Cas9 imaging screen identifies aneuploidy drivers in pediatric high-grade glioma.
+
+Abstract:
+The genomic landscape of pediatric high-grade glioma, a rare but lethal brain tumor, is characterized by high aneuploidy (abnormal gains and losses of chromosomes) but without any druggable targets. Aneuploidy fuels tumor heterogeneity, driving tumor growth and therapy resistance. We deployed a phenotypic CRISPR-Cas9 knockout screen to identify aneuploidy-associated driver genes. Using whole-genome sequencing datasets from 106 pediatric gliomas and 81 spontaneous canine gliomas, we identified 460 genes in conserved regions of glioma-specific aneuploidies. We designed a custom guideRNA library to knockout 460 genes using an arrayed CRISPR-Cas9 knockout screen in two pediatric and one canine high-grade glioma cell lines. By deploying 108 384-well plates on an automated confocal Opera Phenix High-Content Screening System and using dyes staining cell membrane, nucleus and apoptotic cells, we established 7 million live-cell images across three timepoints (day 7, 8, 9 post-transduction). Each gene was targeted across 32 randomized wells across four 384-well plates to gather robust morphological profiles. Our modular analysis workflow leveraged CellProfiler and Human-in-the-loop trained Cellpose model to process 10 TB of data, characterizing 100 million single cells across 41,472 wells. We used semi-supervised machine learning to analyze cell morphology, selecting 307 features across eight categories. Our analysis identified genes impacting cell viability and growth vs differentiation cell state, a hallmark of cycling cancer cells driving glioma. The top ranked genes were linked to oncogenes and tumor suppressors based on pathway analysis plus functional in vitro and in silico validation using Pediatric Cancer Dependency Map. Within conserved aneuploidies of human and canine glioma, we found convergence of the most impactful gene knockouts on neuronal developmental pathways, highlighting candidate targets for treating pediatric high-grade gliomas.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: bioimaging, CRISPR, HCS, cancer, aneuploidy, target-discovery
+
+Gender of presenting author: Man

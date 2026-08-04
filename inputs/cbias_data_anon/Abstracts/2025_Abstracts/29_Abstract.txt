@@ -1,0 +1,31 @@
+Institution:
+Beatson Advanced Imaging Resource, CRUK Scotland Institute, Glasgow, UK
+Gene Regulation Group, CRUK Scotland Institute, Glasgow, UK
+RI Cancer Sciences, School of Cancer Sciences, University of Glasgow, UK
+RI Cancer Sciences, School of Cancer Sciences, University of Glasgow, UK
+Beatson Advanced Imaging Resource, CRUK Scotland Institute, Glasgow, UK
+RI Cancer Sciences, School of Cancer Sciences, University of Glasgow, UK
+Gene Regulation Group, CRUK Scotland Institute, Glasgow, UK
+Beatson Advanced Imaging Resource, CRUK Scotland Institute, Glasgow, UK
+
+Title: A workflow for automated cell-tracking
+
+Abstract:
+Analysis of cell motility require the ability to reliably track cell movement for the duration of the experiment. Automated cell tracking has become more feasible with the development of new open-source deep-learning tools designed specifically for cell segmentation [1]. These tools can automatically detect cells or objects in biomedical images and provide a segmentation that can be used by particle tracking packages to determine cell trajectories throughout a live-cell experiment [2].  
+
+Here we present an experimental protocol that allowed us to implement a fully automated pipeline for tracking glioblastoma cells during a live-cell experiment. We used a fluorescent dye to stain the cell nuclei, allowing us to image the cells using a fluorescent microscope. The analysis sequence uses a retrained cellpose model to segment the cell nuclei [1], and the Btrack package in python to track the cell masks generated [3]. The script is completely automated and will export an experimental report from the inputted data, alongside the cell segmentation and tracking information for each time-lapse image analysed. To make the analysis sequence as user-friendly as possible, the python script is contained within a jupyter notebook [4].
+
+[1] Stringer, C., Pachitariu, M. Cellpose3: one-click image restoration for improved cellular segmentation. Nat Methods 22, 592–599 (2025). https://doi.org/10.1038/s41592-025-02595-5
+[2] Holme, B., Bjørnerud, B., Pedersen, N.M. et al. Automated tracking of cell migration in phase contrast images with CellTraxx. Sci Rep 13, 22982 (2023). https://doi.org/10.1038/s41598-023-50227-9
+[3] Ulicna K, Vallardi G, Charras G and Lowe AR, Automated deep lineage tree analysis using a Bayesian single cell tracking approach. Front in Comp Sci (2021)
+[4] Kluyver, T. et al., 2016. Jupyter Notebooks – a publishing format for reproducible computational workflows. In F. Loizides & B. Schmidt, eds. Positioning and Power in Academic Publishing: Players, Agents and Agendas. 
+
+
+Themes: ["Imaging","Data processing and visualisation","Open science and FAIR data","Applications"]
+
+Keywords: Imaging, Tracking, Analysis
+
+Gender of presenting author: Man
+
+Special requirements: None, 
+If selected, my preference would be to present this work as a poster.

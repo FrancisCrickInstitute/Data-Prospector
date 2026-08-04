@@ -1,0 +1,12 @@
+
+
+Institution: University of Leeds
+
+Title: Super-Resolution STED Microscopy to Investigate Dynamic ANO1 Signalling Domains 
+
+
+Abstract: The Ca2+-activated Cl- channel ANO1 confers amplification of nociceptive signals in dorsal root ganglion (DRG) neurons via functional coupling to IP3-sensitive release of endoplasmic reticulum (ER) Ca2+ stores. The intrinsically low Ca2+ sensitivity of ANO1 necessitates highly localised, micromolar Ca2+ concentrations for activation, therefore, maintaining tight proximity between ANO1 and the IP3 receptor is essential. This proximity is achieved through localisation of ANO1-IP3R1 nanodomain complexes to junctional appositions formed between the ER and plasma membrane (PM). The dynamic regulation of such ER-PM contact sites is an intriguing area of research for somatosensory neuroscience that may posit novel therapeutic targets, such as the scaffolding proteins responsible for the formation and maintenance of membrane contact sites. We used a super-resolution STimulated Emission Depletion (STED) microscopy approach to investigate proximity between ANO1-IP3R1 signalling complexes and the proposed ER-PM junction scaffolding protein, extended synaptotagmin 1 (ESYT1). Localisation of punctate ANO1, IP3R1 and ESYT1 immunoreactivity was achieved with a resolution of ≤ 50 nm allowing for the identification of individual complexes, and nearest neighbour distance (NND) analysis was performed to quantify colocalisation between ANO1 or IP3R1 with ESYT1. Interestingly, while stimulation with bradykinin (an inflammatory mediator known to activate ANO1 via the Gq signalling cascade) reduced the mean NND between ANO1 and ESYT1, suggesting greater proximity between the ER and PM, the mean NND between IP3R1 and ESYT1 increased, despite both proteins residing in the ER. A complementary proximity ligation assay (PLA) approach, which detects protein pairs found within 40 nm proximity, similarly showed an increased fluorescent signal between ANO1 and ESYT1 following bradykinin stimulation but suggested a noxious stimuli-dependent reduction in proximity between IP3R1 and ESYT1. These trends suggest a dynamic and complex rearrangement of ER-PM signalling nanodomains during nociception that demands further research to elucidate and may reflect a role for ESYT1 in facilitating ANO1-IP3R1 interactions.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: super-resolution, STED, nearest neighbour, ANO1, ER-PM junction

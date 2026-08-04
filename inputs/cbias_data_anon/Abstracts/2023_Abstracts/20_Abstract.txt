@@ -1,0 +1,12 @@
+
+
+Institution: Integrated Pathology Unit, Institute of Cancer Research, Royal Marsden NHS Hospital Trust
+
+Title: BVSegNet: Enhancing Blood Vessel Segmentation with Attention-Based Distance Regularization
+
+
+Abstract: Tumour vasculature, a key factor for influencing tumour growth, exhibit diverse morphology of blood vessels associated with their size and diameter. Accurately measuring vessels, especially those which are not continuous, in cross-sections is challenging for pathologists, whether done visually or through a microscope eyepiece. Moreover, manual quantification and scoring of CD31 staining (endothelial cell marker) lack reproducibility and precision among different raters. Thus, a precise quantification is needed in the context of cross-modality images. We have devised BVSegNet (Blood Vessel Segmentation Network) for automated detection and segmentation of blood vessels in breast biopsy samples stained with CD31. We employed the framework to captures blood vessels and multi-resolution spatial attention maps using encoder-decoder network with attention-based inception blocks as feature extractors. We introduced a regularizer based on Hausdorff distance to ensure optimal segmentation, especially when blood vessels are adjacent, and utilized a weighted binary cross-entropy loss. The outputs from the weighted binary cross-entropy and the distance loss estimate are summed to produce the optimal segmentation. Our results from BVSegNet were compared against ground truth annotations and achieved an intersection of a union score of 0.81 and a Panoptic quality metric of 0.73.
+
+Keywords: ["New Tools\n","AI & Machine/Deep Learning","Multi-Disciplinary","Open Science"]
+
+Additional Keywords: NA

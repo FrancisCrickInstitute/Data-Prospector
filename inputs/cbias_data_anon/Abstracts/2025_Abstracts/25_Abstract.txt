@@ -1,0 +1,30 @@
+Institution:
+Department of Medical Physics and Biomedical Engineering, University College London, UK; Department of Mechanical Engineering, University College London, UK
+Department of Mechanical Engineering, University College London, UK
+Centre national de la recherche scientifique (CNRS), France; Department of Mechanical Engineering, University College London, UK
+Department of Mechanical Engineering, University College London, UK
+Department of Mechanical Engineering, University College London, UK
+Department of Mechanical Engineering, University College London, UK
+
+
+Title: Benchmarking skeletonization metrics across vascular network types for permeability estimation
+
+Abstract:
+High-resolution imaging such as synchrotron CT (sCT) and Hierarchical Phase-Contrast Tomography (HiP-CT) [1] enables micron-scale resolution of vascular structures, requiring segmentation and skeletonization algorithms to extract the associated architectures. Skeletonization performance varies strongly with network morphology [2]. Tree-like, mesh-like, collapsed, and disconnected structures each present distinct challenges that affect the accuracy of skeleton-based flow modelling.
+Our framework evaluates homotopic thinning, distance-ordered thinning and voxel-scooping skeletonization methods using geometric and topological metrics, including the skeletonization super-metric and radius accuracy, linking differences in skeleton quality to permeability tensor estimation. 
+In mesh-like structures, algorithms such as TEASAR fail to preserve loops, leading to topological discontinuity [3]. Vessel radii measurements also vary substantially between algorithms, altering predicted vascular network resistance and permeability [2]. Algorithms also differ in preserving connectivity, producing differences in network structure. Both radius and connectivity variations propagate into flow modelling predictions, where accurate representation of paths and resistances is essential.
+By comparing skeletonization outputs across diverse morphologies in cardiac imaging datasets, we highlight how algorithmic biases influence permeability estimation, though the absence of a gold standard remains a key challenge. This work informs selection and design of skeletonization algorithms suited to different vascular structures, and supports robust permeability modelling in noisy, artefact-prone or incomplete 3D vascular segmentations.
+
+References
+[1] Walsh C.L. Nat Methods, 18.12 (2021): 1532–1541.
+[2] Walsh C.L. Comput Biol Med, 171 (2024): 108140.
+[3] Sato M. Proc. Pacific Conf. Comput. Graph. Appl. (2000): 281–289.
+
+
+Themes: ["Imaging","Modelling"]
+
+Keywords: biomedical imaging, image analysis, cardiovascular modelling
+
+Gender of presenting author: Woman
+
+Special requirements: 

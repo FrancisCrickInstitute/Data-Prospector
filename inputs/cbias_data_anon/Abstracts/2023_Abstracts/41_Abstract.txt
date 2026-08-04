@@ -1,0 +1,14 @@
+
+
+Institution: Max Planck Institute of Biochemistry
+
+Title: SPARCS, a platform for genome-scale CRISPR screening for spatial cellular phenotypes
+
+
+
+
+Abstract: Forward genetic screening associates phenotypes with genotypes by randomly inducing mutations and then identifying those that result in phenotypic changes of interest. Here we present spatially resolved CRISPR screening (SPARCS), a platform for microscopy-based genetic screening for spatial cellular phenotypes. SPARCS uses automated high-speed laser microdissection to physically isolate phenotypic variants in situ from virtually unlimited library sizes. We demonstrate the potential of SPARCS in a genome-wide CRISPR-KO screen on autophagosome formation in 40 million cells. Coupled to deep learning image analysis, SPARCS recovered almost all known macroautophagy genes in a single experiment and discovered a role for the ER-resident protein EI24 in autophagosome biogenesis. Harnessing the full power of advanced imaging technologies, SPARCS enables genome-wide forward genetic screening for diverse spatial phenotypes in situ.
+
+Keywords: ["AI & Machine/Deep Learning","New Tools\n"]
+
+Additional Keywords: CRISPR screening

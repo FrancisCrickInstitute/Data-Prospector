@@ -1,0 +1,19 @@
+
+
+Institution: University College London
+
+Title: Easy-to-use tools for computational neuroanatomy: consolidating the BrainGlobe user and contributor experience 
+
+
+Abstract: The BrainGlobe Initiative’s (https://brainglobe.info) suite of tools for computational neuroanatomy has been successful primarily because it is easy-to-use. These tools include atlas registration, feature segmentation and visualisation software. BrainGlobe allows the analysis of brain images from many species and different imaging modalities. One of our key aims is that Brainglobe software can be installed and run on a modern laptop within minutes. 
+
+Here, we describe the latest work on the BrainGlobe tools, with ease-of-use in mind. We've created a simplified installation procedure, enhanced and targeted documentation, and consistent provision of interoperable graphical user interfaces (plugins for the open-source image viewer "napari") backed by Python APIs for core computation. To ensure the user experience remains smooth and robust as the code base changes, we’ve added automated benchmarking and end-to-end tests on real-life data. The latest plugin allows intuitive visualisation and exploration of atlas registered data in a single graphical user environment, and includes the popular "brainrender" functionality.
+
+While these improvements are mainly aimed at improving the user experience, they additionally improve the contributor experience. For example, the simplified installation procedure and benchmarking tests mean we can confidently refactor and share parts of the code and documentation for increased maintainability behind the scenes without affecting users.
+
+
+Keywords: ["New Tools\n","Open Science","Quality Control\n","Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: Good practice
+User experience
+Graphical User Interfaces

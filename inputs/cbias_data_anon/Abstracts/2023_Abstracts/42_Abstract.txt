@@ -1,0 +1,15 @@
+
+
+Institution: Francis Crick, Imperial
+
+Title: Exploring tumour heterogeneity using combined fluorescence and phase contrast live-cell imaging techniques
+
+
+Abstract: Heterogeneity is a key feature of many tumours and plays a vital role in therapy resistance and tumour relapse. Little is known about how individual tumour cells within the heterogenous mixture may be sensitive or resistant to targeted treatments and how they may evolve over time. 
+Here we use single cell resolved time-lapse imaging tools to follow the fate of individual tumour cells during targeted therapy, coupled with the use of fluorescent biosensors as a readout of MAPK pathway activity. We describe a novel label-free microscopy technique for single-shot, semi-quantitative phase microscopy, polarisation differential phase contrast (pDPC), implemented into an existing commercial fluorescence microscope. 
+We use pDPC microscopy for whole cell segmentation, generation of several cell morphological features as well as cell dry mass. We track these metrics over time, in addition to the readout of MAPK pathway dynamics at the single cell level, to probe responses to targeted inhibitors. 
+Our results demonstrate that using pDPC is comparable to using fluorescent labels for single-cell segmentation and subsequent cell tracking, and can be combined with fluorescence to study the inter-connectivity between cell signalling pathway dynamics, cell migration, morphology and cell mass.
+
+Keywords: ["Multi-Disciplinary","Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n"]
+
+Additional Keywords: Fluorescence, phase contrast, imaging

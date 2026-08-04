@@ -1,0 +1,19 @@
+Institution:
+Randall Centre for Cell and Molecular Biophysics, King’s College London, UK
+Comprehensive Cancer Centre, King’s College London, UK
+Comprehensive Cancer Centre, King’s College London, UK
+Comprehensive Cancer Centre, King’s College London, UK
+Randall Centre for Cell and Molecular Biophysics, King’s College London, UK
+
+Title: Repurposing deep learning models from computer vision to classify drug-resistant cells using autofluorescence lifetime imaging data
+
+Abstract:
+Antibody-drug conjugates (ADCs) have vastly improved treatment for breast cancer patients, but the development of drug resistance remains a serious challenge. Identifying subpopulations of cancer cells with upfront resistance would enable more personalised treatment regimens, and determining cell population response rates and emergent resistant sub-populations would enable regimens to be adjusted over successive rounds. In this work, we used an invasive breast ductal carcinoma cell line to explore whether metabolic profiling can be used to classify cell populations that are responsive or non-responsive to ADC treatment. The metabolic profile is determined by 2-photon autofluorescence lifetime imaging (FLIM) of the live cells, which requires minimal perturbation of the sample. This multi-dimensional data contains both intensity and lifetime information corresponding to the location and interaction status of NAD(P)H. This molecule is a key component of cell metabolism, and its average fluorescence lifetime is a means to probe important indicators of cancer. We tested the suitability of deep learning (DL) models to classify these cells using FLIM data. DL models have outstanding performance at classification tasks, but typically require datasets of hundreds of thousands of entries for effective training. Since our application is characterised by the scarcity of available data, a problem which is common in advanced microscopy research, we repurposed pretrained computer vision DL models using transfer learning. To facilitate this, we introduced an encoder block prior to the pretrained models to map the multi-dimensional FLIM data to the image space, since the computer vision models were developed to process natural scene images. We conducted a series of experiments to validate the performance of the classification method and to determine the fundamental FLIM data required to discriminate between cell populations that responded or did not respond to ADC treatment.
+
+Themes: ["Applications"]
+
+Keywords: Fluorescence lifetime imaging microscopy, Deep learning, Cancer treatment
+
+Gender of presenting author: Man
+
+Special requirements: No

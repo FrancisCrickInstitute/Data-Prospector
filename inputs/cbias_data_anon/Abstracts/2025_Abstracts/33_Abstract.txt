@@ -1,0 +1,17 @@
+Institution:
+University of Liverpool, UK
+Defence Science Technology Laboratory, UK
+
+Title: Segmentation methods for identifying morphological changes in cells in response to exposure from chemical or biological hazards
+
+Abstract:
+The function and shape of cells are intrinsically linked and can be perturbed and destroyed upon exposure to chemical or biological threats. We hypothesise that these changes can be leveraged and aim to develop AI tools that can be used to characterise cellular morphological changes in response to exposure. This study improves upon previous literature by focussing on calu-3 cells within a confluent monolayer to produce more applicable to life results. To do this the nuclei and cell membrane need to be segmented, but the morphological changes associated with death make segmentation difficult. 
+Using hand drawn labels as a ground truth, we have evaluated the performance of Cellpose 3.1 vs Cellpose SAM on 72 brightfield and fluorescent images of over 15,000 cells that are either i) fixed or ii) live and iii) healthy or iv) dying. Preliminary results indicate that on fixed cells the segmentation is significantly better if the fluorescently stained cell membrane channel is used instead of the brightfield channel while the presence of a fluorescent nuclei channel hinders the performance. However, including a fluorescent nuclei channel improves the segmentation of live brightfield images. These initial findings partnered with future analysis will allow us to quantify which factors contribute towards a high-performing yet generalisable segmentation model.
+
+Themes: ["Imaging"]
+
+Keywords: microscopy, imaging, AI
+
+Gender of presenting author: Man
+
+Special requirements: I can't stand for extended periods of time so will need a chair please

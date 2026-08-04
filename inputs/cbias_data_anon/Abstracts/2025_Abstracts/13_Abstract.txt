@@ -1,0 +1,15 @@
+Institution:
+bonej.org, Tannay, Switzerland
+
+Title: GPU-accelerated bone image analysis in BoneJ
+
+Abstract:
+BoneJ is a suite of ImageJ plugins for measuring osteocyte lacunae, trabecular bone and whole bones in three-dimensional X-ray microtomography and CT images. Several plugins faced performance bottlenecks when implemented for CPU. GPUs are ubiquitous, so I implemented BoneJ plugins that had potential for data-parallelism using JOCL and OpenCL. Ellipsoid Factor+ fits maximal ellipsoids, seeded from medial ridge and medial axis points, within clouds of occlusion points to calculate Ellipsoid Factor, a measure of rod- or plate-like geometry. Java's task-parallelism is used to manage OpenCL device queues across multiple GPUs. 100× or greater speedup is achieved meaning that ellipsoids are fit more accurately to structures in the same time. Development has lacked institutional support, so to make it "pay" I established a token issuing and validation system for ImageJ. Token value ("beans") can be spent arbitrarily: Ellipsoid Factor+ spends one bean per ellipsoid, which equates to about £1 per GPU-hour, enough to fit 100,000 ellipsoids in one 512³-pixel trabecular bone image. Other programs could spend based on number of pixels processed, or any other measure of work done depending on a reasonable judgement of what the market would bear. Developers are welcome to use the payment API to shift from a grant or core-funded model to a user-pays, “research software as a laboratory service” model, which might be more sustainable in the long run.
+
+Themes: ["Data processing and visualisation","Imaging"]
+
+Keywords: GPU bone tomgraphy
+
+Gender of presenting author: Prefer not to say
+
+Special requirements: None required.

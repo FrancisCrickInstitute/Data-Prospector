@@ -1,0 +1,12 @@
+
+
+Institution: University of Sussex
+
+Title: Optimising Cellpose for Efficient Cell and Nuclei Segmentation with Improved Speed and Reduced Memory Usage
+
+
+Abstract: Cellpose, a tool for cell and nuclei segmentation, often results in processing delays and significant memory consumption due to its generalist capabilities. To address these challenges, we present an optimised approach to distil Cellpose into a smaller, fine-tuned segmentation model that is faster and more memory efficient. The smaller model uses Cellpose's Residual Neural Network architecture but has fewer hidden layers. In the training phase, through a balanced loss function of mean squared error and binary cross-entropy, the smaller model learns to mirror the intermediate and final outputs of Cellpose when provided with images from the same cell or nucleus dataset. This allows our model to accurately reproduce Cellpose's segmentation technique while maintaining a more efficient architecture. Implementing our distillation method results in a 19% reduction in segmentation accuracy and a 16% reduction in the identification of cells and nuclei. However, this trade-off leads to a 5 times faster model and a reduction in memory consumption by a factor of 3.9 compared to Cellpose. Our approach is useful for high-volume applications where time and memory consumption are often rate-limiting parameters. Furthermore, our model is adaptable to perform additional tasks such as classification and tracking in parallel with segmentation.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Multi-Disciplinary","Open Science","New Tools\n"]
+
+Additional Keywords: Computational Efficiency

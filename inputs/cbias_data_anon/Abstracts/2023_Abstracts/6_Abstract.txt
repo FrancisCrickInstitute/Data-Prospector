@@ -1,0 +1,14 @@
+
+
+Institution: Glencoe Software
+
+Title: Synchronizing the data science workflow with data management at scale
+
+
+
+
+Abstract: OMERO is an image data management platform designed for storage and analysis of bioimaging data and metadata. Metadata can range from simple annotation tags to tables containing per-object measurements related to the image. OMERO.tables provides an online interface for storing, viewing and retrieving such tabular data within the object-oriented OMERO model. Despite a wide variety of programmatic tooling available for the analysis of high-content numerical data, the ability to utilise data stored as OMERO.tables as input has been limited by a complex Python API (omero-py) which requires extensive background knowledge to use effectively. We aimed to create a Python package to provide a simple, accessible interface for interacting with remote OMERO.tables. Specifically, we opted to provide an interface for downloading data into a pandas dataframe due to the broad compatibility and uptake of this framework. The resulting open source package, named omero2pandas, is freely available via the Python package index (PyPI). We demonstrate the usability of this tool for dimensionality reduction on a table detailing millions of objects with hundreds of measurements, including the visualization of these results in open source and commercial tools.
+
+Keywords: ["Web/Cloud Interfaces\n","New Tools\n","Big Data\n","Open Science"]
+
+Additional Keywords: OMERO

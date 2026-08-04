@@ -1,0 +1,22 @@
+Institution:
+Rosalind Franklin Institute, Didcot, United Kingdom, OX11 0QS
+University of Birmingham, School of Dentistry, 32-34 Colmore Circus Queensway, Birmingham B4 6BN
+Rosalind Franklin Institute, Didcot, United Kingdom, OX11 0QS
+Rosalind Franklin Institute, Didcot, United Kingdom, OX11 0QS
+University of Manchester, Department of Mathematics, Oxford Road, Manchester, M13 9PL
+University of Manchester, School of Medical Sciences, Division of Developmental Biology & Medicine, Academy, Moss Ln E, Rusholme M14 4PX
+Rosalind Franklin Institute, Didcot, United Kingdom, OX11 0QS
+Rosalind Franklin Institute, Didcot, United Kingdom, OX11 0QS
+
+
+Title: Scaling a pipeline for segmentation of synchrotron micro-CT volumetric images of villi and vasculature in human placenta
+
+Abstract:
+Understanding the structural development of the placenta is crucial as common disorders of pregnancy (such as pre-eclampsia and fetal growth restriction) are associated with impaired development of the placental vasculature. For the pipeline described here, normal and pathological samples are processed with appropriate contrast agents, vascular cast resins and fixation and embedding methods before synchrotron micro-CT scanning performed at Diamond Light Source. The samples are at a scale of approximately 1.5𝑚𝑚(_^3)  to allow investigation of the fetal-maternal interface and fetal-placental vascular network.  The 3D image processing pipeline after tomographic reconstruction includes deep-learning-based segmentation with ensembling followed by semi-automatic post-processing of the segmentation. To train the segmentation models a pseudo-labelling approach is used to augment manual annotation with annotation of additional data produced by pre-existing segmentation models. The annotation is then used to train different encoder-decoder models, optimising for parameters such as model architecture, encoder type, input image size, augmentations and loss function. Derived quantitative metrics of segmentations produced by this pipeline include volume fraction, surface area, skeleton length, villi and vessel diameter. Regions of interest are taken from the segmentations to isolate terminal villi which are then converted to meshes which will be used for mathematical modeling.
+
+
+Themes: ["BioMedical Applications of Image Analysis","AI: What Can('t) it do?"]
+
+Keywords: biomedical, microscopy, image, cryo-electron tomography, placenta
+
+Gender of presenting author: Woman

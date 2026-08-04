@@ -1,0 +1,15 @@
+Institution:
+Randall Centre for Cell and Molecular Biophysics, King's College London, London, UK
+Randall Centre for Cell and Molecular Biophysics, King's College London, London, UK
+Randall Centre for Cell and Molecular Biophysics, King's College London, London, UK
+
+Title: Maximising data from 3D human tissue imaging 
+
+Abstract:
+Fluorescence-based volumetric imaging of ex-vivo human tissues provides excellent means to retain spatial 3D cell organisation seen in vivo and explore the dynamic interplay between cell types, structural components and resulting phenotypes. Such analysis creates data that can be used for the extraction of both qualitative and quantitative endpoints. One of the challenges facing such analysis is retaining the volumetric aspect (x, y, z) and tracking cells over time. We have undertaken imaging of human precision cut lung slices to investigate changes in cell fate upon treatment with pro-fibrotic mediators. Most opensource platforms cannot currently handle multiple, large datasets, and user manual tracking over different fields introduces a high degree of error. We have employed ImageJ- based macro pipelines to characterise cell subtypes from fixed volumetric acquisitions. Use of plugins enabled segmentation of each fluorophore marker with DAPI for cell quantification and iterations evaluated the cytoplasmic intensities for cell differentiation and co-localisation. This has provided a baseline to investigate epithelial cell state changes over time, with automation aiding high throughput analysis. We now aim to expand this into more complex, multiplexed images, which represents a significant challenge to the broader field.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: Lung, 3D, analysis
+
+Gender of presenting author: Woman

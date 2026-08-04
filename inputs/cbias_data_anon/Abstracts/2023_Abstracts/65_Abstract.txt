@@ -1,0 +1,13 @@
+
+
+Institution: 
+
+Title: An AI-ready BioImage Archive
+
+
+Abstract:The BioImage Archive is currently dedicated to two primary objectives: enhancing the reusability of biological imaging data and facilitating its integration with artificial intelligence (AI) techniques. A critical challenge in this pursuit is the diversity of file formats utilised in biological imaging, which often hinders data reuse. To address this issue, we are actively converting a subset of our datasets into the OME-NGFF format, a community-supported standard that streamlines access to biological images and facilitates in-browser interactive visualisation, as well as cloud-based data access for extensive reanalysis. Furthermore, we are actively developing a framework to directly support "AI-ready" data. This involves the creation of comprehensive data models that encompass both images and annotations, annotation-specific metadata, and data presentation formats tailored to meet the needs of the machine learning and computer vision communities.
+
+
+Keywords: 
+
+Additional Keywords: 

@@ -1,0 +1,16 @@
+Institution:
+University of Galway, Ireland
+University of Galway, Ireland
+
+Title: Centromeric protein CENP-C depletion during early stages of Drosophila spermatogenesis results in reduced levels of the centromere-specific histone CENP-A in mature sperm
+
+Abstract:
+The centromere is a unique region on the chromosome that serves as the basis for kinetochore assembly. Kinetochores play a crucial role in cell division by attaching chromosomes to spindle microtubules to be equally distributed between the two daughter cells. The correct segregation of chromosomes is particularly important in tissues with constantly dividing cells such as male germline, in which the disruption of this process can lead to infertility. Centromeres are defined epigenetically by the presence of a centromere-specific histone H3 variant CENP-A in the nucleosomes. Unlike other histones, CENP-A is not replaced by sperm nuclear binding proteins (e.g. protamines) during the compaction of the nuclei in spermiogenesis and is retained at centromeres. CENP-A is recruited to centromeres via its specific assembly factor CAL1 and another centromeric protein CENP-C, which serves as a link between the centromeric chromatin and outer kinetochore proteins. In this work, we track CENP-A maintenance in mature sperm using the male germline of the fruit fly Drosophila melanogaster expressing GFP-tagged CENP-A as a model. We show that a 40% depletion of CENP-C during early stages of spermatogenesis achieved by RNA interference leads to the formation of mature sperm with CENP-A reduced by approximately 33%. Preliminary data indicate the presence of aneuploid sperm and ¬that such males have lower fertility in comparison to the control.
+
+Themes: ["Imaging","Data processing and visualisation"]
+
+Keywords: CENP-A, centromere, spermatogenesis, Drosophila
+
+Gender of presenting author: Woman
+
+Special requirements: 

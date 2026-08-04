@@ -1,0 +1,12 @@
+
+
+Institution: Chan Zuckerberg Biohub
+
+Title: ultrack: large-scale versatile cell tracking in Python under segmentation uncertainty
+
+
+Abstract: Ultrack is a new cell-tracking Python package. It is designed for a broad audience, accepting 2D, 3D, and multichannel datasets and working well on devices from laptops to high-performance computer clusters. One of its unique features is the ability to consider different input modalities, from intensity images to cell-boundary detection, segmentation labels, or a combination of all of them. Its user-friendly Python interface allows easy adjustments to fit specific needs and supports various file formats, like tif, zarr, and others. This ensures it fits nicely into existing work processes without unnecessary data duplication. We've tested Ultrack on various datasets, and it has proven efficient, even handling millions of segments of multi-terabyte datasets in just a few hours.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","New Tools\n"]
+
+Additional Keywords: cell tracking; segmentation; machine-learning; image-analysis;

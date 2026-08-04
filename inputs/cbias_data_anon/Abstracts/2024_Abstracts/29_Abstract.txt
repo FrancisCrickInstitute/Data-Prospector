@@ -1,0 +1,20 @@
+Institution:
+Tomocube Inc, Daejeon, Republic of Korea
+Tomocube Inc, Daejeon, Republic of Korea
+Tomocube Inc, Daejeon, Republic of Korea
+Tomocube Inc, Daejeon, Republic of Korea
+Tomocube Inc, Daejeon, Republic of Korea
+Tomocube Inc, Daejeon, Republic of Korea
+Tomocube Inc, Daejeon, Republic of Korea
+Korea Advanced Institute of Science and Technology (KAIST), Department of Physics, Daejeon, Republic of Korea
+
+Title: Segmentation and Analysis Method for 3D Cell Structures Enhanced with Open-Source AI Tools in Holotomography Images.
+
+Abstract:
+Holotomography (HT) imaging enables label-free, high-resolution four-dimensional (XYZ and time) observation of cell morphology and subcellular components by measuring their refractive index (RI). However, extracting specific features from HT images can be challenging without manual annotation. To address this, we developed an image analysis pipeline combining RI-based thresholding algorithms, post-processing procedures, and AI models trained with RI information for precise segmentation and analysis. We employed Cellpose and StarDist for 2D and 3D cell and nucleus segmentation, generating robust predictions across various cell types. The ilastik model was trained for mitochondria segmentation, creating cell line-specific models to improve prediction accuracy. Lipid droplets were segmented using rule-based algorithms based on their distinct RI. For long-term imaging, TrackMate was used for object tracking, allowing the measurement of temporal dynamics of biological objects. This approach enables the extraction of morphological and biophysical properties from HT images, enhancing the analysis of cellular structures and dynamics. In conclusion, our method effectively isolates individual cells and organelles from HT images, maximizing HT’s capabilities for real-time, high-resolution, and quantitative analysis.
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: Holotomography, image analysis, AI
+
+Gender of presenting author: Man

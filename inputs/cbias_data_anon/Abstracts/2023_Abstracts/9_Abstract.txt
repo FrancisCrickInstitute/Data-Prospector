@@ -1,0 +1,12 @@
+
+
+Institution: Spatial Proteomics, Max Delbrück Center for Molecular Medicine in the Helmholtz Association
+
+Title: Investigating chemoresistance in triple negative breast cancer, by imaging-guided MS-proteomics
+
+
+Abstract: Triple negative breast cancer (TNBC) is an aggressive disease whose standard treatment is neoadjuvant platinum-based chemotherapy, however, chemoresistance and relapse are common.  Understanding the tumor microenvironment is essential for improving chemotherapeutic efficacy, but the systematic analyses including both spatial and phenotypic information have been limited. My aim is to understand the tumor microenvironment of TNBC with cell-type and spatial resolution at the proteomic level. We are analyzing 88 patient biopsies, before and after chemotherapy, characterizing key biomarkers predictive of the variable treatment outcomes. We performed multiplex imaging with a panel of 20+ markers, to identify the main immune players. Images are stitched, registered, segmented (Cellpose), and cells classified with a Nextflow pipeline --- taking advantage of its transparency and replicability. We are analyzing the spatial distribution of cells to categorize the tumor regions; this perspective can guide the biological questions to understand the variability in treatment outcomes. Lastly, these analyses will enable the prioritization of the most interesting cellular phenotypes, which will be collected by laser microdissection for deep proteomic profiling by mass spectrometry, characterizing their functional states. These multimodal data provide us with unique insights into proteomic changes induced by chemotherapy of TNBC, potentially improving the clinical decision making.
+
+Keywords: ["Multi-Disciplinary","Open Science","Common Analysis Tasks: Image Segmentation, Object Tracking, etc."]
+
+Additional Keywords: Spatial analysis

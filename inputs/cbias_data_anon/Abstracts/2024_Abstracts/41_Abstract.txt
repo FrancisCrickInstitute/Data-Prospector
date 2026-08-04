@@ -1,0 +1,21 @@
+Institution:
+Department of Proteomics and Signal Transduction, Max Planck Institute of Biochemistry, Martinsried, Germany
+Gene Center and Department of Biochemistry, Ludwig-Maximilians-Universität München, Munich, Germany & Institute of Computational Biology, Helmholtz Munich, Germany
+Department of Proteomics and Signal Transduction, Max Planck Institute of Biochemistry, Martinsried, Germany
+Institute of Computational Biology, Helmholtz Munich, Germany
+Institute of Computational Biology, Helmholtz Munich, Germany
+Department of Proteomics and Signal Transduction, Max Planck Institute of Biochemistry, Martinsried, Germany
+Gene Center and Department of Biochemistry, Ludwig-Maximilians-Universität München, Munich, Germany
+Institute of Computational Biology, Helmholtz Munich, Germany
+Department of Proteomics and Signal Transduction, Max Planck Institute of Biochemistry, Martinsried, Germany
+
+Title: scPortrait: Building single cell representations based on microscopy images
+
+Abstract:
+Microscopy imaging routinely produces large datasets that capture the spatial composition and arrangement of millions of cells. Gaining biological insights from these data requires transforming images into descriptive features and integrating single cell information across datasets. Here we introduce scPortrait, a computational framework to generate single cell representations from raw microscopy images. scPortrait solves several challenges that come with scaling image operations such as stitching and segmentation to millions of cells. Out-of-core computation enables scPortrait to efficiently handle datasets in which individual images, for example covering whole microscopy slides, exceed available memory. By introducing an open file format that interfaces with OME-NGFF and scverse spatialData, scPortrait facilitates the integration of newly recorded and publicly available datasets. To generate meaningful single cell representations, scPortrait’s standardized data format directly enables training and applying the latest deep learning-based computer vision models. We demonstrate the utility of scPortrait on several biological use cases including phenotype identification in image-based genetic screening and single-cell representation learning.
+
+Themes: ["AI: What Can('t) it do?","Community Initiatives"]
+
+Keywords: computational platform, scverse, deep learning, single-cell, data format
+
+Gender of presenting author: Woman

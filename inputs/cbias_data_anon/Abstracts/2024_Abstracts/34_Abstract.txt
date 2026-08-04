@@ -1,0 +1,18 @@
+Institution:
+Netherlands Cancer Institute
+
+Title: Predicting cell types from H&E using multiplex imaging and deep learning
+
+Abstract:
+A pathologist examines a tissue slide and looks for criteria of normality and abnormality within tissue samples. Samples are typically stained with Haematoxylin and Eosin (H&E), a low cost widely available staining method. However, the assessment of the large amount of cells by pathologists is time-consuming, expensive and known to be subject to error.
+
+The development of autostainers, slide scanners and the resulting digitization has provided large amounts of H&E data. This has enabled the use of deeplearning to recognise patterns and assist pathologists in their work. Here we present the use of multiplex imaging to accurately identify different cell types in tissue micro arrays (TMAs) as well as whole slide images (WSI) of human TNBC tissue. The CODEX fusion technology is used to stain and image 36 different markers. This gives a very detailed insight into the spatial distribution of different cell types. The slides are subsequently stained with H&E and the same image is registered to the multiplex image to correctly localise the classified cells in the H&E. 
+
+The analysis pipeline that we have developed is free and open source. It is built with QuPath, ImageJ and Python and is available on GitHub.
+
+
+Themes: ["AI: What Can('t) it do?","BioMedical Applications of Image Analysis"]
+
+Keywords: Pathology, Multiplex, Fluorescence
+
+Gender of presenting author: Man

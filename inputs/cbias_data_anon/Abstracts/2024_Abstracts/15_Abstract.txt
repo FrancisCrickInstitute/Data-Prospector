@@ -1,0 +1,13 @@
+Institution:
+University of Sheffield 
+
+Title: Doubling discovery: the powerful fusion of atomic force microscopy and molecular dynamics simulations through deep learning
+
+Abstract:
+Precise atomic positioning is crucial for understanding DNA flexibility and its role in essential cellular processes such as replication, repair, and transcription. While nanoscale imaging techniques like Atomic Force Microscopy (AFM) and Cryo-EM provide valuable insights into DNA conformation, they fall short in delivering the atomic-level resolution necessary for detailed structural analysis. Molecular Dynamics (MD) simulations, on the other hand, model atomic positions and conformational changes over time but require experimental validation, which remains a qualitative and time-consuming process. Here we demonstrate how shape analysis algorithms such as fourier descriptors and deep learning techniques such as variational auto-encoders can be harnessed to fit structures from MD simulations to AFM images, bridging the gap between experimental and computational findings and enhancing the structural information extracted through microscopy. We exemplify our methods by exploring the conformational landscape of DNA minicircles, demonstrating how their structures are influenced by supercoiling, protein binding and environmental conditions. By correlating AFM images with simulations, we show that these conformational changes arise from supercoiling-induced defects, including DNA damage sites. This fusion of techniques promises to drive insights into how DNA dynamically adapts its structure to fulfil functions that are essential for life.
+
+Themes: ["BioMedical Applications of Image Analysis","AI: What Can('t) it do?"]
+
+Keywords: Microscopy, deep learning, shape analysis, biomedical, DNA, mathematics
+
+Gender of presenting author: Woman

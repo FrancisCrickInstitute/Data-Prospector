@@ -1,0 +1,23 @@
+
+
+Institution: Victorian Centre for Functional Genomics, Peter MacCallum Cancer Centre, Melbourne, Victoria, Australia
+
+Title: Imaging Challenges and Innovations in 3D Organoid Screening
+
+
+Affiliations:
+1.	Department of Anatomy and Developmental Biology, Monash Biomedicine Discovery Institute Cancer Program, Monash University, Clayton, Victoria, Australia
+2.	Peter MacCallum Cancer Centre, Melbourne, Victoria, Australia.
+3.	Sir Peter MacCallum Department of Oncology, The University of Melbourne, Victoria, Australia.
+4.	Melbourne Urological Research Alliance, Monash University, Clayton, Victoria, Australia
+5.	Cabrini Institute, Cabrini Health, Malvern, Victoria, Australia.
+6.	Department of Physiology, Monash Biomedicine Discovery Institute Cancer Program, Monash University, Clayton, Victoria, Australia
+7.	Dept Biochemistry and Pharmacology, The University of Melbourne, Victoria, Australia
+
+Abstract: In the field of biomedical research, the use of complex 3D biological models like patient and PDX-derived organoids has gained prominence for their ability to closely mimic in vivo conditions. At the Victorian Centre for Functional Genomics at Peter MacCallum Cancer Centre, we have established a fully automated high-throughput screening pipeline that employs advanced liquid handling and high-content imaging systems. A significant challenge in automating this pipeline is the intricacy of image analysis and segmentation, especially when capturing live-cell Brightfield images.
+To address this challenge, we employ a range of filter-based methods such as CellProfiler or advanced deep-learning techniques like CellPose. The algorithms have been optimised to adaptively segment varying and complex organoid structures with and without drug treatment. These algorithms enable label-free, real-time tracking of organoid growth, size, and composition at both the well-level and single-organoid resolution.
+Our downstream ML-based pipelines then successfully identified morphological changes in patient-derived organoids, providing actionable insights into drug treatment responses. This work not only accelerates drug discovery but also paves the way for personalized medicine applications, as it validates the in vitro responses of organoids as reliable indicators for in vivo sensitivity in matching xenograft models.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","AI & Machine/Deep Learning","Multi-Disciplinary"]
+
+Additional Keywords: Organoids, High-throughput Screening, Personalized Medicine, Machine Learning, Brightfield Imaging,

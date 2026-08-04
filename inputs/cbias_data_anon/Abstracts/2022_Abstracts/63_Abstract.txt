@@ -1,0 +1,12 @@
+
+
+Institution: Francis Crick Institute
+
+Title: Imaging and Graph Theory for Studying Cell's Alignment
+
+
+Abstract: Fibroblast cells of the connective tissue demonstrate a direct role in controlling the progressive cellular events that orchestrate the formation of individual limb muscle bundles. Fibroblasts organize muscle cells into well-aligned parallel patterns of muscle bundle tissue precursors in a healthy embryo, whereas patterning defects are present in radial dysplasia and hypoplasia samples. Image analysis techniques and a graph theory investigation allow us better understand how a population of fibroblasts orchestrates muscle cells by studying structural and functional connectivity patterns between the cells. Cells’ shapes and nuclei positions are segmented in microscopic data to construct cellular networks with nuclei as the graphs’ vertices. Later, the graph theory measurements are used to express the most relevant topological features of the complex networks. Such analysis helps to quantify characteristics like cell connectivity, curvature, closeness, participation in a network, identification of central cells, information flow and network reachability from a local point of view. Comparison of these metrics between healthy and mutant samples enables us closely investigate populations’ behaviours and detect anomalies addressing biological questions regarding the cell’s alignment into the patterns.
+
+Keywords: ["Segmentation","Object Tracking","Multi-Disciplinary","New Tools\n"]
+
+Additional Keywords: Graph Theory

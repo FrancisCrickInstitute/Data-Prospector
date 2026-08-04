@@ -1,0 +1,15 @@
+
+
+Institution: King's College London
+
+Title: High-throughput immunocytochemistry-based screening of CRISPR/Cas9-edited iPSC
+
+
+
+
+
+Abstract: CRISPR/Cas9 genome editing allows efficient modification of the genome and it has been used extensively across a variety of different cell lines to generate disease-relevant cell models. Despite its relative ease of use, identification of clones that carry target sequence requires screening of large numbers of cells and remains the most laborious part of the protocol. We developed a high-throughput, immunocytochemistry-based approach that allows parallel screening of multiple CRISPR-edited clones. We successfully used this approach with induced pluripotent stem cells (iPSCs), where either knock-out of the Fused in sarcoma (FUS) gene or an ALS-causative FUS mutation (FUS D14, FUS Q519fs, FUS R495X and FUS P525L) were introduced into the wildtype FUS background. The screening protocol utilises standard immunocytochemistry protocols and relies on the specificity of antibodies to differentiate between wildtype and mutant FUS protein. We built an automated image-analysis protocol that can differentiate between different genotypes, which takes into account the intensity of the wild type and mutant FUS signal and their localization within a cell. This imaging protocol is easy to use, fast, cost-effective and can be easily implemented in any lab to facilitate screening of a large number of CRISPR-edited clones.
+
+Keywords: ["High-Throughput"]
+
+Additional Keywords: CRISPR screen

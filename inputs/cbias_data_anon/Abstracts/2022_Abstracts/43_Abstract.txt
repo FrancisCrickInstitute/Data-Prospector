@@ -1,0 +1,17 @@
+
+
+Institution: Cardiff University
+
+Title: Organoid Happiness Assay- An Optical Metabolic Imaging Workflow for Organoid Growth Optimisation
+
+
+
+Abstract: Organoids, 3D structures that mirror the cellular architecture of normal or diseased tissues, have the potential to revolutionise cancer research. Evidence has shown that drug-treated organoids mirror patient responses and can be used as a powerful platform in drug discovery and genetics research. 
+In this project we aim to establish a label-free widefield optical metabolic imaging (OMI) workflow, based on the auto-fluorescence of nicotinamide adenine dinucleotide (NAD(P)H) and flavin adenine dinucleotide (FAD), as a real-time ‘organoid happiness assay’ for growth optimisation during the establishment of new organoid lines. 
+To develop this workflow, we cultured patient derived colorectal cancer organoids under different conditions. Organoid metabolism, growth and health were analysed over several days by microscopy using an Olympus widefield microscope fitted with a Hamamatsu Orca flash 4.0 camera. NAD(P)H and FAD auto-fluorescence was assessed using dedicated excitation and emission filter combinations. To aid with the organoid-by-organoid quantification of metabolic and morphological parameters, we developed a Python data analysis pipeline to automate organoid segmentation, registration and tracking over time. 
+Data generated from this pipeline was compared with traditional methods to analyse organoid health and growth, such as ATP-light, metabolomic, apoptosis and necrosis assays. Preliminary data indicates that widefield OMI can be utilised as a ‘happiness assay’ and provide a reproducible method to link metabolic and physical characterisation of organoids over time.
+
+
+Keywords: ["Segmentation","Object Tracking"]
+
+Additional Keywords: Feature Extraction

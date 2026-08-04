@@ -1,0 +1,19 @@
+Institution:
+Artificial Intelligence & Informatics, Rosalind Franklin Institute, Didcot, United Kingdom
+Artificial Intelligence & Informatics, Rosalind Franklin Institute, Didcot, United Kingdom
+Structural Biology, Rosalind Franklin Institute, Didcot, United Kingdom
+Structural Biology, Rosalind Franklin Institute, Didcot, United Kingdom
+Artificial Intelligence & Informatics, Rosalind Franklin Institute, Didcot, United Kingdom
+Artificial Intelligence & Informatics, Rosalind Franklin Institute, Didcot, United Kingdom
+
+
+Title: GeoLlama: a tool for measuring cryo-electron tomography lamella geometries
+
+Abstract:
+Lamellae are thin slabs of ice usually containing biological samples in cryo-electron tomography (cryo-ET). The electron-transparency of lamellae and signal-to-noise ratio of the resultant tomograms are closely related to their thickness, which in cryo-ET is typically less than 250 nm.  Moreover, it has been shown previously that sample damage due to ionic deposition during focused ion beam (FIB) milling is inversely proportional to the depth at which particles are buried in the lamellae. Therefore, the knowledge of the geometries of the sample-containing lamellae is of paramount importance in determining the quality of experiments. In this work, we present GeoLlama, an open-source Python-based program that uses novel approaches to gauge different geometrical aspects, including thickness and rotational angles, in reconstructed tomograms a posteriori. The GeoLlama code can be found at https://github.com/rosalindfranklininstitute/GeoLlama.git
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: cryo-ET, image, evaluation
+
+Gender of presenting author: Man

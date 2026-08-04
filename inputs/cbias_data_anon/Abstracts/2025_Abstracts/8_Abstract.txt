@@ -1,0 +1,15 @@
+Institution:
+UCL Centre for Cell & Molecular Dynamics, London UK
+
+Title: A Euro-BioImaging Scientific Ambassador’s Role in Strengthening Research Communities
+
+Abstract:
+The Euro-BioImaging Scientific Ambassadors programme promotes awareness of open-access imaging, analysis, and data services across Europe, catalysing collaboration and innovation. As one of the 2025–26 Ambassadors, I have connected researchers at UCL and beyond with these resources, fostering engagement and knowledge exchange. My activities so far include reviewing applications for the Euro-BioImaging job shadowing programme and interviewing Euro-BioImaging Node representatives, such as those at the Microscopy Innovation Centre at KCL and Octopus, to spotlight the often-overlooked contributions of technical staff, aligning with my commitment to advancing technician career development and visibility. These interactions also give me the opportunity to build networks beyond my own institution and exchange best practices in data management and analysis, two of the most pressing topics in microscopy today. I aim to close a persistent awareness gap by promoting Euro-BioImaging at events, ensuring that advanced tools, expert support, and collaborative opportunities reach the researchers who can benefit most.
+
+Themes: ["Communities"]
+
+Keywords: microscopy, collaboration, networking, scientific ambassador, Euro-BioImaging
+
+Gender of presenting author: Woman
+
+Special requirements: No

@@ -1,0 +1,19 @@
+
+
+Institution: Imaging and Modeling Unit, Institut Pasteur
+
+Title: Deep learning identifies antibiotic mode of action from label-free high-throughput images 
+
+
+
+
+
+Abstract: Antimicrobial resistance is a growing global public health concern. Thus, identifying antibiotics with novel modes of action (MoA) is crucial. To increase the success of image-based drug screens, hit-selection strategies relying on multi-parametric read-outs are becoming more commonplace. Recent studies have shown that hand-crafted features obtained from fluorescence microscopy images of drug-treated bacteria allow to distinguish between MoAs. However, the potential of deep learning approaches to exploit the imaging data more exhaustively and improve predictive performance remains to be fully explored. Here, we developed a convolutional neural network (CNN) to classify images of drug-treated bacteria to enable MoA identification.
+
+We acquired brightfield and three-colour fluorescent images of E. coli treated with 19 antibiotics and trained a CNN on these images. We found that brightfield images alone enable to classify MoAs with an accuracy of 88.1%, and to infer the MoA of compounds not included during training with an accuracy of 79.2%. Moreover, embeddings of brightfield images of H. pylori computed by a model trained on E. coli cluster by MoA, suggesting that phenotypic features required to distinguish antibiotic MoAs generalise across bacterial species.
+
+These results indicate that CNNs can be used to profile bacterial images in a label-free manner, thus simplifying imaging protocols while conserving the ability to identify the MoA of unseen compounds. 
+
+Keywords: ["AI & Machine/Deep Learning","Big Data\n"]
+
+Additional Keywords: high-content screening, image profiling, antibiotics, drug discovery, target identification

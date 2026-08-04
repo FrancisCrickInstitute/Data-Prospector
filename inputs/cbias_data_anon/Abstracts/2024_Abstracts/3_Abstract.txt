@@ -1,0 +1,19 @@
+Institution:
+Electron Microscopy Center, RadboudUMC, Nijmegen, NL
+Electron Microscopy Center, RadboudUMC, Nijmegen, NL
+Delmic BV, Delft, NL
+Electron Microscopy Center, RadboudUMC, Nijmegen, NL
+Electron Microscopy Center, RadboudUMC, Nijmegen, NL
+
+Title: Image Restoration and Enhancement for Cryogenic Focused Ion Beam / Scanning Electron Microscopy in Napari
+
+Abstract:
+Biology occurs in inherently hydrated and multi-dimensional environments. Techniques such as cryogenic serial focused ion beam/scanning electron microscopy (cryo-FIB/SEM), combining cryo-fixation and volumetric imaging, allows 3D visualization of biological materials at near-native conditions. Cells, bacteria and various micrometer-size specimens can now be imaged as a volume with precise nanometer resolutions. Despite its advancements, details in the images may be obscured due to artifacts, noise, and low contrast. Thus, post-processing of cryo-FIB/SEM stacks vastly improves outputs. 
+
+Here we demonstrate a software tool that addresses the lack of convenient procedures for image processing of these data types. The following functions are available: decurtaining for eliminating curtaining artifacts which arise from FIB milling, decharging for removing large bright regions in the background which occur due to charge accumulation on the surface, denoising for decreasing grainy spots which result from the low electron dosages required for cryo-fixed samples, enhancing low contrast which stems from the low density and Z-numbers of biological materials, and brightness correction throughout a stack for equalizing global brightness variations of different slices. Moreover, it is built on top of napari, a viewer for multi-dimensional images in Python, which enables users to interactively view their image stacks during processing.
+
+Themes: ["None of the above"]
+
+Keywords: CryoFIB/SEM, Image post-processing, Volume electron microscopy, Cryogenic samples
+
+Gender of presenting author: Woman

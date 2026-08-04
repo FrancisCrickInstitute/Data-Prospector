@@ -1,0 +1,19 @@
+Institution:
+Priya lab, Francis Crick Institute, London, UK 
+Priya lab, Francis Crick Institute, London, UK 
+Priya lab, Francis Crick Institute, London, UK 
+Electron Microscopy, Francis Crick Institute, London, UK
+Electron Microscopy, Francis Crick Institute, London, UK
+Priya lab, Francis Crick Institute, London, UK
+
+
+Title: Mechanics of cardiomyocyte nuclei in a beating heart
+
+Abstract:
+During development, cells experience and adapt to various mechanical forces. The vertebrate heart stands out as a mechanically active organ, as it generates substantial forces during each heartbeat. The nucleus, the largest and stiffest organelle inside a eukaryotic cell, can directly perceive and adapt to mechanical stimuli. How cardiomyocyte nuclei adapt to cardiac forces and sustain homeostasis in a growing, beating heart remains elusive. By developing a 3D nuclear morphology analysis pipeline, we now find that cardiomyocytes exhibit different nuclear morphologies and might exploit different mechanisms to sustain nuclear homeostasis in the two functionally distinct chambers of the heart – ventricle and atrium. Manipulation of cardiac forces alters nuclear morphology in a dose dependent manner, suggesting a direct response to forces. Further, our results show that nuclear filament lamin A is differentially expressed in ventricle and atrium and knock-down causes an increase in nuclear deformations of ventricle with no changes in atrium. In contrast, ectopic expression of lamin A in atrium leads to formation of large aggregates and nuclear rupture. Of note, cytoskeletal microtubules are differentially organized in atrium compared to ventricle, and experimental manipulation of microtubule stability alters nuclear shape in both chambers. We are currently following up on these observations to understand how microtubules and nuclear lamins sustain nuclear homeostasis in a developing heart.
+
+Themes: ["None of the above"]
+
+Keywords: Live microscopy, Image 3D analysis, Nuclear mechanics
+
+Gender of presenting author: Woman

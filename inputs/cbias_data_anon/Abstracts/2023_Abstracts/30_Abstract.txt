@@ -1,0 +1,20 @@
+
+
+Institution: University of Sussex
+
+Title: Introducing Omero-Screen for Comprehensive Single-Cell Data Analysis in Fluorescence Microscopy
+
+
+Abstract: Automated, quantitative analysis of single-cell data derived from fluorescence microscopy has become indispensable in biosciences, particularly for high-throughput screening in genetics and drug discovery. While existing platforms like Cell Profiler, Harmony, and SCANR offer valuable data extraction capabilities, they fall short in data and metadata management, as well as in downstream processing of single-cell measurements.
+
+To address these limitations, we are developing Omero-Screen, a state-of-the-art open-source§ software tool that leverages the Omero suite of image data management tools. Designed for cell biologists with minimal experience in data science and image analysis, Omero-Screen features:
+
+An efficient Convolutional Neural Network (CNN) model for simultaneous cell segmentation, classification, and tracking.
+A cohesive user pipeline, integrating Omero and Napari, for seamless data management and user-friendly analysis.
+
+Our prototype is built upon an end-to-end analysis pipeline that uses Cellpose models for segmentation. We are currently refining a more compact model that performs single-step segmentation, classification, and tracking through a transfer learning approach (also see submission by [NAME REDACTED]). The Omero-Screen prototype efficiently executes image processing, segmentation, and feature extraction while managing both experimental and imaging metadata with minimal user input. Additionally, we are developing a Napari-based post-analysis interface, allowing users to further extract quantitative information and undertake additional analysis and classification tasks.
+We have deployed Omero-Screen in a range of high-content image analysis experiments. These include monitoring small molecule activity across cell panels, measuring various cell cycle and genome stability phenotypes, and conducting phenotypic screens. These datasets serve as comprehensive use cases, validating the robustness and usability of our software.
+
+Keywords: ["Common Analysis Tasks: Image Segmentation, Object Tracking, etc.","New Tools\n","AI & Machine/Deep Learning","Open Science"]
+
+Additional Keywords: High Content Image Analysis

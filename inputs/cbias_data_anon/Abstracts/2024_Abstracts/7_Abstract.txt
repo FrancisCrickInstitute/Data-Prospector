@@ -1,0 +1,18 @@
+Institution:
+Department of Biophysics, Center for Integrated Physiology and Molecular Medicine (CIPMM), Medical Faculty, Saarland University, 66424 Homburg, Germany
+Department of Biophysics, Center for Integrated Physiology and Molecular Medicine (CIPMM), Medical Faculty, Saarland University, 66424 Homburg, Germany
+Department of Biophysics, Center for Integrated Physiology and Molecular Medicine (CIPMM), Medical Faculty, Saarland University, 66424 Homburg, Germany
+Department of Biophysics, Center for Integrated Physiology and Molecular Medicine (CIPMM), Medical Faculty, Saarland University, 66424 Homburg, Germany
+
+Title: Precision Immunotherapy: Identifying Serial Killer Cells through High-Resolution Single-Cell Analysis
+
+Abstract:
+Personalized immune therapy for cancer is revolutionizing medical advancements. Evaluating new treatments depends on assessing the killing efficiency of human killer cells targeting cancer cells. Previous research revealed a spectrum of killer cell effectiveness, from ineffective to highly potent "serial killers." Conventional population-based assays fall short in analyzing individual cell performance. While droplet and microwell techniques track single cells, they are limited to small groups and miss population-level dynamics. Our lab's novel, pCasper based, time-resolved single-cell cytotoxicity assay overcomes these limitations by enabling precise tracking and analysis of large cell populations. This advanced method offers a comprehensive understanding of cellular behavior and interactions, essential for identifying and leveraging the most effective killer cells. 
+Building upon our cytotoxicity assay, we are able to image large cell populations in standard well plates and perform single-cell analysis. Our high-performance analysis pipeline is capable to process large datasets and incorporates background correction, precise tracking, as well as analysis of both individual target and killer cells. It enables us to perform motion analysis, accurate cell-death classification, and contact analysis. By evaluating the efficiency of individual killer cells, we can identify potential "super killers" with exceptional cytotoxic capabilities. To streamline the analysis process, we offer a user-friendly graphical application that executes all analyses with a simple button press, provides interactive previews, and automatically exports results.
+
+
+Themes: ["BioMedical Applications of Image Analysis"]
+
+Keywords: cell tracking, big data, fluorescence analysis
+
+Gender of presenting author: Man
