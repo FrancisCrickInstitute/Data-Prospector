@@ -308,48 +308,6 @@ Return your response as one <angles> block containing exactly {n} <angle> blocks
 </angles>
 """
 
-ANGLE_GENERATION_SYSTEM_FALLBACK = (
-    "You generate candidate data-analysis angles as structured XML. Each angle is a distinct "
-    "question or method, not a full analysis plan."
-)
-
-ANGLE_GENERATION_PROMPT_PREFIX_FALLBACK = """
-Report: {report}
-
-Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
-{ideation_criteria}
-
-Input Data: {input_data}
-"""
-
-ANGLE_GENERATION_PROMPT_SUFFIX_FALLBACK = """
-{existing_angles}
-
-For this call, your assigned angle of attack is:
-- Approach/stance: {stance}
-- Guiding question or stakeholder to focus on: {guiding_question}
-
-Propose {n} distinct candidate analysis angle(s) that concretely reflect the stance and question
-above - do not default back to whichever opportunity in the data looks most obvious or most
-concrete if it conflicts with this assignment. Each angle is an idea for a specific analysis - not
-code, not a full script design - identified by what it would compute and why it might be
-interesting, and it must be genuinely different from anything already listed above (if non-empty).
-
-Return your response as one <angles> block containing exactly {n} <angle> blocks:
-
-<angles>
-<angle>
-<id>short slug, e.g. angle-1</id>
-<variables_involved>which fields/columns this angle uses</variables_involved>
-<hypothesis>what pattern or relationship this angle expects to find</hypothesis>
-<question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
-<why_non_obvious>why this isn't just the first/obvious thing to check</why_non_obvious>
-<rough_method>one or two sentences on how it'd be computed</rough_method>
-<requires>comma-separated list of any Python libraries this method would need beyond numpy/pandas/matplotlib, if any (e.g. "networkx, scikit-learn, scipy"); this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available</requires>
-</angle>
-</angles>
-"""
-
 # --- D5: Insight + soundness judging --------------------------------------------------------
 # Human-owned - see DIVERGER_PLAN.md guardrails ("Do not invent objective prompts") AND D5's own
 # note: "Both prompts are human-owned - they are the product." Once req_score is gone, these two
@@ -374,34 +332,6 @@ Ideation Criteria (guiding questions, stakeholders, ANTI-TARGETS - analyses alre
 Input Data: {input_data}
 """
 INSIGHT_JUDGE_PROMPT_SUFFIX = """
-Judge the non-obviousness of this candidate analysis angle. Do NOT take its own why_non_obvious
-field as evidence - judge independently against the anti-target list above and your own knowledge
-of what's obvious to try first with this kind of data. An angle that overlaps the anti-target list,
-even if phrased differently or using a different library/method, is NOT non-obvious.
-
-Angle:
-{angle_text}
-
-<score>[0.0-1.0, where 0.0 = exactly what the anti-target list already covers, 1.0 = genuinely novel and non-obvious]</score>
-<reasoning>[1-2 sentences justifying the score, referencing the anti-target list or data if relevant]</reasoning>
-"""
-
-
-INSIGHT_JUDGE_SYSTEM_FALLBACK = (
-    "You judge whether a proposed data-analysis angle is genuinely non-obvious, grounded in what "
-    "the data can actually support - not whether the angle's own self-description claims novelty."
-)
-
-INSIGHT_JUDGE_PROMPT_PREFIX_FALLBACK = """
-Report: {report}
-
-Ideation Criteria (guiding questions, stakeholders, ANTI-TARGETS - analyses already explored, data constraints):
-{ideation_criteria}
-
-Input Data: {input_data}
-"""
-
-INSIGHT_JUDGE_PROMPT_SUFFIX_FALLBACK = """
 Judge the non-obviousness of this candidate analysis angle. Do NOT take its own why_non_obvious
 field as evidence - judge independently against the anti-target list above and your own knowledge
 of what's obvious to try first with this kind of data. An angle that overlaps the anti-target list,
@@ -447,33 +377,6 @@ Angle:
 <caveat>[if verdict is "caveat", the specific limitation to carry forward and display alongside the
 angle later (e.g. "n=37 respondents in 2022, treat as indicative, not conclusive"); leave empty if
 verdict is "solid" or "unsupportable"]</caveat>
-<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if not solid]</reasoning>
-"""
-
-SOUNDNESS_JUDGE_SYSTEM_FALLBACK = (
-    "You judge whether a proposed data-analysis angle's claimed pattern is likely a real, "
-    "defensible finding given the data volume available, or a sampling artifact / overclaim."
-)
-
-SOUNDNESS_JUDGE_PROMPT_PREFIX_FALLBACK = """
-Report: {report}
-
-Ideation Criteria (guiding questions, stakeholders, anti-targets, data constraints):
-{ideation_criteria}
-
-Input Data: {input_data}
-"""
-
-SOUNDNESS_JUDGE_PROMPT_SUFFIX_FALLBACK = """
-Judge whether this candidate analysis angle's claimed pattern is defensible given the data volume
-actually available (see Input Data above), or whether it needs an explicit caveat, or cannot be
-supported at all (e.g. a "trend" over only 2 data points, a field only present in a subset of years,
-a tiny subgroup).
-
-Angle:
-{angle_text}
-
-<verdict>[unsupportable, caveat, or solid - exactly one of these three words]</verdict>
-<caveat>[if verdict is "caveat", the specific limitation to note; empty otherwise]</caveat>
-<reasoning>[1-2 sentences justifying the verdict]</reasoning>
+<reasoning>[1-2 sentences justifying the verdict, citing the specific data limitation if not solid or 
+unsupportable]</reasoning>
 """
