@@ -2,7 +2,7 @@
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
-**D1–D5 and D5-calibrate are complete.** The pipeline now ideates, diverges, dedups and judges — with a graded (not gated) soundness verdict — with no code executed anywhere in it. What remains is realisation (D6), the gallery (D7), and stopping/economy (D8). D5-calibrate is implemented but **not yet run live** — see §3 for what to check on the next run.
+**D1–D5 and D5-calibrate are complete.** The pipeline now ideates, diverges, dedups and judges — with a graded (not gated) soundness verdict — with no code executed anywhere in it. What remains is realisation (D6), the gallery (D7), and stopping/economy (D8). All of it is live-verified through Run 8 — see §3 for the current live issues and what to check next.
 
 **Read this whole document before starting. Then implement ONE step at a time, stopping after each for review and a live run.**
 
@@ -57,17 +57,21 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 
 **D3** — fan-out to N concurrent one-angle calls, stance cycling, archive re-roled to hold proposed angles, `{existing_angles}` as cross-iteration divergence pressure, `_log_iteration_diversity` revived against angle text, `pick_best_seed`/`pick_other_seed` deleted.
 
-**D3a** — **worked.** Within-iteration mean fell 0.34 → 0.10–0.12 and has held there for four runs. Three parts: stance logging (which unblocked diagnosis), guiding-question cycling as a second axis, and moving the stance adjacent to the instruction it modifies.
+**D3a** — **worked.** Within-iteration mean fell 0.34 → 0.09–0.12 and has held there for five runs. Three parts: stance logging (which unblocked diagnosis), guiding-question cycling as a second axis, and moving the stance adjacent to the instruction it modifies.
 
 > **Slot-determinism bug, and the fix — do not reintroduce.** Both cycles were originally pinned to the call index (`m % len(...)`), so with 4 calls the pairing was identical every iteration: Q5 never fired, and each slot regenerated its own previous output (`abstract-readability-complexity-trend` → `abstract-reading-level-and-complexity-trend`). The fix offsets by iteration — `stances[(m + iteration) % S]`, `questions[(m + iteration * n) % Q]` — so no slot repeats its inputs and all five questions are covered within two iterations.
 
 **D3b** — **worked.** Criteria now split into ideation criteria (guiding questions, stakeholders, verbatim anti-targets, data-availability constraints) and a deliverable rubric held for D6. Unplanned bonus: the extraction now emits a per-year *field availability inventory* (e.g. "Themes" and "Gender of presenting author" only in 2024/25, "doi" only in 2024), which is real grounding ideation previously lacked. Keep it.
 
-**D4** — implemented (`_dedup_angles`, `angle_similarity_threshold=0.22`) but **never exercised**: 0 merges in every run since, because all observed pairs score 0.06–0.19. The threshold is calibrated against historical duplicates but unvalidated in the direction that matters. See "Known ceiling" below.
+**D4** — implemented (`_dedup_angles`, `angle_similarity_threshold=0.22`) and **first exercised on Run 8**: one across-iteration merge, 8 → 7. Threshold now has one real data point rather than none.
+
+> **Open: which pair merged is unrecorded, and the two candidates have opposite verdicts.** `early-bird-uptake-ratio` ~ `registration-lead-time-and-group-size-trend` (both registration-timing behaviour on the attendee CSVs) would be a true positive. `topic-evolution` ~ `feedback-lda-topic-evolution` (both LDA, but different corpus, different guiding question) would be a false positive of exactly the kind to avoid — collapsing two distinct analyses because they share a technique. **Log the merged pair and its score** before drawing any conclusion about the threshold.
+
+See "Known ceiling" below.
 
 **D5** — implemented (`judge_insight`, `judge_soundness`, `_rank_key`, `judge_model` per config). Prompts filled by the human. `_candidate_score` deleted as scheduled. **The judges are not yet calibrated** — see "Live issues".
 
-**D5-calibrate** — implemented, **not yet run live** (Run 8 is the next data point). All six items from the original spec:
+**D5-calibrate** — implemented and **live-verified on Run 8**. All six items from the original spec:
 1. Scores were already surfaced by D5 (ranked shortlist, per-angle reasoning) — nothing to change.
 2. **Soundness graded instead of gated.** `judge_soundness` now returns a three-way `unsupportable`/`caveat`/`solid` verdict instead of a boolean, plus a `soundness_caveat` string carried forward for display, never used as a filter. `caveat` is written up as the *normal* case for a dataset this size, not a rare one. `_judgment_sort_key` now ranks `solid > caveat > unsupportable > unranked` (was `sound_rank`/boolean).
 3. **Verdict parsing hardened.** Anything outside the three-word vocabulary maps to `None` (unranked) with a warning, not a default verdict — the same fix the old boolean parse needed (it silently mapped anything unexpected to `false`).
@@ -92,16 +96,27 @@ The evidence base for every threshold in this document.
 | 5 | 0.11 / 0.09 | working | D3b. Dedup 8→8 |
 | 6 | 0.11 / 0.09 | working | D5 wired, fallback prompts. 0/8 sound |
 | 7 | 0.12 / 0.10 | working | Human prompts filled. 1/8 sound; duplicate `angle-1` ids |
+| 8 | 0.09 / 0.10 | working | D5-calibrate live. Dedup fires first time (8→7). 0 solid / 6 caveat / 1 unsupportable. Q1 attractor gone; LDA attractor forming |
 
-**Divergence is solved.** Both axes are healthy and have been for four consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for five consecutive runs. Do not spend further effort here.
+
+> **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
 ### Live issues
 
-**1. Soundness was saturated — addressed by D5-calibrate, pending live verification (highest priority to confirm).** 0/8 then 1/8 sound under the old boolean gate, which contributed nothing to ranking — structurally the converger's binary `req_pass` problem in new clothes. `judge_soundness` now emits a three-way `unsupportable`/`caveat`/`solid` verdict, with `caveat` written up as the normal case for n=37–60/year data, not the rare one. Not yet confirmed against a live run — check the `[judge]` line's solid/caveat/unsupportable/unranked breakdown on Run 8.
+**1. Soundness — partially resolved.** Under the old boolean gate: 0/8 then 1/8 sound, contributing nothing to ranking (structurally the converger's binary `req_pass` problem in new clothes). The three-way verdict is now live and Run 8 returned **0 solid / 6 caveat / 1 unsupportable** — real separation, and the caveat text now exists for D7 to display.
 
-**2. Insight discrimination is still unmeasured.** Per-angle `insight_score` is computed, printed, and now also written to `output_dir/surfaced_angles_<ts>.md`. **This is still the next number to look at.** If `ticket-type-trend` and `satisfaction-driver-shifts` score similarly, the insight prompt needs work before anything else.
+But 6/7 in one bucket means ranking is still driven almost entirely by insight, and `solid` may simply be **unreachable** on n=37–60 respondents with four time points. If `solid` stays empty across the next few runs, treat this as a two-level scale in practice rather than tuning the prompt toward a tier the data cannot support.
 
-**3. Cross-run memory is still manual, now with a curation aid.** `ticket-type-trend` has appeared in four consecutive runs (always Q1 + Conventional); `readability-trend` and `registration-timing` three each. `{existing_angles}` still only persists *within* a run — the report's Already Explored section remains the only persistent cross-run memory, and it's still hand-maintained. D5-calibrate added `_write_angle_dump` so curating that section is a copy-paste from `surfaced_angles_<ts>.md` instead of a manual re-transcription; nothing retires an angle automatically, by design.
+**2. Insight discrimination is still unread — not unplumbed.** Per-angle `insight_score` is computed and written to *two* places: `output_dir/surfaced_angles_<ts>.md`, and — because `generate_and_optimize` still returns the ranked block as a string — the misnamed `analysis_script_<ts>.py` that `app.py` writes (a D7 relic). The blocker is that nobody has read them.
+
+**This remains the next number to look at.** Run 8 test pair: `early-bird-uptake-ratio` (conventional stance, derived but simple) should score clearly below `feedback-correlation-themes` (contrarian, structural). If they score similarly, the insight prompt needs work before anything else.
+
+**3. Cross-run memory is still manual, now with a curation aid.** `ticket-type-trend` appeared in four consecutive runs (always Q1 + Conventional); `readability-trend` and `registration-timing` three each.
+
+> **The Q1 attractor is gone, and a new one is forming.** Run 8 produced `early-bird-uptake-ratio` and `registration-lead-time-and-group-size-trend` from the demographics question — both *behavioural* rather than label-counting — so whatever changed in the prompts pushed the conventional stance off the trivially obvious. Meanwhile **LDA appeared twice in Run 8, both depth-first**: the natural successor once TF-IDF and word frequency are on the anti-target list. If an LDA angle gets realised, retire it into Already Explored promptly, or it becomes the next `ticket-type-trend`.
+
+`{existing_angles}` still only persists *within* a run — the report's Already Explored section remains the only persistent cross-run memory, and it's still hand-maintained. D5-calibrate added `_write_angle_dump` so curating that section is a copy-paste from `surfaced_angles_<ts>.md` instead of a manual re-transcription; nothing retires an angle automatically, by design.
 
 **4. Duplicate angle ids — fixed.** Run 7 produced two angles both called `angle-1`. `_ensure_unique_id` (D5-calibrate) now suffixes `-2`, `-3`, ... on collision before an angle reaches the archive.
 
@@ -175,18 +190,18 @@ Currently unreferenced but **must not be deleted**. Mark each with a banner comm
 
 ## 7. Remaining steps
 
-**D5-calibrate is done (§3) but not yet live-verified.** Run it once on `cbias` and check the `[judge]` breakdown and `insight_score` spread before spending real money in D6 — realisation spends on whatever the ranking selects, so the ranking has to mean something first. One small item from the original D5-calibrate spec was left undone as optional polish: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs (id collisions are now handled mechanically by `_ensure_unique_id` regardless, so this only affects readability, not correctness).
+**D5-calibrate is done and live-verified (§3).** The `[judge]` breakdown behaved as intended on Run 8; the remaining unknown before D6 is the `insight_score` spread, which has been written to disk but not yet read — realisation spends real money on whatever the ranking selects, so confirm the ranking means something first. Also outstanding before D6: §10's interim library additions, and logging which pair D4 merged. One small item from the original D5-calibrate spec was left undone as optional polish: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs (id collisions are now handled mechanically by `_ensure_unique_id` regardless, so this only affects readability, not correctness).
 
 ### D6 — Selective execution
 
 **Goal:** only now write and run code — for the top-k angles only. Revives the dormant execution layer.
 
 **Changes**
-1. Realise only the top-k ranked angles (`--realize-top-k`, default ~4; re-role or retire `--designs-per-iteration`). Revive `compile_script`, `_call_worker`, `execute_script_in_docker` and artifact copy-out **unchanged**, including their PREFIX/SUFFIX caching. Demoted from *scorer* to *validity gate*.
+1. Realise only the top-k ranked angles (`--realize-top-k`, default ~4; re-role or retire `--designs-per-iteration`). **Skip `unsupportable` angles entirely** — `_judgment_sort_key` ranks them above `unranked`, so one with a high insight score can reach the shortlist, and realising it means paying Docker runs to visualise a claim the judge said the data cannot support. `caveat` angles realise normally, with the caveat displayed at D7. Revive `compile_script`, `_call_worker`, `execute_script_in_docker` and artifact copy-out **unchanged**, including their PREFIX/SUFFIX caching. Demoted from *scorer* to *validity gate*.
 2. Rebuild `_run_one_design` around **one angle**: its `hypothesis` and `rough_method` become the brief the orchestrator/workers implement.
 3. Re-role `validate_requirements` → `validate_realization`: from "meets criteria" to "does this legibly show the claimed pattern". Keep multimodal grounding (`_load_plot_images`, vision-capable model per §5). Feed it D3b's **deliverable rubric**.
 4. An angle whose plot fails to show its claimed pattern is marked **"not realized"** and kept in the gallery flagged — not a run failure.
-5. **Distinguish three outcomes**, and never conflate the last two: *realised*, *not realisable* (missing library — a provisioning outcome, see §10), *unsound* (a quality judgement). Expect availability failures to dominate initially: the cbias image is numpy/pandas/matplotlib only, and roughly half of recent angles reach for sentence-transformers, HDBSCAN, networkx, nltk or scipy.
+5. **Distinguish three outcomes**, and never conflate the last two: *realised*, *not realisable* (missing library — a provisioning outcome, see §10), *unsound* (a quality judgement). Availability failures will dominate unless §10's interim fix lands first: on Run 8, **exactly one of eight angles** ran on the current image.
 6. Keep `max_attempts` low.
 
 **Verify:** exactly k Docker runs; confirm the token drop versus the converger; realised angles have real, legible PNGs.
@@ -245,7 +260,7 @@ This is also the capability the horizon-scanning fork depends on, so getting the
 
 **Library availability is a realisation constraint, not an ideation constraint.** Putting `AVAILABLE_LIBRARIES` into the ideation prefix would re-couple exactly what D2 decoupled. Do not narrow ideation to fit the image.
 
-Current floor: numpy, pandas, matplotlib only. Roughly half of recent angles reach beyond it.
+Current floor: numpy, pandas, matplotlib only. **Run 8, the first with the `requires` field live, measured the gap: exactly one of eight angles runs on the current image.** The concrete asks were `scipy`, `scikit-learn`, `nltk`, `seaborn`, `textstat`.
 
 When implemented:
 
@@ -253,7 +268,8 @@ When implemented:
 - **Provision at build time, not run time.** `--network none` forbids runtime installs, so the union of `requires` across the top-k angles resolves into a derived image (`FROM cbias-analysis; RUN pip install …`) before realisation. The build is trusted; execution stays isolated. That distinction is why this is safe.
 - **Allowlist package names.** Hallucinated package names are a live supply-chain attack vector — attackers register the plausible-sounding names models invent. Grow the allowlist from observed `requires`.
 - **Model weights are not pip installs.** `sentence-transformers` and BERTopic download weights on first use; with no runtime network they fail after a successful install. Baking weights into the image is a much heavier lift and a reasonable place to draw the line.
-- **Cheap interim win:** add scipy, scikit-learn and nltk to the base image. Small relative to torch, and covers most of what ideation has reached for across seven runs.
+- **Cheap interim win — do this before D6.** Add `scipy`, `scikit-learn`, `nltk`, `seaborn` and `textstat` to the base image. Small relative to torch, and covers everything ideation asked for on Run 8. Without it D6 reports a ~7/8 failure rate that is purely provisioning and tells you nothing about angle quality.
+- **`nltk` corpora are not a pip install.** `nltk.download()` fetches stopwords/tokenisers at runtime — the model-weights problem in miniature. Under `--network none` the package installs fine and then fails on first use. Bake the corpora in at build time.
 
 Keep "not realisable" strictly separate from "unsound" in the gallery — the first is an engineering outcome, the second a quality judgement.
 
