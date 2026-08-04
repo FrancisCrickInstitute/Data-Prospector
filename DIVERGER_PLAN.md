@@ -1,8 +1,8 @@
-# Converger → Diverger conversion plan (rev. 6)
+# Converger → Diverger conversion plan (rev. 7)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
-**D1–D5 and D5-calibrate are complete.** The pipeline now ideates, diverges, dedups and judges — with a graded (not gated) soundness verdict — with no code executed anywhere in it. What remains is realisation (D6), the gallery (D7), and stopping/economy (D8). All of it is live-verified through Run 8 — see §3 for the current live issues and what to check next.
+**D1–D6 are complete.** The pipeline now ideates, diverges, dedups, judges — with a graded (not gated) soundness verdict — and selectively realises only the top-ranked angles into executed, Docker-verified scripts. What remains is the gallery (D7) and stopping/economy (D8). D6 is confirmed working end-to-end on a live `cbias` run — see §3 for what it implemented and the current live issues.
 
 **Read this whole document before starting. Then implement ONE step at a time, stopping after each for review and a live run.**
 
@@ -83,6 +83,15 @@ The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s ne
 
 **Prompt cleanup (post-D5-calibrate)** — once the human-owned prompts proved stable through Run 8, the `*_FALLBACK` constants and their empty-check/warning/fallback-selection branches were removed entirely from `prompts.py` and `pipeline.py`. `generate_angles`, `judge_insight`, and `judge_soundness` now call `ANGLE_GENERATION_*`/`INSIGHT_JUDGE_*`/`SOUNDNESS_JUDGE_*` directly and unconditionally — an empty human-owned prompt is now a hard failure, not a silent generic substitute. Alongside this: `SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s `<caveat>` tag now also carries the specific reason for an `unsupportable` verdict (previously populated only for `caveat`, left empty otherwise), `<reasoning>` is now requested for every verdict rather than just non-`solid` ones, and `_write_angle_dump` now surfaces `soundness_reasoning` per angle alongside `soundness_caveat`.
 
+**D6** — implemented and **confirmed working end-to-end on a live `cbias` run**: selective execution over the top-ranked angles only, never the whole archive.
+1. `--realize-top-k` (default 4, replacing the dead `--designs-per-iteration` relic) selects the top-k non-`unsupportable` angles off D5's already-ranked shortlist; `unsupportable` angles are skipped entirely rather than paying a Docker run to visualise a claim the judge already said the data can't support.
+2. `_run_one_design` rebuilt around **one angle**: the orchestrator's brief is now the angle's hypothesis/variables_involved/rough_method/why_non_obvious, not the whole report. Workers still see the TRUE original report (not the angle brief), so `WORKER_PROMPT_PREFIX` stays cache-hit across every angle realised in a run, not just within one angle's own compile retries.
+3. `validate_requirements` re-roled to `validate_realization`: its PRIMARY judgment is a new `<pattern_shown>` tag — does the actual output (console + attached plots) legibly demonstrate the angle's claimed pattern — checked ahead of, and independently from, the existing deliverable-rubric checklist. Fed D3b's **deliverable rubric** instead of the old undivided criteria.
+4/5. **Three outcomes, never conflated**: `realised` (executed, pattern shown), `unsound` (executed, pattern NOT shown — a quality judgement), `not_realisable` (never executed after `max_compile_attempts` — an engineering/provisioning outcome). Status is driven purely by `pattern_shown`; the deliverable-rubric score is reported alongside but doesn't gate it — graded, not gated, the same shape as D5-calibrate's soundness verdict.
+6. `max_compile_attempts` left at its existing default of 3 (already low).
+
+`compile_script`, `_call_worker`, `execute_script_in_docker`, `_format_artifacts`, `_load_plot_images` were revived **unchanged**, per the spec's own instruction — see §6 (now empty of dormant code). Realised angles' artifacts land in `output_dir/artifacts/<angle_id>/`; the compiled script itself is kept in memory but not yet written to disk — D7 item 3's job, deliberately not pulled forward.
+
 **Report** — rewritten three times: plot taxonomy, metric counts and PNG counts removed; guiding questions levelled; anti-target list inlined from `djpbarry/cbias-survey`; programme CSVs pre-downloaded so Q4 is answerable without network access; Q5 reworded to drop post-attendance collaboration; `<year>_Abstracts` notation replaced (it was producing XML parse failures every iteration when the model copied it into `<variables_involved>`).
 
 ### Run log
@@ -148,7 +157,9 @@ Programme CSVs are headerless and ragged: column 1 is a time *or* `Session N`, c
 |---|---|---|
 | Ideation | `report`, ideation criteria, `input_data`, anti-targets | `stance`, `guiding_question`, `existing_angles`, `n` |
 | D5 judges | `report`, ideation criteria, `input_data`/schema, anti-targets | the individual angle |
-| D6 realisation | existing compiler/worker splits, unchanged | — |
+| D6 orchestrator | `report` (the TRUE report, not the angle brief), `input_data`, deliverable rubric | the angle being realised (hypothesis/variables/rough_method/why_non_obvious) |
+| D6 workers/compiler | existing splits, unchanged | — |
+| D6 validator (`validate_realization`) | `report`, deliverable rubric | `claimed_pattern`, script, execution output |
 
 **Parallel fan-out defeats the cache on first use.** N concurrent calls all start before any writes the cache, so all N miss on iteration 1 and hit only from iteration 2. Note it when reading cost figures rather than concluding caching is broken.
 
@@ -172,41 +183,21 @@ Programme CSVs are headerless and ragged: column 1 is a time *or* `Session N`, c
 
 ## 6. Dormant code register
 
-Currently unreferenced but **must not be deleted**. Mark each with a banner comment so intent survives without this document:
+D6 revived everything that used to be listed here: `_run_one_design` (rebuilt around a single angle), `compile_script`, `_call_worker`, `parse_tasks`, `execute_script_in_docker`, `_format_artifacts`, `_load_plot_images`, `_image_blocks`, and `validate_execution`/`validate_requirements` (the latter re-roled to `validate_realization`) are all live again. **Nothing remains dormant.**
+
+The underlying guardrail (§2 — do not delete code a later step is scheduled to revive) still applies to any future step that leaves something temporarily unused; mark it with a banner comment if that happens again:
 
 ```python
-# --- DORMANT: revived in D6 (selective execution). Do not delete. ---
+# --- DORMANT: revived in D<n> (<reason>). Do not delete. ---
 ```
 
-| Symbol | Status | Revived by |
-|---|---|---|
-| `_run_one_design` | dormant | D6 — rebuilt around a single angle |
-| `compile_script`, `_call_worker`, `parse_tasks` | dormant | D6 |
-| `execute_script_in_docker`, `_format_artifacts` | dormant | D6 |
-| `_load_plot_images`, `_image_blocks` | dormant | D6 (multimodal realisation check) |
-| `validate_execution`, `validate_requirements` | dormant | D6 → `validate_realization` |
-
-`pick_best_seed` / `pick_other_seed` (D3) and `_candidate_score` (D5) were deleted as scheduled.
+`pick_best_seed` / `pick_other_seed` (D3) and `_candidate_score` (D5) remain deleted, not dormant — those were retired on purpose, not carried over.
 
 ---
 
 ## 7. Remaining steps
 
-**D5-calibrate is done and live-verified (§3).** The `[judge]` breakdown behaved as intended on Run 8; the remaining unknown before D6 is the `insight_score` spread, which has been written to disk but not yet read — realisation spends real money on whatever the ranking selects, so confirm the ranking means something first. Also outstanding before D6: §10's interim library additions, and logging which pair D4 merged. One small item from the original D5-calibrate spec was left undone as optional polish: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs (id collisions are now handled mechanically by `_ensure_unique_id` regardless, so this only affects readability, not correctness).
-
-### D6 — Selective execution
-
-**Goal:** only now write and run code — for the top-k angles only. Revives the dormant execution layer.
-
-**Changes**
-1. Realise only the top-k ranked angles (`--realize-top-k`, default ~4; re-role or retire `--designs-per-iteration`). **Skip `unsupportable` angles entirely** — `_judgment_sort_key` ranks them above `unranked`, so one with a high insight score can reach the shortlist, and realising it means paying Docker runs to visualise a claim the judge said the data cannot support. `caveat` angles realise normally, with the caveat displayed at D7. Revive `compile_script`, `_call_worker`, `execute_script_in_docker` and artifact copy-out **unchanged**, including their PREFIX/SUFFIX caching. Demoted from *scorer* to *validity gate*.
-2. Rebuild `_run_one_design` around **one angle**: its `hypothesis` and `rough_method` become the brief the orchestrator/workers implement.
-3. Re-role `validate_requirements` → `validate_realization`: from "meets criteria" to "does this legibly show the claimed pattern". Keep multimodal grounding (`_load_plot_images`, vision-capable model per §5). Feed it D3b's **deliverable rubric**.
-4. An angle whose plot fails to show its claimed pattern is marked **"not realized"** and kept in the gallery flagged — not a run failure.
-5. **Distinguish three outcomes**, and never conflate the last two: *realised*, *not realisable* (missing library — a provisioning outcome, see §10), *unsound* (a quality judgement). Availability failures will dominate unless §10's interim fix lands first: on Run 8, **exactly one of eight angles** ran on the current image.
-6. Keep `max_attempts` low.
-
-**Verify:** exactly k Docker runs; confirm the token drop versus the converger; realised angles have real, legible PNGs.
+**D6 is done (§3).** §10's interim library additions and D4's merge-pair logging (both flagged as outstanding before D6) landed first — the base image now has `scipy`/`scikit-learn`/`nltk`/`seaborn`/`textstat`, and `_dedup_angles` reports which specific pair merged. `insight_score` spread is still worth a deliberate read before leaning further on the ranking (Live Issue 2), but D6 itself is confirmed working end-to-end. One small item from the original D5-calibrate spec remains undone as optional polish: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs (id collisions are already handled mechanically, so this only affects readability, not correctness).
 
 ---
 
@@ -262,7 +253,7 @@ This is also the capability the horizon-scanning fork depends on, so getting the
 
 **Library availability is a realisation constraint, not an ideation constraint.** Putting `AVAILABLE_LIBRARIES` into the ideation prefix would re-couple exactly what D2 decoupled. Do not narrow ideation to fit the image.
 
-Current floor: numpy, pandas, matplotlib only. **Run 8, the first with the `requires` field live, measured the gap: exactly one of eight angles runs on the current image.** The concrete asks were `scipy`, `scikit-learn`, `nltk`, `seaborn`, `textstat`.
+**Interim floor raised, pre-D6.** Run 8 (the first with the `requires` field live) measured the gap at numpy/pandas/matplotlib only: exactly one of eight angles ran on the image. `scipy`, `scikit-learn`, `nltk`, `seaborn`, and `textstat` were added to the base image before D6 landed (see below) - the dynamic, build-time-provisioning system described in this section is still not implemented; this was the cheap interim fix only.
 
 When implemented:
 
@@ -270,7 +261,7 @@ When implemented:
 - **Provision at build time, not run time.** `--network none` forbids runtime installs, so the union of `requires` across the top-k angles resolves into a derived image (`FROM cbias-analysis; RUN pip install …`) before realisation. The build is trusted; execution stays isolated. That distinction is why this is safe.
 - **Allowlist package names.** Hallucinated package names are a live supply-chain attack vector — attackers register the plausible-sounding names models invent. Grow the allowlist from observed `requires`.
 - **Model weights are not pip installs.** `sentence-transformers` and BERTopic download weights on first use; with no runtime network they fail after a successful install. Baking weights into the image is a much heavier lift and a reasonable place to draw the line.
-- **Cheap interim win — do this before D6.** Add `scipy`, `scikit-learn`, `nltk`, `seaborn` and `textstat` to the base image. Small relative to torch, and covers everything ideation asked for on Run 8. Without it D6 reports a ~7/8 failure rate that is purely provisioning and tells you nothing about angle quality.
+- **Cheap interim win — done, before D6.** `scipy`, `scikit-learn`, `nltk`, `seaborn` and `textstat` were added to the base image. Small relative to torch, and covered everything ideation asked for on Run 8 - avoided D6 reporting a ~7/8 failure rate that would have been purely provisioning and told nothing about angle quality.
 - **`nltk` corpora are not a pip install.** `nltk.download()` fetches stopwords/tokenisers at runtime — the model-weights problem in miniature. Under `--network none` the package installs fine and then fails on first use. Bake the corpora in at build time.
 
 Keep "not realisable" strictly separate from "unsound" in the gallery — the first is an engineering outcome, the second a quality judgement.
