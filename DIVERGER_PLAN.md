@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 8)
+# Converger → Diverger conversion plan (rev. 9)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -111,14 +111,15 @@ The evidence base for every threshold in this document.
 | 9 | 0.10 / 0.11 | working | Dockerfile provisioning fix. Dedup 8→8. 0 solid / 6 caveat / 2 unsupportable. **Insight judge validated**: 0.20–0.72, floored the anti-target-adjacent angle |
 | 10 | — | working | `soundness_reasoning` added; both rejections audited and correct. Insight 0.30–0.75 |
 | 11 | 0.14 / 0.12 | working | **First end-to-end D6 run.** Dedup 8→7 (merge at 0.247). 0 solid / 5 caveat / 2 unsupportable. Realisation: 0 realised, 3 pattern-not-shown, 1 not realisable — **invalidated by the criteria-split regression below** |
+| 12 | 0.11 / 0.10 | working | **D6-fix validated.** Criteria split confirmed distinct; `delivered_score` spread 0.09–0.94 (was clustered 0.29–0.33). Dedup 8→8. 0 solid / 5 caveat / 3 unsupportable. Realisation: **1 realised**, 3 pattern-not-shown, 0 not realisable |
 
-**Divergence is solved.** Both axes are healthy and have been for eight consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for nine consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
 ### Live issues
 
-**0. BLOCKER — the D3b criteria split silently collapsed (Run 11).** Both printed blocks contained *identical* text, and that text contained both the `# IDEATION CRITERIA` and `# DELIVERABLE RUBRIC` sections. The extraction emitted everything inside one tag, and the fallback did the rest:
+**0. RESOLVED (Run 12) — the D3b criteria split silently collapsed (Run 11).** Both printed blocks contained *identical* text, and that text contained both the `# IDEATION CRITERIA` and `# DELIVERABLE RUBRIC` sections. The extraction emitted everything inside one tag, and the fallback did the rest:
 
 ```python
 deliverable_rubric = extract_xml(criteria_response, "deliverable_rubric").strip() or criteria_response.strip()
@@ -130,7 +131,9 @@ The `or` guard exists to survive a *failed* criteria call; here it silently mask
 2. **The D6 orchestrator designed the wrong artifact** — it receives `criteria=deliverable_rubric`, so instead of a rubric for one angle it got the entire report brief (all five guiding questions, "key metrics" plural, the data-gaps list) and built a general-purpose script.
 3. **`delivered_score` measured the wrong target** — all three executed angles landed in 0.29–0.33, tight clustering consistent with a single-angle script being graded against a full-report checklist it was never meant to satisfy. A diluted script is also one whose specific claimed pattern won't read clearly, which plausibly explains `pattern_shown=false` across the board.
 
-**Run 11's `0 realised` is therefore an artifact, not a result.** Fix before drawing any D6 conclusion: (a) make `CRITERIA_PROMPT` reliably emit both tags, and (b) **drop the `or` fallback on the second extraction** — a missing `<deliverable_rubric>` must fail loudly rather than duplicate. Consider asserting the two blocks differ.
+**Run 11's `0 realised` was therefore an artifact, not a result.** Fixed in D6-fix: extraction now raises on a missing *or* identical tag pair and falls through to the same loud raw-report fallback as a failed call. Run 12 confirmed it — the two printed blocks are genuinely different and `delivered_score` spread from the tight 0.29–0.33 cluster to **0.09–0.94**.
+
+> **The fallback still degrades D6, just loudly now.** On a malformed extraction both variables still become the raw report, reproducing the Run 11 condition with a WARNING attached. Ideation stages are cheap, so that is fine there; D6 then spends real money (k compile chains + k Docker runs) producing structurally unusable realisations. Consider **skipping realisation** rather than running it on a known-bad rubric — the ideation output would still be perfectly good.
 
 **1. Soundness — resolved as a two-level scale.** `solid` has now been empty for **three consecutive runs** (9, 10, 11). Treat it as unreachable at n=37–60 with four time points: keep the three-way vocabulary, but do not tune the prompt toward a tier the data cannot support. `unsupportable` is doing real work — 2 of 7–8 angles per run, correctly identified — and D6 now skips those angles entirely. Under the old boolean gate: 0/8 then 1/8 sound, contributing nothing to ranking (structurally the converger's binary `req_pass` problem in new clothes). The three-way verdict is now live and Run 8 returned **0 solid / 6 caveat / 1 unsupportable** — real separation, and the caveat text now exists for D7 to display.
 
@@ -151,11 +154,28 @@ No further calibration needed. The `analysis_script_<ts>.py` misnaming (a D7 rel
 
 **4. Duplicate angle ids — fixed.** Run 7 produced two angles both called `angle-1`. `_ensure_unique_id` (D5-calibrate) now suffixes `-2`, `-3`, ... on collision before an angle reaches the archive.
 
-**6. Dedup precedes judging, so the representative is picked blind (Run 11).** The merge fired at 0.247 — `self-reported-role-trend` matched `cross-role-expertise-mapping` — and `_pick_representative` kept the former on the "longest `why_non_obvious`" heuristic. The survivor scored **0.35 insight**, the weakest angle in the realisable set; the discarded one (depth-first, role×training co-occurrence) never reached a judge, so its quality is unknown and unknowable.
+**6. RESOLVED (D6-fix) — dedup preceded judging, so the representative was picked blind (Run 11).** The merge fired at 0.247 — `self-reported-role-trend` matched `cross-role-expertise-mapping` — and `_pick_representative` kept the former on the "longest `why_non_obvious`" heuristic. The survivor scored **0.35 insight**, the weakest angle in the realisable set; the discarded one (depth-first, role×training co-occurrence) never reached a judge, so its quality is unknown and unknowable.
 
-**Ordering is the root cause, not the heuristic.** Since every judge call shares one cached prefix, judging all N angles and *then* deduping — keeping the highest-scoring cluster member — costs very little extra and removes the text-length proxy entirely. Recommended fix; do it alongside issue 0.
+**Ordering was the root cause, not the heuristic.** D5 now judges the whole archive before D4 dedups it, and `_pick_representative` breaks on `_judgment_sort_key` with the old text-length heuristic demoted to a stable secondary tiebreak. Judge calls share one cached prefix, so scoring all N rather than the deduped subset is close to free.
+
+> **The merge log line can now read backwards.** `merge_stats` records the best-matching member *at merge time*, but the survivor is chosen afterwards by score — Run 11 printed `merged [self-reported-role-trend] -> [cross-role-expertise-mapping]` while `self-reported-role-trend` was the one that survived. Add the survivor to the line (`… kept [X]`) so it is self-consistent when diagnosing a bad merge.
 
 The merge itself is borderline: both angles use the same two feedback columns, but one is a four-year proportion trend and the other a two-year co-occurrence structure. Defensible on variables, expensive on quality.
+
+**7. BLOCKER for D7 — `pattern_not_shown` conflates a failure with a finding (Run 12).** `validate_realization` asks whether the output legibly shows the *claimed* pattern, so an angle that ran perfectly and **disconfirmed its own hypothesis** gets the same status as one whose plot is broken or illegible.
+
+Run 12 shows both in the same bucket: `industry-speakers-vs-attendees` at `delivered_score=0.69` (a well-delivered script whose claimed co-movement simply is not there) sits alongside `lda-topic-evolution` at 0.09. For a diverger this matters — a clean disconfirmation *closes a question* and is often more useful than a confirmation, but as things stand it will be buried below `realised` in the gallery.
+
+**Split the status before building D7:**
+- `realised` — pattern shown as claimed
+- `realised_null` — executed and rendered legibly, but the data do not support the hypothesis
+- `pattern_not_shown` — the output does not legibly show *anything* about the claim (broken plot, wrong measurement, unreadable)
+
+The validator already sees the PNGs; it simply is not being asked to make this distinction. `realised_null` must rank **alongside** `realised` in the gallery, not below it.
+
+**8. `delivered_score` grades angle-scoped scripts against a report-level rubric (Run 12).** The extracted rubric demands loading *all four* data types across all years and emitting a data-gaps list. A readability angle needs Abstracts only and has no reason to produce a gaps list, so narrow angles lose criteria they were never meant to satisfy — `lda-topic-evolution` scored **0.09** while executing cleanly, which is a scope mismatch, not a quality signal.
+
+Low priority (it gates nothing), but until fixed `delivered_score` cannot be read as a quality measure. Fix by scoping the rubric to the angle, or by telling `validate_realization` the script implements one angle rather than the full report.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -225,15 +245,20 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 
 ## 7. Remaining steps
 
-**D6 is implemented but not yet validated.** Its machinery ran end-to-end on Run 11 — top-k selection, `unsupportable` skipping, the three-way `realization_status`, and the `not_realisable` classification all behaved correctly. But the *result* (0 realised) is an artifact of the criteria-split regression (Live Issue 0), so nothing can yet be concluded about whether realisation works. **D6-fix below must land and be re-run before D7.**
+**D6 is implemented and validated (Run 12).** The full pipeline now runs end-to-end: ideate → judge → dedup → rank → realise top-k. Run 12 produced 1 realised, 3 pattern-not-shown, 0 not realisable, with `delivered_score` spread 0.09–0.94.
 
-Prerequisites that did land first: the base image now has `scipy`/`scikit-learn`/`nltk`/`seaborn`/`textstat`, `_dedup_angles` reports which specific pair merged, and the insight judge is validated (Live Issue 2). Optional polish still outstanding: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs — id collisions are handled mechanically, so this affects readability only.
+**Before D7, three items:**
+1. **Split `pattern_not_shown`** (Live Issue 7) — a disconfirmed hypothesis is a finding, not a failure, and the gallery must not bury it. This is a D7 prerequisite, not optional polish.
+2. **Fix the merge-log direction** (Live Issue 6) — one line; it currently reads backwards.
+3. **Descriptive angle ids** — `angle-1` reappeared in Run 12. Collisions are handled mechanically, so this is readability only, but the gallery is where it shows.
+
+Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but the number should not be *displayed* as a quality measure until it is fixed.
 
 ---
 
-### D6-fix — Repair the criteria split and the dedup ordering (do first)
+### D6-fix — Repair the criteria split and the dedup ordering — **DONE (Run 12)**
 
-**Goal:** Run 11's D6 result is uninterpretable until these two land. Neither is large.
+**Goal:** Run 11's D6 result was uninterpretable until these landed. All four items shipped and Run 12 validated them.
 
 **Changes**
 1. **Make `CRITERIA_PROMPT` reliably emit both `<ideation_criteria>` and `<deliverable_rubric>` tags**, and **remove the `or criteria_response.strip()` fallback on the second extraction** — a missing tag must fail loudly, not duplicate the whole response into both variables (live issue 0). Consider asserting the two extracted blocks are not identical.
@@ -241,17 +266,26 @@ Prerequisites that did land first: the base image now has `scipy`/`scikit-learn`
 3. **Rename D6's `unsound` status** — it currently collides with D5's soundness vocabulary. `pattern_not_shown` distinguishes "the plot didn't show the claimed pattern" (D6, one judge) from "the data can't support this claim" (D5, a different judge). D7's gallery must not conflate them.
 4. Re-run and confirm `delivered_score` is no longer clustered at ~0.3 and that at least some angles reach `realised`.
 
-**Verify:** the two printed criteria blocks differ; the ideation block contains no PNG/labelling/code-quality criteria; the realisation orchestrator's brief is one angle, not the whole report.
+**Outcome (Run 12):** criteria blocks distinct; `delivered_score` spread 0.09–0.94; 1 realised, 3 pattern-not-shown, 0 not realisable. Two follow-ups surfaced and are recorded as Live Issues 7 and 8; the merge-log direction fix (Live Issue 6) is still outstanding.
 
 ---
 
 ### D7 — Gallery, not a winner
 
+**Prerequisite: split `pattern_not_shown` first (Live Issue 7).** Building the gallery on a status that bins disconfirmations with broken plots would bake the conflation into the deliverable. Do that, then this.
+
 **Changes**
 1. `generate_and_optimize` returns a structured result, not a string. **This ripples into `app.py`**, which currently writes `analysis_script_<ts>.py`; the console header "FINAL COMPILED SCRIPT" is also now inaccurate.
-2. Emit a self-contained gallery into `output_dir`: per realised angle, its plot(s), a one-line "what's surprising here", **the soundness caveat as a visible confidence note**, which question/stakeholder it serves, and its realisation status. Cluster by theme, rank by insight.
-3. Also write each angle's generated script.
-4. Build it to skim in under a minute. The human makes the final "is this actually interesting" call.
+2. Emit a self-contained gallery into `output_dir`. Per angle: its plot(s), a one-line "what's surprising here", **the soundness caveat as a visible confidence note**, which question/stakeholder it serves, and its realisation status.
+3. **Four presentation tiers, not one ranked list** — the statuses answer different questions and must not be flattened:
+   - `realised` and `realised_null` **together at the top**, ranked by insight. A clean disconfirmation closes a question and is often more useful than a confirmation; label it as such rather than demoting it.
+   - `pattern_not_shown` — executed but the output does not show the claim. A quality outcome; show it, secondary.
+   - `not_realisable` — an *engineering* outcome (missing library). List these prominently **with their `requires`**, because that list is the signal telling you what to provision next (§10).
+   - `unsupportable` angles never reach realisation, but are worth listing with their `soundness_reasoning` — Run 12's three were the most *sophisticated* angles in the run, and knowing what the dataset cannot support is itself a finding.
+4. Also write each angle's generated script.
+5. Build it to skim in under a minute. The human makes the final "is this actually interesting" call.
+
+**Do not display `delivered_score` as a quality number** until Live Issue 8 is fixed — it currently penalises narrow angles for not doing the whole report.
 
 ---
 
@@ -275,6 +309,10 @@ Prerequisites that did land first: the base image now has `scipy`/`scikit-learn`
 **Q1 + Conventional is a reliable obvious-angle generator — and that is now useful.** It reliably produces a ticket-type/role-counting angle, which the insight judge as reliably floors at 0.20 (Runs 9 and 11). It costs one slot per iteration and functions as a **standing control**: if that angle ever scores well, the insight judge has drifted. Leave it in place.
 
 **Thresholds are control parameters, not gauges.** D4's dedup threshold (0.22 — now exercised twice, evidence in §3) and D8's saturation threshold (still unmeasured) read the same Jaccard signal. Set both from logged numbers.
+
+**The dataset has a sophistication ceiling, and the judges have found it.** Run 12's three `unsupportable` angles were the *most* methodologically ambitious in the run — MCA + k-modes on ~90 respondents, factor analysis over 15–20 items at n=37, BERTopic on perhaps 30 comments — and scored 0.72 / 0.68 / 0.40 on insight. The soundness reasoning cites the 5–10-respondents-per-item rule and computes the effective corpus explicitly.
+
+This is a property of the data, not a defect: **on n=37–60 with four time points, methodological sophistication and defensibility are in direct tension**, and the achievable frontier is *simple method, modest claim* — where Run 12's one realised angle sits. Expect ~3 of 8 angles per run to be spent on ambitious ideas the dataset cannot support. That is a meaningful fraction of the budget and worth surfacing in the gallery (D7 tier 4) rather than discarding, since "what this dataset cannot support" is itself useful to the organising committee.
 
 **Judge prompts are the product.** The machinery around them is trivial; the wording is the whole game. They are human-owned for that reason.
 
