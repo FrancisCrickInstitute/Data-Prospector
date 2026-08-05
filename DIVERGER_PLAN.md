@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 7)
+# Converger → Diverger conversion plan (rev. 8)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -108,28 +108,54 @@ The evidence base for every threshold in this document.
 | 6 | 0.11 / 0.09 | working | D5 wired, fallback prompts. 0/8 sound |
 | 7 | 0.12 / 0.10 | working | Human prompts filled. 1/8 sound; duplicate `angle-1` ids |
 | 8 | 0.09 / 0.10 | working | D5-calibrate live. Dedup fires first time (8→7). 0 solid / 6 caveat / 1 unsupportable. Q1 attractor gone; LDA attractor forming |
+| 9 | 0.10 / 0.11 | working | Dockerfile provisioning fix. Dedup 8→8. 0 solid / 6 caveat / 2 unsupportable. **Insight judge validated**: 0.20–0.72, floored the anti-target-adjacent angle |
+| 10 | — | working | `soundness_reasoning` added; both rejections audited and correct. Insight 0.30–0.75 |
+| 11 | 0.14 / 0.12 | working | **First end-to-end D6 run.** Dedup 8→7 (merge at 0.247). 0 solid / 5 caveat / 2 unsupportable. Realisation: 0 realised, 3 pattern-not-shown, 1 not realisable — **invalidated by the criteria-split regression below** |
 
-**Divergence is solved.** Both axes are healthy and have been for five consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for eight consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
 ### Live issues
 
-**1. Soundness — partially resolved.** Under the old boolean gate: 0/8 then 1/8 sound, contributing nothing to ranking (structurally the converger's binary `req_pass` problem in new clothes). The three-way verdict is now live and Run 8 returned **0 solid / 6 caveat / 1 unsupportable** — real separation, and the caveat text now exists for D7 to display.
+**0. BLOCKER — the D3b criteria split silently collapsed (Run 11).** Both printed blocks contained *identical* text, and that text contained both the `# IDEATION CRITERIA` and `# DELIVERABLE RUBRIC` sections. The extraction emitted everything inside one tag, and the fallback did the rest:
+
+```python
+deliverable_rubric = extract_xml(criteria_response, "deliverable_rubric").strip() or criteria_response.strip()
+```
+
+The `or` guard exists to survive a *failed* criteria call; here it silently masked a *malformed* one and assigned the whole response to both variables. Three consequences, all visible in Run 11:
+
+1. **The D3b leak is back** — ideation's prefix again contains "PNG files", "properly labelled", "clean and minimal", the exact script-rubric contamination D3b removed.
+2. **The D6 orchestrator designed the wrong artifact** — it receives `criteria=deliverable_rubric`, so instead of a rubric for one angle it got the entire report brief (all five guiding questions, "key metrics" plural, the data-gaps list) and built a general-purpose script.
+3. **`delivered_score` measured the wrong target** — all three executed angles landed in 0.29–0.33, tight clustering consistent with a single-angle script being graded against a full-report checklist it was never meant to satisfy. A diluted script is also one whose specific claimed pattern won't read clearly, which plausibly explains `pattern_shown=false` across the board.
+
+**Run 11's `0 realised` is therefore an artifact, not a result.** Fix before drawing any D6 conclusion: (a) make `CRITERIA_PROMPT` reliably emit both tags, and (b) **drop the `or` fallback on the second extraction** — a missing `<deliverable_rubric>` must fail loudly rather than duplicate. Consider asserting the two blocks differ.
+
+**1. Soundness — resolved as a two-level scale.** `solid` has now been empty for **three consecutive runs** (9, 10, 11). Treat it as unreachable at n=37–60 with four time points: keep the three-way vocabulary, but do not tune the prompt toward a tier the data cannot support. `unsupportable` is doing real work — 2 of 7–8 angles per run, correctly identified — and D6 now skips those angles entirely. Under the old boolean gate: 0/8 then 1/8 sound, contributing nothing to ranking (structurally the converger's binary `req_pass` problem in new clothes). The three-way verdict is now live and Run 8 returned **0 solid / 6 caveat / 1 unsupportable** — real separation, and the caveat text now exists for D7 to display.
 
 But 6/7 in one bucket means ranking is still driven almost entirely by insight, and `solid` may simply be **unreachable** on n=37–60 respondents with four time points. If `solid` stays empty across the next few runs, treat this as a two-level scale in practice rather than tuning the prompt toward a tier the data cannot support.
 
-**2. Insight discrimination is still unread — not unplumbed.** Per-angle `insight_score` is computed and written to *two* places: `output_dir/surfaced_angles_<ts>.md`, and — because `generate_and_optimize` still returns the ranked block as a string — the misnamed `analysis_script_<ts>.py` that `app.py` writes (a D7 relic). The blocker is that nobody has read them.
+**2. Insight discrimination — VALIDATED (Runs 9–11).** The judge separates cleanly and repeatably: 0.20–0.72 (Run 9), 0.30–0.75 (Run 10), 0.20–0.75 (Run 11). Two things it demonstrably gets right:
 
-**This remains the next number to look at.** Run 8 test pair: `early-bird-uptake-ratio` (conventional stance, derived but simple) should score clearly below `feedback-correlation-themes` (contrarian, structural). If they score similarly, the insight prompt needs work before anything else.
+- **The anti-target generalises beyond its literal list.** `direct-self-reported-roles` (Run 9) and `attendee-role-composition` (Run 11) both proposed per-year category counts plotted as a trend — structurally the exhausted pattern, on columns not named in the list — and both scored **0.20**, the floor of their runs.
+- **`soundness_reasoning` checks claims against actual data values**, not just sample size. Run 11 on `attendee-role-composition`: *"the specific hypothesis (increasing Industry share) is actually contradicted by the data (Industry falls to ~1 in 2025)."*
+
+No further calibration needed. The `analysis_script_<ts>.py` misnaming (a D7 relic — `generate_and_optimize` still returns the ranked block as a string) remains outstanding and is fixed by D7.
 
 **3. Cross-run memory is still manual, now with a curation aid.** `ticket-type-trend` appeared in four consecutive runs (always Q1 + Conventional); `readability-trend` and `registration-timing` three each.
 
-> **The Q1 attractor is gone, and a new one is forming.** Run 8 produced `early-bird-uptake-ratio` and `registration-lead-time-and-group-size-trend` from the demographics question — both *behavioural* rather than label-counting — so whatever changed in the prompts pushed the conventional stance off the trivially obvious. Meanwhile **LDA appeared twice in Run 8, both depth-first**: the natural successor once TF-IDF and word frequency are on the anti-target list. If an LDA angle gets realised, retire it into Already Explored promptly, or it becomes the next `ticket-type-trend`.
+> **Attractors are now being handled by the insight judge rather than needing curation.** The Q1 ticket-counting attractor stopped dominating after Run 8. The LDA attractor that formed in Runs 8–9 was scored **0.25** by the insight judge in Run 9 without any manual intervention — it may self-correct rather than needing retirement. Registration lead-time appeared in four separate runs across different stances and question slots and scored *well* (0.75 in Run 10), so it is a genuinely good angle rather than an attractor; retire it once realised, not before.
 
 `{existing_angles}` still only persists *within* a run — the report's Already Explored section remains the only persistent cross-run memory, and it's still hand-maintained. D5-calibrate added `_write_angle_dump` so curating that section is a copy-paste from `surfaced_angles_<ts>.md` instead of a manual re-transcription; nothing retires an angle automatically, by design.
 
 **4. Duplicate angle ids — fixed.** Run 7 produced two angles both called `angle-1`. `_ensure_unique_id` (D5-calibrate) now suffixes `-2`, `-3`, ... on collision before an angle reaches the archive.
+
+**6. Dedup precedes judging, so the representative is picked blind (Run 11).** The merge fired at 0.247 — `self-reported-role-trend` matched `cross-role-expertise-mapping` — and `_pick_representative` kept the former on the "longest `why_non_obvious`" heuristic. The survivor scored **0.35 insight**, the weakest angle in the realisable set; the discarded one (depth-first, role×training co-occurrence) never reached a judge, so its quality is unknown and unknowable.
+
+**Ordering is the root cause, not the heuristic.** Since every judge call shares one cached prefix, judging all N angles and *then* deduping — keeping the highest-scoring cluster member — costs very little extra and removes the text-length proxy entirely. Recommended fix; do it alongside issue 0.
+
+The merge itself is borderline: both angles use the same two feedback columns, but one is a four-year proportion trend and the other a two-year co-occurrence structure. Defensible on variables, expensive on quality.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -138,6 +164,8 @@ But 6/7 in one bucket means ranking is still driven almost entirely by insight, 
 `feedback-cooccurrence-networks` (co-occurrence graph, modularity) and `feedback-cluster-evolution` (embed → HDBSCAN → Hungarian matching) are the **same idea** — how does the thematic structure of free-text feedback reorganise over time — with entirely different method vocabulary. Token-set Jaccard scores them ~0.09.
 
 **Do not fix this by lowering the threshold**: genuinely distinct pairs also sit at 0.14, so lowering it over-merges before it catches this. The fix, if the duplication becomes material, is embedding- or judge-based similarity on `hypothesis` alone. Documented here so nobody tunes it instead.
+
+Threshold evidence to date: near-duplicates 0.23 / 0.247 / 0.30–0.40; distinct pairs 0.06–0.19. The 0.22 default sits correctly between them, and Run 9's highest non-merged pair (0.19, two angles on the same survey question) confirms it is holding the line about where it should.
 
 ### Data notes
 
@@ -197,7 +225,23 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 
 ## 7. Remaining steps
 
-**D6 is done (§3).** §10's interim library additions and D4's merge-pair logging (both flagged as outstanding before D6) landed first — the base image now has `scipy`/`scikit-learn`/`nltk`/`seaborn`/`textstat`, and `_dedup_angles` reports which specific pair merged. `insight_score` spread is still worth a deliberate read before leaning further on the ranking (Live Issue 2), but D6 itself is confirmed working end-to-end. One small item from the original D5-calibrate spec remains undone as optional polish: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs (id collisions are already handled mechanically, so this only affects readability, not correctness).
+**D6 is implemented but not yet validated.** Its machinery ran end-to-end on Run 11 — top-k selection, `unsupportable` skipping, the three-way `realization_status`, and the `not_realisable` classification all behaved correctly. But the *result* (0 realised) is an artifact of the criteria-split regression (Live Issue 0), so nothing can yet be concluded about whether realisation works. **D6-fix below must land and be re-run before D7.**
+
+Prerequisites that did land first: the base image now has `scipy`/`scikit-learn`/`nltk`/`seaborn`/`textstat`, `_dedup_angles` reports which specific pair merged, and the insight judge is validated (Live Issue 2). Optional polish still outstanding: nudging `ANGLE_GENERATION_PROMPT_SUFFIX` toward descriptive slugs — id collisions are handled mechanically, so this affects readability only.
+
+---
+
+### D6-fix — Repair the criteria split and the dedup ordering (do first)
+
+**Goal:** Run 11's D6 result is uninterpretable until these two land. Neither is large.
+
+**Changes**
+1. **Make `CRITERIA_PROMPT` reliably emit both `<ideation_criteria>` and `<deliverable_rubric>` tags**, and **remove the `or criteria_response.strip()` fallback on the second extraction** — a missing tag must fail loudly, not duplicate the whole response into both variables (live issue 0). Consider asserting the two extracted blocks are not identical.
+2. **Judge before dedup**, keeping the highest-scoring member of each cluster instead of the longest `why_non_obvious` (live issue 6). Judge calls share a cached prefix, so scoring all N rather than the deduped subset is close to free.
+3. **Rename D6's `unsound` status** — it currently collides with D5's soundness vocabulary. `pattern_not_shown` distinguishes "the plot didn't show the claimed pattern" (D6, one judge) from "the data can't support this claim" (D5, a different judge). D7's gallery must not conflate them.
+4. Re-run and confirm `delivered_score` is no longer clustered at ~0.3 and that at least some angles reach `realised`.
+
+**Verify:** the two printed criteria blocks differ; the ideation block contains no PNG/labelling/code-quality criteria; the realisation orchestrator's brief is one angle, not the whole report.
 
 ---
 
@@ -214,7 +258,7 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 ### D8 — Saturation stopping and economy instrumentation
 
 **Changes**
-1. Stopping criterion = **novelty saturation**, using D4's *across-iteration* merge fraction against a configurable threshold. Keep `max_iterations` as a hard cap. (Across-iteration is the right signal — within-iteration measures differentiation, not saturation.) Note this is currently unmeasurable: dedup has merged 0 in every run, so take a measurement before setting the threshold.
+1. Stopping criterion = **novelty saturation**, using D4's *across-iteration* merge fraction against a configurable threshold. Keep `max_iterations` as a hard cap. (Across-iteration is the right signal — within-iteration measures differentiation, not saturation.) Dedup has now fired in Runs 8 and 11 (both single across/within merges), so a measurement exists but the *fraction* is still tiny — take a run with more iterations before setting the threshold.
 2. **Verify caching** (§4) — the outstanding one-off measurement.
 3. Instrument **cost per distinct angle surfaced**, reporting cached vs uncached input tokens alongside it. Replaces `req_score` as the number to tune against.
 4. Confirm model tiering end to end against §5.
@@ -224,13 +268,13 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 
 ## 8. Tuning notes
 
-**Divergence is solved; the judges are the live frontier.** Four consecutive runs at 0.09–0.12 within-iteration with healthy cross-iteration behaviour. Effort now belongs in D5-calibrate, not in more stances or thresholds.
+**Divergence is solved; the judges are validated; realisation is the live frontier.** Eight consecutive runs at 0.09–0.14 within-iteration with healthy cross-iteration behaviour, and Runs 9–11 confirmed the insight judge discriminates and the soundness judge reasons from actual data. Effort now belongs in D6-fix and D7, not in stances, thresholds, or judge prompts.
 
 **The attractor effect is a standing property.** Closing off explored territory concentrates ideation onto whatever remains most concrete — that is the anti-target *working*. Counter-pressure comes from differentiating the calls, not from loosening the anti-targets. Expect to re-check the diversity numbers after any substantial report change.
 
-**Q1 + Conventional is a reliable obvious-angle generator.** Four runs, four ticket-type-count angles. Arguably the stance working as designed, but it spends a slot per iteration on something the insight judge should score near zero. Leave it until the insight scores are visible — if it scores low, it is functioning as a useful control.
+**Q1 + Conventional is a reliable obvious-angle generator — and that is now useful.** It reliably produces a ticket-type/role-counting angle, which the insight judge as reliably floors at 0.20 (Runs 9 and 11). It costs one slot per iteration and functions as a **standing control**: if that angle ever scores well, the insight judge has drifted. Leave it in place.
 
-**Thresholds are control parameters, not gauges.** D4's dedup threshold (0.22, calibrated, unexercised) and D8's saturation threshold (unmeasured) read the same Jaccard signal. Set both from logged numbers.
+**Thresholds are control parameters, not gauges.** D4's dedup threshold (0.22 — now exercised twice, evidence in §3) and D8's saturation threshold (still unmeasured) read the same Jaccard signal. Set both from logged numbers.
 
 **Judge prompts are the product.** The machinery around them is trivial; the wording is the whole game. They are human-owned for that reason.
 
@@ -264,7 +308,9 @@ When implemented:
 - **Cheap interim win — done, before D6.** `scipy`, `scikit-learn`, `nltk`, `seaborn` and `textstat` were added to the base image. Small relative to torch, and covered everything ideation asked for on Run 8 - avoided D6 reporting a ~7/8 failure rate that would have been purely provisioning and told nothing about angle quality.
 - **`nltk` corpora are not a pip install.** `nltk.download()` fetches stopwords/tokenisers at runtime — the model-weights problem in miniature. Under `--network none` the package installs fine and then fails on first use. Bake the corpora in at build time.
 
-Keep "not realisable" strictly separate from "unsound" in the gallery — the first is an engineering outcome, the second a quality judgement.
+**Provisioning is a moving target, not a gap to be closed once.** Three consecutive runs each asked for packages the previous run's provisioning did not cover: Run 8 → scipy/scikit-learn/nltk/seaborn/textstat (added); Run 9 → networkx, python-louvain, sentence-transformers; Run 10 → spacy, gensim, sentence-transformers; Run 11 → umap-learn, hdbscan, sentence-transformers. Ideation's library appetite grows as the angles get more creative. Treat `not_realisable` as a **permanent, recurring outcome class** rather than a transient defect — and note that `sentence-transformers` has now been requested in three consecutive runs, making the model-weights question the next real decision rather than a hypothetical.
+
+Keep "not realisable" strictly separate from "unsound"/"pattern_not_shown" in the gallery — the first is an engineering outcome, the second a quality judgement.
 
 ---
 
