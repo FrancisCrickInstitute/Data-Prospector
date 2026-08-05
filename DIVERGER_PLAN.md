@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 9)
+# Converger → Diverger conversion plan (rev. 10)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -112,8 +112,9 @@ The evidence base for every threshold in this document.
 | 10 | — | working | `soundness_reasoning` added; both rejections audited and correct. Insight 0.30–0.75 |
 | 11 | 0.14 / 0.12 | working | **First end-to-end D6 run.** Dedup 8→7 (merge at 0.247). 0 solid / 5 caveat / 2 unsupportable. Realisation: 0 realised, 3 pattern-not-shown, 1 not realisable — **invalidated by the criteria-split regression below** |
 | 12 | 0.11 / 0.10 | working | **D6-fix validated.** Criteria split confirmed distinct; `delivered_score` spread 0.09–0.94 (was clustered 0.29–0.33). Dedup 8→8. 0 solid / 5 caveat / 3 unsupportable. Realisation: **1 realised**, 3 pattern-not-shown, 0 not realisable |
+| 13 | 0.12 / 0.10 | working | Three-way pattern outcome live. Dedup 8→7 (0.313, clean true positive). 0 solid / 6 caveat / 1 unsupportable. Realisation: 1 realised (`delivered_score=1.00`), **0 disconfirmed**, 2 pattern-not-shown, 1 not realisable |
 
-**Divergence is solved.** Both axes are healthy and have been for nine consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for ten consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
@@ -162,7 +163,7 @@ No further calibration needed. The `analysis_script_<ts>.py` misnaming (a D7 rel
 
 The merge itself is borderline: both angles use the same two feedback columns, but one is a four-year proportion trend and the other a two-year co-occurrence structure. Defensible on variables, expensive on quality.
 
-**7. BLOCKER for D7 — `pattern_not_shown` conflates a failure with a finding (Run 12).** `validate_realization` asks whether the output legibly shows the *claimed* pattern, so an angle that ran perfectly and **disconfirmed its own hypothesis** gets the same status as one whose plot is broken or illegible.
+**7. RESOLVED (Run 13) — `pattern_not_shown` conflated a failure with a finding (Run 12).** `validate_realization` asks whether the output legibly shows the *claimed* pattern, so an angle that ran perfectly and **disconfirmed its own hypothesis** gets the same status as one whose plot is broken or illegible.
 
 Run 12 shows both in the same bucket: `industry-speakers-vs-attendees` at `delivered_score=0.69` (a well-delivered script whose claimed co-movement simply is not there) sits alongside `lda-topic-evolution` at 0.09. For a diverger this matters — a clean disconfirmation *closes a question* and is often more useful than a confirmation, but as things stand it will be buried below `realised` in the gallery.
 
@@ -173,9 +174,19 @@ Run 12 shows both in the same bucket: `industry-speakers-vs-attendees` at `deliv
 
 The validator already sees the PNGs; it simply is not being asked to make this distinction. `realised_null` must rank **alongside** `realised` in the gallery, not below it.
 
+Shipped as a three-way `<pattern_outcome>` (`shown` / `disconfirmed` / `not_shown`), same strict-vocabulary shape as `_SOUNDNESS_VERDICTS`, with an unparseable response mapping conservatively to `pattern_not_shown`. The prompt requires a disconfirmation to be *legible, complete, and directly addressing the claim*, which is what stops it becoming a soft landing for half-broken output, and instructs the feedback text not to frame a disconfirmation as something to fix. **Calibration is not yet confirmed** — Run 13 returned 0 disconfirmed, which cannot currently be distinguished from an over-strict bar (see Live Issue 9).
+
 **8. `delivered_score` grades angle-scoped scripts against a report-level rubric (Run 12).** The extracted rubric demands loading *all four* data types across all years and emitting a data-gaps list. A readability angle needs Abstracts only and has no reason to produce a gaps list, so narrow angles lose criteria they were never meant to satisfy — `lda-topic-evolution` scored **0.09** while executing cleanly, which is a scope mismatch, not a quality signal.
 
 Low priority (it gates nothing), but until fixed `delivered_score` cannot be read as a quality measure. Fix by scoping the rubric to the angle, or by telling `validate_realization` the script implements one angle rather than the full report.
+
+**9. BLOCKER for D7 — `pattern_reasoning` is requested but never surfaced (Run 13).** The realisation validator is asked for `<pattern_reasoning>` and the field is discarded: the console prints `pattern_not_shown (delivered_score=0.67)` and nothing about why. **This is the same audit gap that existed for `unsupportable` verdicts before `soundness_reasoning` was added** — and fixing that one immediately proved the judge was right, so the precedent is direct.
+
+It bites now because Run 13 returned **0 disconfirmed**, and that is currently uninterpretable. The two `pattern_not_shown` results are plausible disconfirmation candidates: `readability-and-complexity-trends` (0.53) and `program-speaker-role-blur` (0.67) both executed, produced artifacts, and delivered most of the rubric. If readability came out flat across four years that is a `disconfirmed` finding; if the plot was unreadable it is `not_shown`. From the current output those are indistinguishable, so the three-way split cannot be calibrated.
+
+**Surface `pattern_reasoning` in the console line, the dump, and D7's gallery.**
+
+**10. The dump is written before realisation, so it carries no realisation data (Run 13).** `surfaced_angles_<ts>.md` has soundness verdict, reasoning, caveat and insight — but no `realization_status`, `delivered_score`, `pattern_reasoning`, or artifact paths, because `[dump]` fires before `[realize]`. That is fine for its stated purpose (curating anti-targets) but **D7's gallery needs exactly the missing half.** Decide the data flow before building D7: either move the write point after realisation, or emit a second post-realisation artifact and keep the current one as the curation aid.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -248,9 +259,11 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 **D6 is implemented and validated (Run 12).** The full pipeline now runs end-to-end: ideate → judge → dedup → rank → realise top-k. Run 12 produced 1 realised, 3 pattern-not-shown, 0 not realisable, with `delivered_score` spread 0.09–0.94.
 
 **Before D7, three items:**
-1. **Split `pattern_not_shown`** (Live Issue 7) — a disconfirmed hypothesis is a finding, not a failure, and the gallery must not bury it. This is a D7 prerequisite, not optional polish.
-2. **Fix the merge-log direction** (Live Issue 6) — one line; it currently reads backwards.
-3. **Descriptive angle ids** — `angle-1` reappeared in Run 12. Collisions are handled mechanically, so this is readability only, but the gallery is where it shows.
+1. **Surface `pattern_reasoning`** (Live Issue 9) — requested from the validator and currently discarded. Without it the three-way outcome cannot be calibrated (Run 13's 0 disconfirmed is uninterpretable) and the gallery has nothing to show beside a status label.
+2. **Decide the dump's data flow** (Live Issue 10) — the current dump predates realisation and carries none of it. D7 needs both halves.
+3. **Fix the merge-log direction** (Live Issue 6) — one line; it currently reads backwards. Run 13's arrow happened to point at the survivor, but that is not guaranteed.
+
+Also outstanding, readability-only: **descriptive angle ids** (`angle-1` reappeared in Run 12). Collisions are handled mechanically, but the gallery is where it shows.
 
 Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but the number should not be *displayed* as a quality measure until it is fixed.
 
@@ -272,13 +285,13 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 
 ### D7 — Gallery, not a winner
 
-**Prerequisite: split `pattern_not_shown` first (Live Issue 7).** Building the gallery on a status that bins disconfirmations with broken plots would bake the conflation into the deliverable. Do that, then this.
+**Prerequisites: Live Issues 9 and 10.** The status split (Issue 7) has shipped, but the gallery needs the *reasoning* behind each status (Issue 9) and a data source that actually contains realisation results (Issue 10). Building on a status label with no explanation would give the reader a verdict they cannot evaluate.
 
 **Changes**
 1. `generate_and_optimize` returns a structured result, not a string. **This ripples into `app.py`**, which currently writes `analysis_script_<ts>.py`; the console header "FINAL COMPILED SCRIPT" is also now inaccurate.
 2. Emit a self-contained gallery into `output_dir`. Per angle: its plot(s), a one-line "what's surprising here", **the soundness caveat as a visible confidence note**, which question/stakeholder it serves, and its realisation status.
 3. **Four presentation tiers, not one ranked list** — the statuses answer different questions and must not be flattened:
-   - `realised` and `realised_null` **together at the top**, ranked by insight. A clean disconfirmation closes a question and is often more useful than a confirmation; label it as such rather than demoting it.
+   - `realised` and `realised_null` **together at the top**, ranked by insight. A clean disconfirmation closes a question and is often more useful than a confirmation; label it as such rather than demoting it. Show `pattern_reasoning` alongside the plot — for a `realised_null` it *is* the finding.
    - `pattern_not_shown` — executed but the output does not show the claim. A quality outcome; show it, secondary.
    - `not_realisable` — an *engineering* outcome (missing library). List these prominently **with their `requires`**, because that list is the signal telling you what to provision next (§10).
    - `unsupportable` angles never reach realisation, but are worth listing with their `soundness_reasoning` — Run 12's three were the most *sophisticated* angles in the run, and knowing what the dataset cannot support is itself a finding.
@@ -314,6 +327,8 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 
 This is a property of the data, not a defect: **on n=37–60 with four time points, methodological sophistication and defensibility are in direct tension**, and the achievable frontier is *simple method, modest claim* — where Run 12's one realised angle sits. Expect ~3 of 8 angles per run to be spent on ambitious ideas the dataset cannot support. That is a meaningful fraction of the budget and worth surfacing in the gallery (D7 tier 4) rather than discarding, since "what this dataset cannot support" is itself useful to the organising committee.
 
+**The anti-target curation loop is now due its first real use.** `reg-lead-time-by-ticket-type` has appeared in five separate runs across different stances and question slots, and Run 13 *realised* it at `delivered_score=1.00`. That is the loop working as designed: a genuinely good angle, now done. Retire it into the report's Already Explored section, or it will keep winning a slot. This is the intended human step — automatic retirement would suppress angles that merely resemble a prior one.
+
 **Judge prompts are the product.** The machinery around them is trivial; the wording is the whole game. They are human-owned for that reason.
 
 ---
@@ -342,7 +357,9 @@ When implemented:
 - **`requires` field on angles** (add now, in D5-calibrate) — instrumentation first, so the design is driven by what ideation actually asks for.
 - **Provision at build time, not run time.** `--network none` forbids runtime installs, so the union of `requires` across the top-k angles resolves into a derived image (`FROM cbias-analysis; RUN pip install …`) before realisation. The build is trusted; execution stays isolated. That distinction is why this is safe.
 - **Allowlist package names.** Hallucinated package names are a live supply-chain attack vector — attackers register the plausible-sounding names models invent. Grow the allowlist from observed `requires`.
-- **Model weights are not pip installs.** `sentence-transformers` and BERTopic download weights on first use; with no runtime network they fail after a successful install. Baking weights into the image is a much heavier lift and a reasonable place to draw the line.
+- **`sentence-transformers` is now the live decision, not a hypothetical.** Requested in four consecutive runs (10–13), and Run 13's `semantic-drift-via-embeddings` burned three compile attempts before `not_realisable`. Embedding-based angles are a recurring, well-ranked family — they scored 0.55 in Runs 12 and 13. Either bake the weights in, or accept that the family is permanently unrealisable and ensure D7 surfaces it as a **provisioning gap**, not a quality failure. Note the wasted budget either way: three compile attempts per run on an angle that cannot run.
+
+**Model weights are not pip installs.** `sentence-transformers` and BERTopic download weights on first use; with no runtime network they fail after a successful install. Baking weights into the image is a much heavier lift and a reasonable place to draw the line.
 - **Cheap interim win — done, before D6.** `scipy`, `scikit-learn`, `nltk`, `seaborn` and `textstat` were added to the base image. Small relative to torch, and covered everything ideation asked for on Run 8 - avoided D6 reporting a ~7/8 failure rate that would have been purely provisioning and told nothing about angle quality.
 - **`nltk` corpora are not a pip install.** `nltk.download()` fetches stopwords/tokenisers at runtime — the model-weights problem in miniature. Under `--network none` the package installs fine and then fails on first use. Bake the corpora in at build time.
 
