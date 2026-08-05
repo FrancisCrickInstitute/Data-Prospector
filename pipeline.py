@@ -460,7 +460,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     same graded-not-gated shape as D5-calibrate's soundness verdict.
 
     Returns (pattern_shown, delivered_score, delivered_pass, feedback). pattern_shown is what
-    _run_one_design uses to set realization_status ("realised" vs "unsound"); delivered_score/
+    _run_one_design uses to set realization_status ("realised" vs "pattern_not_shown"); delivered_score/
     delivered_pass are met/total across every <criterion> tag the validator emitted against the
     deliverable rubric (0.0/False if it emitted none - treated as a full miss, not a free pass).
     """
@@ -618,17 +618,22 @@ def _angle_signature(angle: dict) -> set:
 
 
 def _pick_representative(cluster: list[dict]) -> dict:
-    """Within a dedup cluster, keep the record with the most specific why_non_obvious (longest
-    text, as a crude proxy for specificity) - else the earliest-proposed record.
-    # TODO(human): tiebreak may want tuning - longest text is a crude specificity proxy.
+    """Within a dedup cluster, keep the record whose angle scored highest on _judgment_sort_key
+    (soundness_verdict rank, then insight_score) - REQUIRES judging to have already run on every
+    record in the cluster (D6-fix item 2: judge before dedup, precisely so this can happen).
+
+    Before D6-fix this picked the longest why_non_obvious text as a crude specificity proxy, which
+    is exactly what discarded the stronger angle on Run 11 (DIVERGER_PLAN.md Live Issue 6):
+    self-reported-role-trend (insight 0.35, the weakest in the realisable set) survived over
+    cross-role-expertise-mapping purely because its why_non_obvious was longer, and the discarded
+    angle never reached a judge at all. Ties on judgment (e.g. both unranked) fall back to the old
+    longest-why_non_obvious heuristic as a stable secondary tiebreak.
     """
-    best = cluster[0]
-    best_len = len((best["angle"].get("why_non_obvious") or "").strip())
-    for record in cluster[1:]:
-        candidate_len = len((record["angle"].get("why_non_obvious") or "").strip())
-        if candidate_len > best_len:
-            best, best_len = record, candidate_len
-    return best
+    def key(record: dict) -> tuple:
+        angle = record["angle"]
+        return (_judgment_sort_key(angle), len((angle.get("why_non_obvious") or "").strip()))
+
+    return max(cluster, key=key)
 
 
 def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], dict]:
@@ -839,10 +844,13 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     Returns {angle_id, realization_status, realization_feedback, delivered_score, artifacts,
     artifacts_dir, script}. realization_status is one of:
     - "realised": executed, and the claimed pattern was legibly shown.
-    - "unsound": executed, but the claimed pattern was NOT shown - a quality judgement.
+    - "pattern_not_shown": executed, but the claimed pattern was NOT shown - a quality judgement.
+      Deliberately not named "unsound" (D6-fix item 3) - that word is D5's soundness-judge
+      vocabulary (data can't support the claim), a different judge answering a different question;
+      conflating the two would mislabel D7's gallery.
     - "not_realisable": never executed after max_compile_attempts (e.g. a missing library) or
       execution was unverifiable (no data_dir / Docker unavailable) - an engineering/provisioning
-      outcome, never conflated with "unsound" (DIVERGER_PLAN.md D6 item 5).
+      outcome, never conflated with "pattern_not_shown" (DIVERGER_PLAN.md D6 item 5).
     """
 
     def log(msg):
@@ -924,7 +932,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     pattern_shown, delivered_score, delivered_pass, realization_feedback = await validate_realization(
         compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
         artifacts=artifacts, artifacts_dir=artifacts_dir)
-    status = "realised" if pattern_shown else "unsound"
+    status = "realised" if pattern_shown else "pattern_not_shown"
     log(f"Realization: {status} (delivered_score={delivered_score:.2f})")
     return {
         "angle_id": angle.get("id", "?"), "realization_status": status,
@@ -992,17 +1000,19 @@ async def generate_angles(report: str, ideation_criteria: str, input_metadata: s
 async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: str = None,
                                 max_iterations: int = 2, output_dir: str = None,
                                 realize_top_k: int = 4, angles_per_iteration: int = 12) -> str:
-    """D3/D3a/D3b/D4/D5/D6: ideation loop, fanned out, then deduped, then judged, then selectively
+    """D3/D3a/D3b/D4/D5/D6: ideation loop, fanned out, then judged, then deduped, then selectively
     realized. Each iteration fires angles_per_iteration independent generate_angles calls (n=1
     each) concurrently via asyncio.gather, cycling config.design_stances and the parsed guiding
     questions across calls independently (D3a) for intra-iteration diversity - concurrent calls
     can't see each other, so these two cycling axes are the only lever within an iteration.
     Cross-iteration diversity instead comes from {existing_angles}: the accumulated archive of
     every angle proposed so far, fed back into ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation
-    finishes, D4 dedups the whole archive by token-set similarity, then D5 scores every surviving
-    angle for non-obviousness (judge_insight) and soundness (judge_soundness) and ranks the
-    shortlist by both. D6 then realizes only the top realize_top_k non-unsupportable angles - code
-    is written and run for that small selection only, never for the whole archive.
+    finishes, D5 scores every archived angle for non-obviousness (judge_insight) and soundness
+    (judge_soundness), THEN D4 dedups the whole archive by token-set similarity (D6-fix item 2:
+    judging first lets dedup keep the highest-scoring member of each cluster instead of a
+    text-length proxy) and the survivors are ranked by both judgments. D6 then realizes only the
+    top realize_top_k non-unsupportable angles - code is written and run for that small selection
+    only, never for the whole archive.
 
     Returns a plain-text summary of every surviving angle, ranked best-first by D5's judgment (a
     string, not a script) so app.py's existing file-write path keeps working unmodified - D7
@@ -1020,16 +1030,33 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     #     generate_angles below (and, later, the D5 judges).
     #   - deliverable_rubric: script-delivery mechanics - fed to _run_one_design/validate_realization
     #     below (D6), only for the small top-k set of angles actually realized.
-    # If extraction itself fails (e.g. a transient rate-limit error), fall back to the raw report
-    # for both instead of leaving either pointed at an empty rubric.
+    # If extraction itself fails (e.g. a transient rate-limit error) OR comes back malformed (one
+    # or both tags missing, or - Run 11, DIVERGER_PLAN.md Live Issue 0 - both tags collapsing to
+    # the same text), fall back to the raw report for both instead of leaving either pointed at an
+    # empty rubric. D6-fix item 1: this used to be `extract_xml(...) or criteria_response.strip()`
+    # per field, which silently duplicated the WHOLE malformed response into both variables on a
+    # missing tag rather than failing loudly - that's what broke Run 11's D6 realization (the
+    # orchestrator designed against the whole report instead of a one-angle rubric). A missing or
+    # duplicated tag now raises here and hits the same honest raw-report fallback as a call failure.
     try:
         criteria_input = format_prompt(CRITERIA_PROMPT, report=report, input_data=input_metadata)
         criteria_response = await llm_call(criteria_input, system_prompt=CRITERIA_SYSTEM,
                                            model=config.requirements_evaluator_model, cache_prompt=True)
-        ideation_criteria = extract_xml(criteria_response, "ideation_criteria").strip() or criteria_response.strip()
-        deliverable_rubric = extract_xml(criteria_response, "deliverable_rubric").strip() or criteria_response.strip()
+        ideation_criteria = extract_xml(criteria_response, "ideation_criteria").strip()
+        deliverable_rubric = extract_xml(criteria_response, "deliverable_rubric").strip()
+        if not ideation_criteria or not deliverable_rubric:
+            raise ValueError(
+                f"Criteria response missing <ideation_criteria> and/or <deliverable_rubric> "
+                f"({len(ideation_criteria)} / {len(deliverable_rubric)} chars extracted) - first "
+                f"500 chars of response: {criteria_response[:500]!r}"
+            )
+        if ideation_criteria == deliverable_rubric:
+            raise ValueError(
+                "Criteria response's <ideation_criteria> and <deliverable_rubric> extracted as "
+                "identical text - the criteria split has collapsed."
+            )
     except Exception as e:
-        print(f"WARNING: Criteria extraction failed ({e!r}); falling back to the raw report as both criteria.")
+        print(f"WARNING: Criteria extraction failed or malformed ({e!r}); falling back to the raw report as both criteria.")
         ideation_criteria = deliverable_rubric = report
     print(f"\nIdeation criteria extracted from report:\n{ideation_criteria}\n")
     print(f"\nDeliverable rubric extracted from report (fed to D6 realization only):\n{deliverable_rubric}\n")
@@ -1115,35 +1142,21 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     print(f"Completed all {max_iterations} iteration(s). {len(archive)} angle(s) generated total.")
     print(f"{'=' * 80}\n")
 
-    # D4: dedup - drop near-duplicate angles across the WHOLE run (all iterations), not per
-    # iteration, so across-iteration duplicates are caught too. Does not feed back into
-    # {existing_angles} above - that cross-iteration pressure already works on the raw archive
-    # (see DIVERGER_PLAN.md §3), so dedup stays a separate, final selection step.
-    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold)
-    print(
-        f"[dedup] {len(archive)} angle(s) -> {len(kept_records)} after dedup "
-        f"(threshold={config.angle_similarity_threshold}); merged "
-        f"{merge_stats['within_iteration']} within-iteration, "
-        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
-    )
-    for merge in merge_stats["merges"]:
-        print(
-            f"    merged [{merge['record_id']}] -> [{merge['matched_id']}] "
-            f"(similarity={merge['similarity']:.3f}, {merge['type']})"
-        )
-    print()
-    all_angles = [rec["angle"] for rec in kept_records]
-
-    if not all_angles:
+    if not archive:
         return "(No angles were generated.)"
 
-    # D5: judge the surviving (post-dedup) angles for non-obviousness and soundness - this
-    # replaces req_score as the quality bar now that there's no code to grade yet. Both judges run
-    # per-angle (2 calls per angle), all fanned out together; a failed call scores that angle
-    # "unranked" (None) rather than failing the run or being penalised as if actually judged.
+    # D5: judge EVERY archived angle - not just the post-dedup subset - for non-obviousness and
+    # soundness, BEFORE dedup runs (D6-fix item 2, DIVERGER_PLAN.md Live Issue 6: dedup used to run
+    # first and _pick_representative broke ties on longest why_non_obvious, a text-length proxy
+    # that discarded the stronger of two merged angles on Run 11 without it ever reaching a judge).
+    # Judge calls share one cached prefix (report/ideation_criteria/input_data - the same triple
+    # generate_angles caches), so judging all N archived angles instead of the deduped subset costs
+    # little extra. A failed call scores that angle "unranked" (None) rather than failing the run or
+    # being penalised as if actually judged.
     judge_calls = []
     call_meta = []
-    for angle in all_angles:
+    for record in archive:
+        angle = record["angle"]
         judge_calls.append(judge_insight(angle, report, ideation_criteria, input_metadata, config))
         call_meta.append(("insight", angle))
         judge_calls.append(judge_soundness(angle, report, ideation_criteria, input_metadata, config))
@@ -1162,6 +1175,29 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
                 )
             continue
         angle.update(result)
+
+    # D4: dedup - drop near-duplicate angles across the WHOLE run (all iterations), not per
+    # iteration, so across-iteration duplicates are caught too. Now runs AFTER judging (D6-fix item
+    # 2) so _pick_representative keeps the highest-scoring cluster member, not a text-length proxy.
+    # Does not feed back into {existing_angles} above - that cross-iteration pressure already works
+    # on the raw archive (see DIVERGER_PLAN.md §3), so dedup stays a separate, final selection step.
+    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold)
+    print(
+        f"[dedup] {len(archive)} angle(s) -> {len(kept_records)} after dedup "
+        f"(threshold={config.angle_similarity_threshold}); merged "
+        f"{merge_stats['within_iteration']} within-iteration, "
+        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
+    )
+    for merge in merge_stats["merges"]:
+        print(
+            f"    merged [{merge['record_id']}] -> [{merge['matched_id']}] "
+            f"(similarity={merge['similarity']:.3f}, {merge['type']})"
+        )
+    print()
+    all_angles = [rec["angle"] for rec in kept_records]
+
+    if not all_angles:
+        return "(No angles were generated.)"
 
     all_angles.sort(key=_judgment_sort_key, reverse=True)
 
@@ -1218,10 +1254,10 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         angle["artifacts_dir"] = result["artifacts_dir"]
 
     realised_count = sum(1 for a in to_realize if a.get("realization_status") == "realised")
-    unsound_count = sum(1 for a in to_realize if a.get("realization_status") == "unsound")
+    pattern_not_shown_count = sum(1 for a in to_realize if a.get("realization_status") == "pattern_not_shown")
     not_realisable_count = sum(1 for a in to_realize if a.get("realization_status") == "not_realisable")
     print(
-        f"[realize] {realised_count} realised, {unsound_count} unsound (pattern not shown), "
+        f"[realize] {realised_count} realised, {pattern_not_shown_count} pattern not shown, "
         f"{not_realisable_count} not realisable\n"
     )
 
