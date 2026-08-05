@@ -449,20 +449,37 @@ def _load_plot_images(artifacts: list[dict], artifacts_dir: str, limit: int = _M
     return images
 
 
+# Live Issue 7 (DIVERGER_PLAN.md, post-D6-fix Run 12): a boolean pattern_shown conflated a clean
+# disconfirmation (script ran fine, data just don't support the hypothesis - a real finding) with a
+# broken/illegible run (blank plot, wrong measurement) - both read as "false" and landed in the same
+# realization_status bucket. Three-way vocabulary, same shape as _SOUNDNESS_VERDICTS: "shown" ->
+# realised, "disconfirmed" -> realised_null (ranks ALONGSIDE realised in D7's gallery, not beneath
+# it), "not_shown" -> pattern_not_shown (the only one that's actually a quality problem).
+_PATTERN_OUTCOMES = ("shown", "disconfirmed", "not_shown")
+_PATTERN_OUTCOME_TO_STATUS = {
+    "shown": "realised",
+    "disconfirmed": "realised_null",
+    "not_shown": "pattern_not_shown",
+}
+
+
 async def validate_realization(compiled_script: str, report: str, deliverable_rubric: str,
                                 claimed_pattern: str, exec_output: str, config: PipelineConfig,
                                 artifacts: list[dict] = None,
-                                artifacts_dir: str = None) -> tuple[bool, float, bool, str]:
+                                artifacts_dir: str = None) -> tuple[str, float, bool, str]:
     """D6: check whether a realized script's actual output legibly shows ONE angle's claimed
     pattern - the PRIMARY judgment (DIVERGER_PLAN.md D6 item 3), replacing the converger's "meets
     requirements" framing. The deliverable rubric's mechanical checklist (file counts, etc.) is
-    still checked and reported, but graded alongside pattern_shown rather than gating it - the
+    still checked and reported, but graded alongside pattern_outcome rather than gating it - the
     same graded-not-gated shape as D5-calibrate's soundness verdict.
 
-    Returns (pattern_shown, delivered_score, delivered_pass, feedback). pattern_shown is what
-    _run_one_design uses to set realization_status ("realised" vs "pattern_not_shown"); delivered_score/
-    delivered_pass are met/total across every <criterion> tag the validator emitted against the
-    deliverable rubric (0.0/False if it emitted none - treated as a full miss, not a free pass).
+    Returns (pattern_outcome, delivered_score, delivered_pass, feedback). pattern_outcome is one of
+    _PATTERN_OUTCOMES, or None if the validator emitted anything outside that vocabulary (a warning
+    is printed - _run_one_design treats None the same as "not_shown", the conservative default,
+    since an unparseable response gives no positive evidence the pattern WAS shown or disconfirmed).
+    delivered_score/delivered_pass are met/total across every <criterion> tag the validator emitted
+    against the deliverable rubric (0.0/False if it emitted none - treated as a full miss, not a
+    free pass).
     """
     artifacts = artifacts or []
     artifacts_listing = _format_artifacts(artifacts)
@@ -482,7 +499,13 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     validator_response = await llm_call(validator_suffix, system_prompt=EVALUATOR_SYSTEM,
                                         model=config.requirements_evaluator_model, cache_prompt=True,
                                         images=images or None, cache_prefix=validator_prefix)
-    pattern_shown = extract_xml(validator_response, "pattern_shown").strip().lower() == "true"
+    outcome_text = extract_xml(validator_response, "pattern_outcome").strip().lower()
+    if outcome_text in _PATTERN_OUTCOMES:
+        pattern_outcome = outcome_text
+    else:
+        print(f"WARNING: realization validator emitted no parseable <pattern_outcome> (first 300 "
+              f"chars): {validator_response[:300]}")
+        pattern_outcome = None
     verdicts = _CRITERION_PATTERN.findall(validator_response)
     feedback = extract_xml(validator_response, "feedback").strip()
 
@@ -497,7 +520,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     delivered_score = met / total if total else 0.0
     delivered_pass = total > 0 and met == total
 
-    return pattern_shown, delivered_score, delivered_pass, feedback
+    return pattern_outcome, delivered_score, delivered_pass, feedback
 
 
 async def _call_worker(task_info: dict, task_index: int, report: str, input_metadata: str,
@@ -844,13 +867,21 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     Returns {angle_id, realization_status, realization_feedback, delivered_score, artifacts,
     artifacts_dir, script}. realization_status is one of:
     - "realised": executed, and the claimed pattern was legibly shown.
-    - "pattern_not_shown": executed, but the claimed pattern was NOT shown - a quality judgement.
-      Deliberately not named "unsound" (D6-fix item 3) - that word is D5's soundness-judge
-      vocabulary (data can't support the claim), a different judge answering a different question;
-      conflating the two would mislabel D7's gallery.
+    - "realised_null": executed and rendered legibly, but the data do NOT support the claimed
+      pattern - a clean disconfirmation, not a failure. Added post-D6-fix (Live Issue 7, Run 12):
+      a boolean pattern_shown used to collapse this into the same bucket as a broken/illegible run,
+      burying a genuine finding under what reads as a quality defect. Ranks ALONGSIDE "realised" in
+      D7's gallery, not beneath it.
+    - "pattern_not_shown": executed, but the output does not legibly show anything about the claim
+      either way (broken/blank/unreadable, or the validator's response was itself unparseable - see
+      validate_realization) - THIS is the actual quality judgement, not "realised_null" or a
+      disconfirmation. Deliberately not named "unsound" (D6-fix item 3) - that word is D5's
+      soundness-judge vocabulary (data can't support the claim), a different judge answering a
+      different question; conflating the two would mislabel D7's gallery.
     - "not_realisable": never executed after max_compile_attempts (e.g. a missing library) or
       execution was unverifiable (no data_dir / Docker unavailable) - an engineering/provisioning
-      outcome, never conflated with "pattern_not_shown" (DIVERGER_PLAN.md D6 item 5).
+      outcome, never conflated with "pattern_not_shown" or "realised_null" (DIVERGER_PLAN.md D6
+      item 5).
     """
 
     def log(msg):
@@ -926,13 +957,15 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         }
 
     # REALIZATION CHECK: only reached on a verified execution PASS (FAIL returned above, SKIPPED
-    # short-circuited above). PRIMARY judgment is whether the actual output legibly shows THIS
-    # angle's claimed pattern (item 3); the deliverable-rubric checklist is reported alongside but
-    # does not gate status - graded, not gated, matching D5-calibrate's soundness verdict.
-    pattern_shown, delivered_score, delivered_pass, realization_feedback = await validate_realization(
+    # short-circuited above). PRIMARY judgment is a three-way classification of whether/how the
+    # actual output shows THIS angle's claimed pattern (Live Issue 7); the deliverable-rubric
+    # checklist is reported alongside but does not gate status - graded, not gated, matching
+    # D5-calibrate's soundness verdict. An unparseable pattern_outcome (None) maps to
+    # "pattern_not_shown" - the conservative default, since it gives no positive evidence either way.
+    pattern_outcome, delivered_score, delivered_pass, realization_feedback = await validate_realization(
         compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
         artifacts=artifacts, artifacts_dir=artifacts_dir)
-    status = "realised" if pattern_shown else "pattern_not_shown"
+    status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
     log(f"Realization: {status} (delivered_score={delivered_score:.2f})")
     return {
         "angle_id": angle.get("id", "?"), "realization_status": status,
@@ -1254,11 +1287,12 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         angle["artifacts_dir"] = result["artifacts_dir"]
 
     realised_count = sum(1 for a in to_realize if a.get("realization_status") == "realised")
+    realised_null_count = sum(1 for a in to_realize if a.get("realization_status") == "realised_null")
     pattern_not_shown_count = sum(1 for a in to_realize if a.get("realization_status") == "pattern_not_shown")
     not_realisable_count = sum(1 for a in to_realize if a.get("realization_status") == "not_realisable")
     print(
-        f"[realize] {realised_count} realised, {pattern_not_shown_count} pattern not shown, "
-        f"{not_realisable_count} not realisable\n"
+        f"[realize] {realised_count} realised, {realised_null_count} realised-null (disconfirmed), "
+        f"{pattern_not_shown_count} pattern not shown, {not_realisable_count} not realisable\n"
     )
 
     lines = [f"{len(all_angles)} candidate analysis angle(s) generated, ranked best-first:\n"]

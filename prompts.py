@@ -22,9 +22,11 @@ COMPILER_SYSTEM = """You are an expert code integrator. Your role is to assemble
 EVALUATOR_SYSTEM = """You are an expert code reviewer and validator. Your role is to verify code meets requirements and works correctly.
 - Assess task alignment, code quality, and execution correctness
 - Check both the code and its actual behavior (if available)
-- For a script realizing one candidate analysis angle, your PRIMARY judgment is whether the actual
-  output legibly demonstrates the angle's claimed pattern - not just whether the code runs and
-  superficially matches a checklist
+- For a script realizing one candidate analysis angle, your PRIMARY judgment is a three-way
+  classification of what the actual output shows: the claimed pattern legibly demonstrated, legibly
+  and completely DISCONFIRMED (the script ran cleanly but the data don't support the claim - a real
+  finding, not a failure), or not legibly shown at all (broken, blank, or unreadable output) - not
+  just whether the code runs and superficially matches a checklist
 - Be critical but fair - flag real issues, not style preferences
 - Provide actionable feedback for improvement
 - Your verdict determines if the code is production-ready"""
@@ -242,13 +244,19 @@ This script exists to realize ONE specific candidate analysis angle. Its claimed
 If PNG images are attached to this message, they are the actual plots the script produced (up to a
 few, in the order listed above) — inspect them directly.
 
-FIRST, and most importantly: does the actual output (console output and/or attached images) legibly
-show the claimed pattern above? Judge what was actually produced, not whether the code looks like it
-should produce this pattern. A blank, unreadable, or contradicting plot means the pattern was NOT
-shown, even if the script ran without error.
+FIRST, and most importantly: classify what the actual output (console output and/or attached images)
+shows about the claimed pattern above. Judge what was actually produced, not whether the code looks
+like it should produce this pattern. Distinguish THREE outcomes, not two - a broken/illegible run and
+a clean disconfirmation are NOT the same thing, even though neither "shows the pattern":
+- "shown": the output legibly demonstrates the claimed pattern.
+- "disconfirmed": the output is legible, complete, and directly addresses the claim - but the data do
+  NOT support it (e.g. a clear flat/opposite trend where a trend was claimed). This is a genuine,
+  useful finding, not a failure - do not penalize it as if something went wrong.
+- "not_shown": the output does not legibly show anything about the claim either way - blank,
+  unreadable, contradicts itself, measures the wrong thing, or is otherwise uninterpretable.
 
-<pattern_shown>[true or false]</pattern_shown>
-<pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show]</pattern_reasoning>
+<pattern_outcome>[shown, disconfirmed, or not_shown - exactly one of these three words, nothing else]</pattern_outcome>
+<pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show, and why that maps to the outcome chosen above]</pattern_reasoning>
 
 SECOND, judge EACH bullet in the Deliverable Requirements above, in the same order, against the
 ACTUAL output above (console output, the "Files actually produced on disk" listing, and any attached
@@ -264,11 +272,13 @@ order as the Deliverable Requirements, and nothing else inside this block:
 </criteria_result>
 
 <feedback>
-For every criterion above marked met="false", or if pattern_shown is false, explain specifically
-what's missing and what needs to change. Also note, without changing the verdicts above, if the
-script adds outputs/metrics/files beyond what's needed, or if the code is not clean (one-line
-docstrings, no bloat). If everything is met and the pattern is shown: "Realized successfully. Data
-gaps for future analysis: [list 2-3 things that would help, if applicable]"
+For every criterion above marked met="false", or if pattern_outcome is "not_shown", explain
+specifically what's missing/broken and what needs to change. Also note, without changing the verdicts
+above, if the script adds outputs/metrics/files beyond what's needed, or if the code is not clean
+(one-line docstrings, no bloat). If pattern_outcome is "disconfirmed", do NOT describe this as
+something to fix - state plainly what the data actually showed instead of the claim. If everything is
+met and the pattern is shown: "Realized successfully. Data gaps for future analysis: [list 2-3 things
+that would help, if applicable]"
 </feedback>
 """
 
