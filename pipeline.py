@@ -473,13 +473,17 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     still checked and reported, but graded alongside pattern_outcome rather than gating it - the
     same graded-not-gated shape as D5-calibrate's soundness verdict.
 
-    Returns (pattern_outcome, delivered_score, delivered_pass, feedback). pattern_outcome is one of
-    _PATTERN_OUTCOMES, or None if the validator emitted anything outside that vocabulary (a warning
-    is printed - _run_one_design treats None the same as "not_shown", the conservative default,
-    since an unparseable response gives no positive evidence the pattern WAS shown or disconfirmed).
-    delivered_score/delivered_pass are met/total across every <criterion> tag the validator emitted
-    against the deliverable rubric (0.0/False if it emitted none - treated as a full miss, not a
-    free pass).
+    Returns (pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, feedback).
+    pattern_outcome is one of _PATTERN_OUTCOMES, or None if the validator emitted anything outside
+    that vocabulary (a warning is printed - _run_one_design treats None the same as "not_shown",
+    the conservative default, since an unparseable response gives no positive evidence the pattern
+    WAS shown or disconfirmed). delivered_score/delivered_pass are met/total across every
+    <criterion> tag the validator emitted against the deliverable rubric (0.0/False if it emitted
+    none - treated as a full miss, not a free pass). pattern_reasoning is the validator's own
+    justification for the pattern_outcome verdict - distinct from feedback, which covers the
+    deliverable-rubric checklist. Previously requested from the model and silently discarded
+    (DIVERGER_PLAN.md Live Issue 9), which left Run 13's "0 disconfirmed" uninterpretable: with no
+    reasoning surfaced, a pattern_not_shown result and a plausible disconfirmation looked identical.
     """
     artifacts = artifacts or []
     artifacts_listing = _format_artifacts(artifacts)
@@ -508,6 +512,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
         pattern_outcome = None
     verdicts = _CRITERION_PATTERN.findall(validator_response)
     feedback = extract_xml(validator_response, "feedback").strip()
+    pattern_reasoning = extract_xml(validator_response, "pattern_reasoning").strip()
 
     if not verdicts:
         print(
@@ -520,7 +525,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     delivered_score = met / total if total else 0.0
     delivered_pass = total > 0 and met == total
 
-    return pattern_outcome, delivered_score, delivered_pass, feedback
+    return pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, feedback
 
 
 async def _call_worker(task_info: dict, task_index: int, report: str, input_metadata: str,
@@ -848,6 +853,16 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
             lines.append(f"- soundness_reasoning: {angle['soundness_reasoning']}")
         if angle.get("requires"):
             lines.append(f"- requires: {angle['requires']}")
+        # Live Issue 10 (DIVERGER_PLAN.md): this function is called BEFORE realization, so these
+        # keys are never present yet - a no-op today, not dead code. Kept here (rather than added
+        # when Issue 10 relocates the call) so pattern_reasoning surfaces in the dump the moment
+        # that ordering changes, with no second edit required.
+        if angle.get("realization_status"):
+            lines.append(f"- realization_status: {angle['realization_status']}")
+            if angle.get("delivered_score") is not None:
+                lines.append(f"- delivered_score: {angle['delivered_score']:.2f}")
+            if angle.get("pattern_reasoning"):
+                lines.append(f"- pattern_reasoning: {angle['pattern_reasoning']}")
         lines.append("")
 
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -864,8 +879,10 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     ORCHESTRATOR_PROMPT_PREFIX and WORKER_PROMPT_PREFIX both still hit cache across the top-k
     angles, not just within one angle's own compile retries (D6 item 1's caching note).
 
-    Returns {angle_id, realization_status, realization_feedback, delivered_score, artifacts,
-    artifacts_dir, script}. realization_status is one of:
+    Returns {angle_id, realization_status, realization_feedback, pattern_reasoning, delivered_score,
+    artifacts, artifacts_dir, script}. pattern_reasoning is the validator's justification for the
+    pattern_outcome verdict (DIVERGER_PLAN.md Live Issue 9) - "" for the not_realisable early-returns
+    below, since those never reach validate_realization. realization_status is one of:
     - "realised": executed, and the claimed pattern was legibly shown.
     - "realised_null": executed and rendered legibly, but the data do NOT support the claimed
       pattern - a clean disconfirmation, not a failure. Added post-D6-fix (Live Issue 7, Run 12):
@@ -940,8 +957,8 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         return {
             "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
             "realization_feedback": f"Execution failed after {max_compile_attempts} compile attempts: {exec_feedback}",
-            "delivered_score": None, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
-            "script": compiled_script,
+            "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+            "artifacts_dir": artifacts_dir, "script": compiled_script,
         }
 
     if exec_verdict == "SKIPPED":
@@ -952,8 +969,8 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         return {
             "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
             "realization_feedback": f"Execution was not verified, so realization cannot be checked: {exec_feedback}",
-            "delivered_score": None, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
-            "script": compiled_script,
+            "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+            "artifacts_dir": artifacts_dir, "script": compiled_script,
         }
 
     # REALIZATION CHECK: only reached on a verified execution PASS (FAIL returned above, SKIPPED
@@ -962,15 +979,18 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     # checklist is reported alongside but does not gate status - graded, not gated, matching
     # D5-calibrate's soundness verdict. An unparseable pattern_outcome (None) maps to
     # "pattern_not_shown" - the conservative default, since it gives no positive evidence either way.
-    pattern_outcome, delivered_score, delivered_pass, realization_feedback = await validate_realization(
+    pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, realization_feedback = await validate_realization(
         compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
         artifacts=artifacts, artifacts_dir=artifacts_dir)
     status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
-    log(f"Realization: {status} (delivered_score={delivered_score:.2f})")
+    # Live Issue 9: pattern_reasoning is the whole point of the three-way split - without it,
+    # pattern_not_shown and a plausible disconfirmation are indistinguishable from the console alone.
+    log(f"Realization: {status} (delivered_score={delivered_score:.2f}) - {pattern_reasoning}")
     return {
         "angle_id": angle.get("id", "?"), "realization_status": status,
-        "realization_feedback": realization_feedback, "delivered_score": delivered_score,
-        "artifacts": artifacts, "artifacts_dir": artifacts_dir, "script": compiled_script,
+        "realization_feedback": realization_feedback, "pattern_reasoning": pattern_reasoning,
+        "delivered_score": delivered_score, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
+        "script": compiled_script,
     }
 
 
@@ -1279,9 +1299,11 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             print(f"WARNING: realization failed for angle {angle.get('id', '?')}: {result!r}")
             angle["realization_status"] = "not_realisable"
             angle["realization_feedback"] = f"(realization call failed: {result!r})"
+            angle["pattern_reasoning"] = ""
             continue
         angle["realization_status"] = result["realization_status"]
         angle["realization_feedback"] = result["realization_feedback"]
+        angle["pattern_reasoning"] = result["pattern_reasoning"]
         angle["delivered_score"] = result["delivered_score"]
         angle["artifacts"] = result["artifacts"]
         angle["artifacts_dir"] = result["artifacts_dir"]
@@ -1315,6 +1337,8 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             lines.append(f"  realization_status: {angle['realization_status']}")
             if angle.get("delivered_score") is not None:
                 lines.append(f"  delivered_score: {angle['delivered_score']:.2f}")
+            if angle.get("pattern_reasoning"):
+                lines.append(f"  pattern_reasoning: {angle['pattern_reasoning']}")
             if angle.get("realization_feedback"):
                 lines.append(f"  realization_feedback: {angle['realization_feedback']}")
             if angle.get("artifacts"):
