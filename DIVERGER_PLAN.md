@@ -188,7 +188,9 @@ It bit because Run 13 returned **0 disconfirmed**, and that was uninterpretable.
 
 **Not yet run live.** The next run should show *why* each `pattern_not_shown`/`disconfirmed` verdict was chosen, and in particular should finally resolve whether Run 13's two `pattern_not_shown` results were disconfirmations misclassified by an over-strict bar, or genuinely broken output. Update this entry with that run's number once confirmed.
 
-**10. The dump is written before realisation, so it carries no realisation data (Run 13).** `surfaced_angles_<ts>.md` has soundness verdict, reasoning, caveat and insight — but no `realization_status`, `delivered_score`, `pattern_reasoning`, or artifact paths, because `[dump]` fires before `[realize]`. That is fine for its stated purpose (curating anti-targets) but **D7's gallery needs exactly the missing half.** Decide the data flow before building D7: either move the write point after realisation, or emit a second post-realisation artifact and keep the current one as the curation aid.
+**10. FIXED, unconfirmed on a live run — the dump was written before realisation, so it carried no realisation data (Run 13).** `surfaced_angles_<ts>.md` had soundness verdict, reasoning, caveat and insight — but no `realization_status`, `delivered_score`, `pattern_reasoning`, or artifact paths, because `[dump]` fired before `[realize]`. That was fine for its stated purpose (curating anti-targets) but left **D7's gallery missing exactly the half it needs.**
+
+Resolved by moving the single write point (not adding a second artifact — one file stays the source of truth, and nothing ever consulted the dump mid-run anyway, only after `generate_and_optimize` returns) to after the realize step. `_write_angle_dump` now runs against `all_angles` post-realization, so angles that were realized carry `realization_status`/`delivered_score`/`pattern_reasoning`/`artifacts` alongside their D5 judgment; angles outside the realized top-k (skipped as `unsupportable`, or ranked below `--realize-top-k`) simply have no realization fields, same as before. **Not yet run live** — confirm on the next run that the post-realization fields actually show up in the file, then update this entry with the run number.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -261,8 +263,8 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 **D6 is implemented and validated (Run 12).** The full pipeline now runs end-to-end: ideate → judge → dedup → rank → realise top-k. Run 12 produced 1 realised, 3 pattern-not-shown, 0 not realisable, with `delivered_score` spread 0.09–0.94.
 
 **Before D7, three items:**
-1. **Surface `pattern_reasoning`** (Live Issue 9) — **fixed, unconfirmed on a live run.** Threaded through the console log line, both result dicts, the ranked-summary block, and (forward-compatible) the dump. Needs a live run to confirm it actually resolves Run 13's uninterpretable 0-disconfirmed result before this item is closed out.
-2. **Decide the dump's data flow** (Live Issue 10) — the current dump predates realisation and carries none of it. D7 needs both halves.
+1. **Surface `pattern_reasoning`** (Live Issue 9) — **fixed, unconfirmed on a live run.** Threaded through the console log line, both result dicts, the ranked-summary block, and the dump. Needs a live run to confirm it actually resolves Run 13's uninterpretable 0-disconfirmed result before this item is closed out.
+2. **Fix the dump's data flow** (Live Issue 10) — **fixed, unconfirmed on a live run.** `_write_angle_dump` now runs after realisation instead of before it, so the single dump file carries both D5's judgments and D6's realisation results (including `pattern_reasoning` and artifact paths).
 3. **Fix the merge-log direction** (Live Issue 6) — one line; it currently reads backwards. Run 13's arrow happened to point at the survivor, but that is not guaranteed.
 
 Also outstanding, readability-only: **descriptive angle ids** (`angle-1` reappeared in Run 12). Collisions are handled mechanically, but the gallery is where it shows.
