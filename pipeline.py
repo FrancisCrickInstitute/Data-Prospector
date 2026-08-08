@@ -815,7 +815,12 @@ def _judgment_sort_key(angle: dict) -> tuple:
 
 
 def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
-    """D5-calibrate item 5: dump this run's ranked, judged angles to a human-readable file.
+    """D5-calibrate item 5: dump this run's ranked, judged AND realized angles to a human-readable
+    file. Called after D6's realize step (Live Issue 10 fix - previously called before it, so the
+    dump only ever carried D5's soundness/insight judgments and never realization_status/
+    delivered_score/pattern_reasoning, which is exactly what D7's gallery needs). Angles outside
+    the realized top-k (skipped as unsupportable, or ranked below --realize-top-k) simply have no
+    realization_* keys - the per-angle rendering below is guarded accordingly.
 
     {existing_angles} only gives cross-iteration memory WITHIN a run (DIVERGER_PLAN.md "Live
     issues" #3) - the report's "Already Explored" section is the only memory that persists across
@@ -853,16 +858,14 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
             lines.append(f"- soundness_reasoning: {angle['soundness_reasoning']}")
         if angle.get("requires"):
             lines.append(f"- requires: {angle['requires']}")
-        # Live Issue 10 (DIVERGER_PLAN.md): this function is called BEFORE realization, so these
-        # keys are never present yet - a no-op today, not dead code. Kept here (rather than added
-        # when Issue 10 relocates the call) so pattern_reasoning surfaces in the dump the moment
-        # that ordering changes, with no second edit required.
         if angle.get("realization_status"):
             lines.append(f"- realization_status: {angle['realization_status']}")
             if angle.get("delivered_score") is not None:
                 lines.append(f"- delivered_score: {angle['delivered_score']:.2f}")
             if angle.get("pattern_reasoning"):
                 lines.append(f"- pattern_reasoning: {angle['pattern_reasoning']}")
+            if angle.get("artifacts"):
+                lines.append(f"- artifacts: {_format_artifacts(angle['artifacts'])}")
         lines.append("")
 
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -1264,13 +1267,6 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         f"(judge call failed)\n"
     )
 
-    # D5-calibrate item 5: dump the ranked, judged angles for cross-run human curation - see
-    # _write_angle_dump's docstring for why this is a file, not an automatic retirement.
-    dump_path = _write_angle_dump(all_angles, output_dir)
-    if dump_path:
-        print(f"[dump] Surfaced angles written to {dump_path} - curate into the report's "
-              f"Already Explored section as needed.\n")
-
     # D6: realize only the top-k ranked, non-unsupportable angles - selective execution, not every
     # candidate (item 1). all_angles is already sorted best-first by _judgment_sort_key;
     # unsupportable angles are skipped entirely rather than paying a Docker run to visualize a
@@ -1316,6 +1312,17 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         f"[realize] {realised_count} realised, {realised_null_count} realised-null (disconfirmed), "
         f"{pattern_not_shown_count} pattern not shown, {not_realisable_count} not realisable\n"
     )
+
+    # D5-calibrate item 5 / Live Issue 10 fix: dump the ranked, judged AND realized angles for
+    # cross-run human curation - see _write_angle_dump's docstring for why this is a file, not an
+    # automatic retirement. Written here (after realization, not before it) so the dump carries
+    # realization_status/delivered_score/pattern_reasoning for the angles that were realized, not
+    # just the D5 judgments - D7's gallery needs both halves, and there is no cost to waiting: the
+    # human never consults this file mid-run, only after generate_and_optimize returns.
+    dump_path = _write_angle_dump(all_angles, output_dir)
+    if dump_path:
+        print(f"[dump] Surfaced angles (judged + realized) written to {dump_path} - curate into "
+              f"the report's Already Explored section as needed.\n")
 
     lines = [f"{len(all_angles)} candidate analysis angle(s) generated, ranked best-first:\n"]
     for angle in all_angles:
