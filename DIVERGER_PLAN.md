@@ -159,7 +159,7 @@ No further calibration needed. The `analysis_script_<ts>.py` misnaming (a D7 rel
 
 **Ordering was the root cause, not the heuristic.** D5 now judges the whole archive before D4 dedups it, and `_pick_representative` breaks on `_judgment_sort_key` with the old text-length heuristic demoted to a stable secondary tiebreak. Judge calls share one cached prefix, so scoring all N rather than the deduped subset is close to free.
 
-> **The merge log line can now read backwards.** `merge_stats` records the best-matching member *at merge time*, but the survivor is chosen afterwards by score — Run 11 printed `merged [self-reported-role-trend] -> [cross-role-expertise-mapping]` while `self-reported-role-trend` was the one that survived. Add the survivor to the line (`… kept [X]`) so it is self-consistent when diagnosing a bad merge.
+> **FIXED, unconfirmed on a live run — the merge log line could read backwards.** `merge_stats` records the best-matching member *at merge time*, but the survivor is chosen afterwards by score — Run 11 printed `merged [self-reported-role-trend] -> [cross-role-expertise-mapping]` while `self-reported-role-trend` was the one that survived. `_dedup_angles` now resolves each merge's `survivor_id` once `_pick_representative` has run (the `->` arrow still shows the merge-time best match, unchanged, since that's a legitimate separate fact), and the console line prints `... kept [X]` alongside it. Needs a live run to confirm the printed survivor actually matches the angle that carries through to realisation.
 
 The merge itself is borderline: both angles use the same two feedback columns, but one is a four-year proportion trend and the other a two-year co-occurrence structure. Defensible on variables, expensive on quality.
 
@@ -265,7 +265,9 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 **Before D7, three items:**
 1. **Surface `pattern_reasoning`** (Live Issue 9) — **fixed, unconfirmed on a live run.** Threaded through the console log line, both result dicts, the ranked-summary block, and the dump. Needs a live run to confirm it actually resolves Run 13's uninterpretable 0-disconfirmed result before this item is closed out.
 2. **Fix the dump's data flow** (Live Issue 10) — **fixed, unconfirmed on a live run.** `_write_angle_dump` now runs after realisation instead of before it, so the single dump file carries both D5's judgments and D6's realisation results (including `pattern_reasoning` and artifact paths).
-3. **Fix the merge-log direction** (Live Issue 6) — one line; it currently reads backwards. Run 13's arrow happened to point at the survivor, but that is not guaranteed.
+3. **Fix the merge-log direction** (Live Issue 6) — **fixed, unconfirmed on a live run.** `_dedup_angles` now attaches each merge's actual survivor (`survivor_id`), and the console line prints `kept [X]` alongside the merge-time `->` arrow so the two can't disagree.
+
+**All three "before D7" items are now implemented; none has been confirmed on a live run yet.** Run the pipeline once end-to-end and check: (a) `pattern_not_shown`/`disconfirmed` verdicts print a reason, (b) `surfaced_angles_<ts>.md` has realisation fields on the realised angles, (c) any merge log line's `kept [X]` is consistent with which angle actually got realised. Update each Live Issue entry above with the confirming run number once done.
 
 Also outstanding, readability-only: **descriptive angle ids** (`angle-1` reappeared in Run 12). Collisions are handled mechanically, but the gallery is where it shows.
 
