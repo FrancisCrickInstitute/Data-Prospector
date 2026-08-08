@@ -678,10 +678,16 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     duplication (stance/question differentiation too weak, see D3a) and across-iteration
     duplication ({existing_angles} pressure too weak, see D3) can be diagnosed separately.
     "merges" records each individual merge event (record id, the id of the most-similar
-    existing record it matched, the similarity score, and the type) so which specific pair
-    merged - not just how many - can be read off the run log (see DIVERGER_PLAN.md §3/§4).
-    Logged at merge time against the best-matching member, not the cluster's eventual
-    representative, since _pick_representative runs after clustering is complete.
+    existing record it matched, the similarity score, the type, and - Live Issue 6 fix - the id of
+    the cluster's eventual survivor) so which specific pair merged, AND which one was kept, can be
+    read off the run log (see DIVERGER_PLAN.md §3/§4) without the two disagreeing.
+
+    best_match is still the best-matching member AT MERGE TIME, not necessarily the survivor -
+    _pick_representative runs after clustering completes and can pick a different cluster member on
+    soundness/insight (D6-fix item 2). Run 11 printed "merged [self-reported-role-trend] ->
+    [cross-role-expertise-mapping]" while self-reported-role-trend was the one actually kept,
+    reading backwards. survivor_id is resolved from the finished clusters below and attached to
+    every merge in that cluster, so the log line can report both without contradicting itself.
     """
     clusters: list[list[dict]] = []
     within_iteration = 0
@@ -708,12 +714,21 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
                 "matched_id": best_match["angle"].get("id", "?"),
                 "similarity": best_sim,
                 "type": merge_type,
+                "cluster_idx": best_idx,
             })
             clusters[best_idx].append(record)
         else:
             clusters.append([record])
 
     kept = [_pick_representative(cluster) for cluster in clusters]
+
+    # Live Issue 6 fix: resolve each merge's cluster to the representative _pick_representative
+    # actually kept, now that clustering (and therefore the cluster's final membership) is
+    # settled. cluster_idx was only ever needed to make this lookup possible - drop it from the
+    # public dict so callers see the same shape as before plus survivor_id.
+    for merge in merges:
+        merge["survivor_id"] = kept[merge.pop("cluster_idx")]["angle"].get("id", "?")
+
     return kept, {
         "within_iteration": within_iteration,
         "across_iteration": across_iteration,
@@ -1245,9 +1260,13 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
     )
     for merge in merge_stats["merges"]:
+        # Live Issue 6 fix: "->" still points at the best match AT MERGE TIME, which is not
+        # necessarily who survived - "kept" is the actual _pick_representative winner, so the line
+        # is self-consistent even when they differ (D6-fix item 2 means dedup runs after judging,
+        # so the winner is picked on soundness/insight, not on who matched whom first).
         print(
             f"    merged [{merge['record_id']}] -> [{merge['matched_id']}] "
-            f"(similarity={merge['similarity']:.3f}, {merge['type']})"
+            f"(similarity={merge['similarity']:.3f}, {merge['type']}) kept [{merge['survivor_id']}]"
         )
     print()
     all_angles = [rec["angle"] for rec in kept_records]
