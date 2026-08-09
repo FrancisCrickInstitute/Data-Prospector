@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 10)
+# Converger → Diverger conversion plan (rev. 11)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -113,8 +113,10 @@ The evidence base for every threshold in this document.
 | 11 | 0.14 / 0.12 | working | **First end-to-end D6 run.** Dedup 8→7 (merge at 0.247). 0 solid / 5 caveat / 2 unsupportable. Realisation: 0 realised, 3 pattern-not-shown, 1 not realisable — **invalidated by the criteria-split regression below** |
 | 12 | 0.11 / 0.10 | working | **D6-fix validated.** Criteria split confirmed distinct; `delivered_score` spread 0.09–0.94 (was clustered 0.29–0.33). Dedup 8→8. 0 solid / 5 caveat / 3 unsupportable. Realisation: **1 realised**, 3 pattern-not-shown, 0 not realisable |
 | 13 | 0.12 / 0.10 | working | Three-way pattern outcome live. Dedup 8→7 (0.313, clean true positive). 0 solid / 6 caveat / 1 unsupportable. Realisation: 1 realised (`delivered_score=1.00`), **0 disconfirmed**, 2 pattern-not-shown, 1 not realisable |
+| 14 | 0.09 / 0.14 | working | `pattern_reasoning` + post-realisation dump confirmed. Dedup 8→7 (0.326). Realisation: **0 realised** — all three failures were the *same* data-loading bug (Live Issue 11), diagnosable only because of `pattern_reasoning` |
+| 15 | 0.13 / 0.14 | working | **Fail-fast fix validated. First `realised_null`.** Dedup 8→7 (0.240, `kept` line correct). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised_null** (`delivered_score=1.00`, real PNG), 0 pattern-not-shown, 3 not realisable. Insight floor a new low: 0.10 |
 
-**Divergence is solved.** Both axes are healthy and have been for ten consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for twelve consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
@@ -174,7 +176,11 @@ Run 12 shows both in the same bucket: `industry-speakers-vs-attendees` at `deliv
 
 The validator already sees the PNGs; it simply is not being asked to make this distinction. `realised_null` must rank **alongside** `realised` in the gallery, not below it.
 
-Shipped as a three-way `<pattern_outcome>` (`shown` / `disconfirmed` / `not_shown`), same strict-vocabulary shape as `_SOUNDNESS_VERDICTS`, with an unparseable response mapping conservatively to `pattern_not_shown`. The prompt requires a disconfirmation to be *legible, complete, and directly addressing the claim*, which is what stops it becoming a soft landing for half-broken output, and instructs the feedback text not to frame a disconfirmation as something to fix. **Calibration is not yet confirmed** — Run 13 returned 0 disconfirmed, which cannot currently be distinguished from an over-strict bar (see Live Issue 9).
+Shipped as a three-way `<pattern_outcome>` (`shown` / `disconfirmed` / `not_shown`), same strict-vocabulary shape as `_SOUNDNESS_VERDICTS`, with an unparseable response mapping conservatively to `pattern_not_shown`. The prompt requires a disconfirmation to be *legible, complete, and directly addressing the claim*, which is what stops it becoming a soft landing for half-broken output, and instructs the feedback text not to frame a disconfirmation as something to fix. **Calibration CONFIRMED (Run 15).** Runs 13 and 14 returned 0 disconfirmed, which looked like a possibly over-strict bar — it was not. Run 14's zero was the data-loading bug (Issue 11); once that was fixed, Run 15 produced the project's first `realised_null`:
+
+> `stakeholder-hybridity-depth` — hybridity **declining** 22.6% (2024) → 16.2% (2025), with individual roles dropping to 0% (Facility staff 23%→0%, Research scientist 28.6%→0%) — *"directly contradicting the claimed 'increasingly' or 'more pronounced in recent years' trend"*, and the judge bounded it unprompted: *"only two of the four symposium years have usable data, but within that legible window the trend runs opposite to the claim."*
+
+Four things validated at once: the three-way split distinguishes disconfirmation from failure; `pattern_reasoning` makes it auditable; `delivered_score=1.00` on a *disconfirming* script proves the rubric grades **delivery, not agreement**; and the artifact listing confirmed the PNG genuinely exists. This is the diverger doing the job it was built for — a plausible, appealing hypothesis tested and refuted.
 
 **8. `delivered_score` grades angle-scoped scripts against a report-level rubric (Run 12).** The extracted rubric demands loading *all four* data types across all years and emitting a data-gaps list. A readability angle needs Abstracts only and has no reason to produce a gaps list, so narrow angles lose criteria they were never meant to satisfy — `lda-topic-evolution` scored **0.09** while executing cleanly, which is a scope mismatch, not a quality signal.
 
@@ -192,7 +198,7 @@ It bit because Run 13 returned **0 disconfirmed**, and that was uninterpretable.
 
 Resolved by moving the single write point (not adding a second artifact — one file stays the source of truth, and nothing ever consulted the dump mid-run anyway, only after `generate_and_optimize` returns) to after the realize step. `_write_angle_dump` now runs against `all_angles` post-realization, so angles that were realized carry `realization_status`/`delivered_score`/`pattern_reasoning`/`artifacts` alongside their D5 judgment. Confirmed in Run 14 — all four realized angles in `surfaced_angles_20260809_090603.md` carry `realization_status`/`delivered_score`, and the three `pattern_not_shown` ones carry `pattern_reasoning` too (`angle-bertopic-trends`, `not_realisable`, correctly has no `pattern_reasoning` since it never executed).
 
-**11. FIXED, unconfirmed on a live run — generated scripts silently fail to find real input data, and a graceful no-op exit reads as PASS (Run 14).** All three angles realised in Run 14 failed for the same underlying reason, only visible because of Issue 9's fix:
+**11. RESOLVED (Run 15) — generated scripts silently failed to find real input data, and a graceful no-op exit read as PASS (Run 14).** All three angles realised in Run 14 failed for the same underlying reason, only visible because of Issue 9's fix:
 - `angle-stakeholder-blurring`: glob `*Survey*.csv` matched nothing (Feedback filenames are `CBIAS <year>Attendee Survey(...).csv`, inconsistently spaced, inside `Feedback/`)
 - `registration-lead-time-shift`: found the Attendees CSVs but couldn't match the `Order date`/`Event start date` columns despite them existing verbatim
 - `lexical-diversity-trend`: "No abstract data found" — `Abstracts/` nests one directory per year (`Abstracts/<year>_Abstracts/*.txt`), a flat glob on `Abstracts/*.txt` finds nothing
@@ -204,7 +210,17 @@ Three fixes landed together:
 2. `cbias_config.py`'s `DOMAIN_NOTES` now spells out the exact three sub-directory paths and glob shape up front, including the Feedback filename's inconsistent spacing and the Abstracts per-year nesting, instead of only describing them prose-style further down.
 3. `validate_execution` gained a mechanical (still not LLM) backstop: exit 0 with zero artifacts and under `_MIN_SUCCESS_OUTPUT_CHARS` (200) of output is now treated as FAIL and fed back into the same compile-retry loop a crash would get, rather than silently passing through as PASS.
 
-**Not yet run live.** The next run should show materially fewer angles failing on file-discovery/column-matching, and any that still do should now retry through the compiler (visible as `Compile attempt 2/3` etc. with the backstop's feedback) rather than reaching the realization judge as a silent no-op. Update this entry with that run's number once confirmed.
+**Confirmed in Run 15.** Zero silent no-op passes: `pattern_not_shown` went to 0, and `stakeholder-hybridity-depth` loaded real data and produced a real PNG. Failures now surface as FAILs that retry through the compiler, exactly as intended. **But the fix has a cost — see Live Issue 12.**
+
+**12. Fail-fast converts silent write-offs into 3× compile spend, and the retry loop is unaudited (Run 15).** Every Run 15 failure was a compile-loop exhaustion: `speaker-industry-alignment`, `survey-blind-spots` and `semantic-drift-similarity` each burned all three attempts before `not_realisable`. That is partly the fix working — scripts that used to exit 0 with no data now correctly FAIL — but it triples the compile budget spent to reach the same conclusion, and it hit the run's **highest-insight angle (`survey-blind-spots`, 0.78)**.
+
+`pattern_reasoning` cannot help here: these angles never reach `validate_realization`. **The diagnostic gap has moved one stage upstream** — is the retry loop converging on a different error each attempt, or repeating the same one? The error feedback *is* threaded into `COMPILER_PROMPT`, so it should be repairing.
+
+Two things to do, in order:
+1. **Log the per-attempt FAIL feedback**, the same way `pattern_reasoning` was surfaced for the realisation judge. Same fix, one stage earlier. Without it, three identical failures and three different failures look the same.
+2. **Consider a fast-path abort** when the same error recurs verbatim across attempts — retrying a structurally impossible angle costs 3× for no gain.
+
+Likely split for Run 15's three, worth confirming from the logs rather than assuming: `semantic-drift-similarity` is almost certainly the `sentence-transformers` model-weights problem (§10 — requested in five consecutive runs now), while `speaker-industry-alignment` is likely the ragged Programme CSVs (see Data notes — headerless, column meanings drift between years). Neither is a code-quality failure and both have known remedies.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -279,9 +295,11 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 **Before D7, three items:**
 1. **Surface `pattern_reasoning`** (Live Issue 9) — **RESOLVED (Run 14).** Threaded through the console log line, both result dicts, the ranked-summary block, and the dump; Run 14 showed a distinct, legible reason on every `pattern_not_shown` angle.
 2. **Fix the dump's data flow** (Live Issue 10) — **RESOLVED (Run 14).** `_write_angle_dump` now runs after realisation instead of before it; Run 14's dump carried `realization_status`/`delivered_score`/`pattern_reasoning` on every realized angle.
-3. **Fix the merge-log direction** (Live Issue 6) — **fixed, unconfirmed on a live run.** `_dedup_angles` now attaches each merge's actual survivor (`survivor_id`), and the console line prints `kept [X]` alongside the merge-time `->` arrow so the two can't disagree. Run 14 produced no merges (7 distinct angles), so this still needs a run where dedup actually fires before it can be marked resolved.
+3. **Fix the merge-log direction** (Live Issue 6) — **RESOLVED (Runs 14–15).** `_dedup_angles` attaches each merge's actual survivor (`survivor_id`) and the console prints `kept [X]` alongside the merge-time `->` arrow. Both runs fired a merge and the line read self-consistently — Run 15: `merged [self-identified-role-shift] -> [stakeholder-hybridity-depth] (0.240, within_iteration) kept [stakeholder-hybridity-depth]`, with the higher-scoring member correctly surviving.
 
-**Issues 9 and 10 are confirmed (Run 14); Issue 6 is still awaiting a run with a merge event.** Run 14 also surfaced a new item — **Live Issue 11**: all three angles it realised failed on file-discovery/column-matching bugs in the generated script rather than on soundness, and a graceful no-op exit was reading as a Docker PASS. Fixed (worker/compiler fail-fast + robust-matching rules, strengthened `DOMAIN_NOTES`, a mechanical zero-artifact/near-empty-output backstop in `validate_execution`) but **not yet confirmed live** — see Live Issue 11 above. Not a D7 blocker (the gallery already has to handle `not_realisable`/`pattern_not_shown` angles), but the next run should show materially more angles reaching `realised`/`realised_null` if the fix is working.
+**All D7 prerequisites are now resolved and confirmed (Runs 14–15).** Issues 9, 10, 6 and 11 are closed on live runs, and Issue 7's `disconfirmed` calibration is confirmed. **D7 now has real content to display**: Run 15 produced a top-tier `realised_null` with a plot and a genuine finding, plus three `not_realisable` entries whose `requires` fields are the provisioning signal (§10).
+
+One new item, **not a D7 blocker**: Live Issue 12 (fail-fast costs 3× compile budget on impossible angles, and the retry loop is unaudited). Worth doing before or alongside D7 since it is the same "surface the reasoning" fix that made Issues 9 and 11 tractable, but the gallery does not depend on it.
 
 Also outstanding, readability-only: **descriptive angle ids** (`angle-1` reappeared in Run 12). Collisions are handled mechanically, but the gallery is where it shows.
 
@@ -346,6 +364,8 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 **The dataset has a sophistication ceiling, and the judges have found it.** Run 12's three `unsupportable` angles were the *most* methodologically ambitious in the run — MCA + k-modes on ~90 respondents, factor analysis over 15–20 items at n=37, BERTopic on perhaps 30 comments — and scored 0.72 / 0.68 / 0.40 on insight. The soundness reasoning cites the 5–10-respondents-per-item rule and computes the effective corpus explicitly.
 
 This is a property of the data, not a defect: **on n=37–60 with four time points, methodological sophistication and defensibility are in direct tension**, and the achievable frontier is *simple method, modest claim* — where Run 12's one realised angle sits. Expect ~3 of 8 angles per run to be spent on ambitious ideas the dataset cannot support. That is a meaningful fraction of the budget and worth surfacing in the gallery (D7 tier 4) rather than discarding, since "what this dataset cannot support" is itself useful to the organising committee.
+
+**The anti-target keeps sinking the same family further.** `ticket-type-composition-trend` scored **0.10** in Run 15 — a new floor, below the 0.20 that the same family scored in Runs 9 and 11. Six runs of progressively harder marking on per-year category counts, without any prompt change. The insight judge is not just discriminating; it is discriminating *consistently* against a family the anti-target names only obliquely.
 
 **The anti-target curation loop is now due its first real use.** `reg-lead-time-by-ticket-type` has appeared in five separate runs across different stances and question slots, and Run 13 *realised* it at `delivered_score=1.00`. That is the loop working as designed: a genuinely good angle, now done. Retire it into the report's Already Explored section, or it will keep winning a slot. This is the intended human step — automatic retirement would suppress angles that merely resemble a prior one.
 
