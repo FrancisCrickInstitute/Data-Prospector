@@ -158,12 +158,19 @@ Output: {output}
 
 CRITICAL RULES:
 1. Implement ONLY the function '{function}', no helpers
-2. Fail fast: if required data is missing, raise an error
-3. No try/except unless absolutely necessary
-4. One-line docstrings only
-5. Clean, simple, direct code
-6. Use only listed libraries + standard library
-7. If implementing main(): make its FIRST line `sys.stdout.reconfigure(encoding='utf-8')` (and import sys) so UTF-8 output works on all platforms
+2. Fail fast: if required data is missing, RAISE an error (e.g. FileNotFoundError/ValueError with the
+   path/pattern you searched) - never print a "not found" message and return/exit normally. A clean
+   exit on missing data is indistinguishable from a real success and defeats the execution check.
+3. No try/except unless absolutely necessary - this includes NOT catching a missing-file/missing-column
+   condition just to print a friendlier message; let rule 2's exception propagate
+4. If locating input files: match paths/filenames case-insensitively and by substring against what the
+   Domain notes above describe (they document real paths/columns) rather than requiring an exact
+   case/format match, and do not assume a single directory level - use a recursive search
+   (`Path.rglob`/`glob(..., recursive=True)`/`os.walk`) if the exact nesting isn't stated explicitly
+5. One-line docstrings only
+6. Clean, simple, direct code
+7. Use only listed libraries + standard library
+8. If implementing main(): make its FIRST line `sys.stdout.reconfigure(encoding='utf-8')` (and import sys) so UTF-8 output works on all platforms
 
 Wrap your function in <response> tags like this:
 
@@ -193,7 +200,9 @@ COMPILER_PROMPT_SUFFIX = """{error_feedback}
 RULES:
 1. Write complete Python code (imports → functions → main() call)
 2. One-line docstrings only
-3. Minimal, clean code (no defensive try/except unless critical)
+3. Minimal, clean code (no defensive try/except unless critical) - in particular, do NOT wrap a
+   missing-file/missing-column condition in try/except to print a message and exit cleanly; a script
+   that finds no usable data must raise, not exit 0, so the execution check can actually catch it
 4. Remove duplicate/unused functions
 
 ENCODING (MANDATORY - always include these, non-negotiable):

@@ -46,9 +46,24 @@ directory (or INPUT_FOLDER env var). This is anonymised data (see the module doc
 identifying columns/fields present in the original raw data have been removed entirely; don't assume
 fields like attendee name, email, or precise location exist.
 
+EXACT PATHS - build globs against these, not an assumed/simplified layout. Getting this wrong means
+zero files load and the script has nothing to analyse:
+- Attendees: {INPUT_FOLDER}/Attendees/CBIAS_<year>_Attendees.csv
+- Feedback:  {INPUT_FOLDER}/Feedback/CBIAS <year>Attendee Survey(<n>-<n>).csv  (note: no path
+  separator, and sometimes no space, between "CBIAS" and the year - e.g. both "CBIAS 2022Attendee
+  Survey(1-60).csv" and "CBIAS 2025 Attendee Survey(1-37).csv" occur; match on the substring
+  "Attendee Survey" within the Feedback/ directory rather than a fixed literal filename)
+- Abstracts:  {INPUT_FOLDER}/Abstracts/<year>_Abstracts/<n>_Abstract.txt  (one directory level PER
+  YEAR under Abstracts/ - a flat glob directly on Abstracts/*.txt will find nothing; glob
+  Abstracts/*_Abstracts/*.txt or walk one level down first)
+All three sub-directories (Attendees/, Feedback/, Abstracts/) are direct children of the data
+directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt files directly.
+
 - Attendees/CBIAS_<year>_Attendees.csv - one row per registration. Columns: Order date, Purchaser
   country, Event name/ID/start date/start time/timezone/location, Ticket quantity/tier/type, Currency,
-  Ticket price, Guest. All four files are plain UTF-8.
+  Ticket price, Guest. All four files are plain UTF-8. Column headers are exactly as listed (e.g.
+  "Order date" and "Event start date", lowercase "date") - read them verbatim from df.columns rather
+  than guessing a snake_case or Title Case variant.
   "Ticket type" holds the registration category: Academic, Academic - early bird, Industry,
   Industry - early bird, Online Only, Sponsors. Treat "X" and "X - early bird" as the same category X
   (e.g. match on a substring/prefix) when computing category distributions; "Industry" plus

@@ -390,9 +390,21 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
     return compiled_script
 
 
+# Live-issue fix (input-routing follow-up): a script that finds no usable data and prints a
+# message before returning normally exits 0, which an exit-code-only check cannot tell apart from
+# a real success. This threshold is a heuristic, not a semantic judgment (still no LLM involved) -
+# it exists to catch exactly that shape (nothing produced, almost nothing printed) and route it
+# back through the same compile-retry loop a real FAIL would get, instead of only being caught much
+# later - and more expensively - by the realization judge after the design's Docker budget is spent.
+_MIN_SUCCESS_OUTPUT_CHARS = 200
+
+
 def validate_execution(compiled_script: str, config: PipelineConfig, data_dir: str = None,
                        artifacts_dir: str = None) -> tuple[str, str, str, list[dict]]:
-    """Check if script executes. Grounded directly in the Docker exit code - no LLM judgment.
+    """Check if script executes. Grounded directly in the Docker exit code - no LLM judgment, though
+    a PASS with zero artifacts and near-empty output is treated as FAIL (see _MIN_SUCCESS_OUTPUT_CHARS)
+    since that shape almost always means the script found no usable data and exited cleanly instead
+    of raising, rather than a genuine success with nothing to report.
 
     Returns (PASS/FAIL/SKIPPED, feedback, execution_output, artifacts). SKIPPED means execution
     was never actually attempted (no data_dir, or Docker unavailable): this must never be reported
@@ -407,6 +419,16 @@ def validate_execution(compiled_script: str, config: PipelineConfig, data_dir: s
     if exec_success is None:
         return "SKIPPED", f"Docker unavailable - execution was not verified: {exec_output}", exec_output, artifacts
     if exec_success:
+        if not artifacts and len(exec_output.strip()) < _MIN_SUCCESS_OUTPUT_CHARS:
+            return "FAIL", (
+                "Script exited successfully but produced no artifacts and almost no output "
+                f"({len(exec_output.strip())} chars):\n{exec_output.strip()}\n\n"
+                "This looks like the script found no usable input data and exited cleanly instead "
+                "of raising - check file-discovery globs and column-name matching against the exact "
+                "paths/names in the domain notes (case-insensitive/substring match, correct "
+                "sub-directory nesting), and raise an error on missing data rather than printing a "
+                "message and returning."
+            ), exec_output, artifacts
         return "PASS", "Script executed successfully.", exec_output, artifacts
     # Keep the TAIL: Python puts the actual exception last, after the traceback frames
     return "FAIL", f"Script execution failed:\n{exec_output[-2000:]}", exec_output, artifacts
