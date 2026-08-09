@@ -216,11 +216,11 @@ Three fixes landed together:
 
 `pattern_reasoning` cannot help here: these angles never reach `validate_realization`. **The diagnostic gap has moved one stage upstream** — is the retry loop converging on a different error each attempt, or repeating the same one? The error feedback *is* threaded into `COMPILER_PROMPT`, so it should be repairing.
 
-Two things to do, in order:
-1. **Log the per-attempt FAIL feedback**, the same way `pattern_reasoning` was surfaced for the realisation judge. Same fix, one stage earlier. Without it, three identical failures and three different failures look the same.
-2. **Consider a fast-path abort** when the same error recurs verbatim across attempts — retrying a structurally impossible angle costs 3× for no gain.
+**FIXED, unconfirmed on a live run.** Both items landed in `_run_one_design`'s compile/execute loop:
+1. **Per-attempt FAIL feedback is now logged** (`  Attempt N FAIL reason: ...`) as it happens, not just kept silently in `compile_error` for the next retry. The final `not_realisable` result's `realization_feedback` now joins every attempt's reason (`attempt_feedbacks`), not just the last one, so a human can tell at a glance whether the compiler was converging on a different bug each time or stuck repeating the same one.
+2. **Fast-path abort on a verbatim repeat.** If attempt N+1's `exec_feedback` (stripped) is identical to attempt N's, the loop breaks immediately instead of spending the remaining attempts — `aborted_on_repeat` is threaded into both the log line and the returned feedback so it's visible this was an early exit, not attempt exhaustion.
 
-Likely split for Run 15's three, worth confirming from the logs rather than assuming: `semantic-drift-similarity` is almost certainly the `sentence-transformers` model-weights problem (§10 — requested in five consecutive runs now), while `speaker-industry-alignment` is likely the ragged Programme CSVs (see Data notes — headerless, column meanings drift between years). Neither is a code-quality failure and both have known remedies.
+**Not yet run live.** The next run should show, for any `not_realisable` angle, either a repeated-error abort (saving 1-2 wasted compile attempts) or a genuinely different error per attempt (proof the compiler is trying different repairs, just not succeeding) — confirm against Run 15's `speaker-industry-alignment`/`semantic-drift-similarity`/`survey-blind-spots` if they recur. Likely split, worth confirming from the logs rather than assuming: `semantic-drift-similarity` is almost certainly the `sentence-transformers` model-weights problem (§10 — requested in five consecutive runs now), while `speaker-industry-alignment` is likely the ragged Programme CSVs (see Data notes — headerless, column meanings drift between years). Neither is a code-quality failure and both have known remedies.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -299,7 +299,7 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 
 **All D7 prerequisites are now resolved and confirmed (Runs 14–15).** Issues 9, 10, 6 and 11 are closed on live runs, and Issue 7's `disconfirmed` calibration is confirmed. **D7 now has real content to display**: Run 15 produced a top-tier `realised_null` with a plot and a genuine finding, plus three `not_realisable` entries whose `requires` fields are the provisioning signal (§10).
 
-One new item, **not a D7 blocker**: Live Issue 12 (fail-fast costs 3× compile budget on impossible angles, and the retry loop is unaudited). Worth doing before or alongside D7 since it is the same "surface the reasoning" fix that made Issues 9 and 11 tractable, but the gallery does not depend on it.
+One new item, **not a D7 blocker**: Live Issue 12 (fail-fast costs 3× compile budget on impossible angles, and the retry loop was unaudited) — **fixed, unconfirmed on a live run.** Per-attempt FAIL feedback is now logged and returned, and the loop aborts early on a verbatim-repeated error. Same "surface the reasoning" fix that made Issues 9 and 11 tractable, one stage upstream; the gallery does not depend on it.
 
 Also outstanding, readability-only: **descriptive angle ids** (`angle-1` reappeared in Run 12). Collisions are handled mechanically, but the gallery is where it shows.
 
