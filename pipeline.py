@@ -972,12 +972,19 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     )
     orchestrator_results = {"analysis": analysis, "worker_results": worker_results}
 
-    # COMPILER + (grounded) EXECUTION: unchanged from before D6 (item 1) - retries up to
-    # max_compile_attempts, feeding the execution error back into the next compile attempt.
+    # COMPILER + (grounded) EXECUTION: retries up to max_compile_attempts, feeding the execution
+    # error back into the next compile attempt. Live Issue 12 fix: log each attempt's FAIL reason
+    # (same audit-gap pattern as pattern_reasoning - previously only the LAST attempt's feedback
+    # was ever visible, in the eventual not_realisable message) and abort early if the same error
+    # recurs verbatim between consecutive attempts, since that means the compiler isn't repairing
+    # anything and the remaining attempts would just spend Docker/LLM budget for no gain.
     compiled_script, exec_output, artifacts = None, "", []
     execution_passed = False
     exec_verdict = "FAIL"
     compile_error = ""
+    attempt_feedbacks = []
+    previous_feedback = None
+    aborted_on_repeat = False
     for attempt in range(max_compile_attempts):
         log(f"Compile attempt {attempt + 1}/{max_compile_attempts}...")
         compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error)
@@ -989,14 +996,25 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         if exec_verdict in ("PASS", "SKIPPED"):
             execution_passed = True
             break
+        log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[:500]}")
+        attempt_feedbacks.append(exec_feedback)
+        if previous_feedback is not None and exec_feedback.strip() == previous_feedback.strip():
+            log("  Same error recurred verbatim - aborting remaining compile attempts (no repair progress).")
+            aborted_on_repeat = True
+            break
+        previous_feedback = exec_feedback
         if attempt < max_compile_attempts - 1:
             compile_error = exec_feedback
 
     if not execution_passed:
-        log(f"[not_realisable] Did not execute after {max_compile_attempts} attempts.")
+        attempt_summary = "\n\n".join(
+            f"Attempt {i + 1}: {fb[:1000]}" for i, fb in enumerate(attempt_feedbacks)
+        )
+        abort_note = " (aborted early - the same error recurred verbatim)" if aborted_on_repeat else ""
+        log(f"[not_realisable] Did not execute after {len(attempt_feedbacks)} attempt(s){abort_note}.")
         return {
             "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
-            "realization_feedback": f"Execution failed after {max_compile_attempts} compile attempts: {exec_feedback}",
+            "realization_feedback": f"Execution failed after {len(attempt_feedbacks)} compile attempt(s){abort_note}:\n\n{attempt_summary}",
             "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
             "artifacts_dir": artifacts_dir, "script": compiled_script,
         }
