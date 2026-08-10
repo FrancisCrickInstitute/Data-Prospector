@@ -975,15 +975,18 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     # COMPILER + (grounded) EXECUTION: retries up to max_compile_attempts, feeding the execution
     # error back into the next compile attempt. Live Issue 12 fix: log each attempt's FAIL reason
     # (same audit-gap pattern as pattern_reasoning - previously only the LAST attempt's feedback
-    # was ever visible, in the eventual not_realisable message) and abort early if the same error
-    # recurs verbatim between consecutive attempts, since that means the compiler isn't repairing
-    # anything and the remaining attempts would just spend Docker/LLM budget for no gain.
+    # was ever visible, in the eventual not_realisable message) and abort early if an error recurs
+    # verbatim, since that means the compiler isn't repairing anything and the remaining attempts
+    # would just spend Docker/LLM budget for no gain. Live Issue 13 fix: track every FAIL string
+    # seen so far, not just the immediately preceding one - a consecutive-only comparison misses
+    # an oscillating loop (attempt 1 error A, attempt 2 error B, attempt 3 error A again), which
+    # is still going in circles even though no two *adjacent* attempts match.
     compiled_script, exec_output, artifacts = None, "", []
     execution_passed = False
     exec_verdict = "FAIL"
     compile_error = ""
     attempt_feedbacks = []
-    previous_feedback = None
+    seen_feedbacks = set()
     aborted_on_repeat = False
     for attempt in range(max_compile_attempts):
         log(f"Compile attempt {attempt + 1}/{max_compile_attempts}...")
@@ -998,11 +1001,13 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             break
         log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[:500]}")
         attempt_feedbacks.append(exec_feedback)
-        if previous_feedback is not None and exec_feedback.strip() == previous_feedback.strip():
-            log("  Same error recurred verbatim - aborting remaining compile attempts (no repair progress).")
+        normalized_feedback = exec_feedback.strip()
+        if normalized_feedback in seen_feedbacks:
+            log("  This error already occurred in an earlier attempt - aborting remaining compile "
+                "attempts (the compiler is cycling, not repairing).")
             aborted_on_repeat = True
             break
-        previous_feedback = exec_feedback
+        seen_feedbacks.add(normalized_feedback)
         if attempt < max_compile_attempts - 1:
             compile_error = exec_feedback
 
