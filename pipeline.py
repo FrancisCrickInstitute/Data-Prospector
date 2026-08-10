@@ -275,11 +275,20 @@ def execute_script_in_docker(script: str, data_dir: str, docker_image: str, time
                 "python", "script.py"
             ]
 
+            # Live Issue 16: text=True with no encoding decodes via locale.getpreferredencoding(),
+            # which on a Windows host is cp1252, not the UTF-8 the container actually emits (the
+            # generated scripts are required to reconfigure stdout as UTF-8 - see CLAUDE.md). A
+            # non-ASCII byte there raised UnicodeDecodeError inside subprocess's reader thread,
+            # silently truncating/emptying exec_output - which feeds the execution verdict, the
+            # near-empty-output backstop (Issue 11), and the compile-retry feedback. Pin the
+            # encoding explicitly and replace undecodable bytes instead of crashing the read.
             result = subprocess.run(
                 docker_cmd,
                 capture_output=True,
                 timeout=timeout + 30,
-                text=True
+                text=True,
+                encoding="utf-8",
+                errors="replace"
             )
 
             # List files the script produced in /work (everything except the script itself),

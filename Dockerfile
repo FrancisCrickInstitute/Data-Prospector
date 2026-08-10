@@ -27,7 +27,10 @@ WORKDIR /work
 # nltk corpora are fetched at runtime by nltk.download(), not by `pip install nltk` - with
 # --network none in DOCKER_SANDBOX_FLAGS that fails on first use unless baked in at build time
 # (DIVERGER_PLAN.md §10). punkt/punkt_tab (tokenization) and stopwords cover the standard entry
-# point for the free-text feedback/abstract fields this config's angles reach for.
+# point for the free-text feedback/abstract fields this config's angles reach for. cmudict
+# (Live Issue 15 - textstat's syllable counter reaches for it on every readability angle, a
+# recurring family), wordnet and averaged_perceptron_tagger (POS-tagging angles, seen once so
+# far) are baked in too so the same runtime-download failure doesn't recur for these corpora.
 # Must run with cwd != "/" (hence WORKDIR above): nltk 3.10's import-hijacking guard
 # (nltk/inisec.py, CWE-427 mitigation) blocks any import whose resolved path is "relative to"
 # the cwd, and every absolute path is trivially "relative to" root - triggers a spurious block
@@ -48,7 +51,10 @@ RUN python -P -c "\
 import nltk; \
 nltk.download('punkt', download_dir='$NLTK_DATA'); \
 nltk.download('punkt_tab', download_dir='$NLTK_DATA'); \
-nltk.download('stopwords', download_dir='$NLTK_DATA')" \
+nltk.download('stopwords', download_dir='$NLTK_DATA'); \
+nltk.download('cmudict', download_dir='$NLTK_DATA'); \
+nltk.download('wordnet', download_dir='$NLTK_DATA'); \
+nltk.download('averaged_perceptron_tagger', download_dir='$NLTK_DATA')" \
     && chmod -R a+rX "$NLTK_DATA"
 
 

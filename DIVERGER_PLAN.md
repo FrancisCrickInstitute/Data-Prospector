@@ -248,20 +248,20 @@ The oscillation also shows the abort cannot fix the underlying case: when the bl
 
 **RESOLVED — rebuild confirmed.** `Dockerfile`'s `cbias-analysis` target now downloads straight into `/usr/local/share/nltk_data` (explicit `download_dir=`, a path unconditionally on nltk's default search list independent of `HOME`), `chmod -R a+rX`'s it so the non-root runtime user can read it, and sets `ENV NLTK_DATA=/usr/local/share/nltk_data` as a second, independent way to reach the same directory. Confirmed against a fresh `docker build --target cbias-analysis -t cbias-analysis:latest .` — `nltk.data.find('corpora/stopwords')` now returns `OK` under the real sandbox conditions (`--user 1000:1000`, `HOME=/tmp`, fresh tmpfs). Still to confirm on a live pipeline run: no compile attempt burned on this for any nltk-touching angle. The script self-healed on attempt 2 in Run 16 (presumably by inlining a stopword list), so this was not fatal — but it burned a compile attempt every time an angle touched nltk. **A regression, not an expansion request.**
 
-**15. `textstat` needs the `cmudict` corpus, which is not baked in (Run 17).** The Dockerfile bakes `punkt`, `punkt_tab` and `stopwords`, but `textstat` reaches for **cmudict** for syllable counting. `angle-readability-change` attempt 1 failed with `Error loading cmudict: refusing to connect by unvalidated hostname` — the sandbox correctly blocking a runtime download. The script self-healed on attempt 2, so this costs one compile attempt rather than the angle, but it will recur on every readability angle (a recurring family — five appearances across runs).
+**15. RESOLVED, unconfirmed on a live run — `textstat` needs the `cmudict` corpus, which was not baked in (Run 17).** The Dockerfile baked `punkt`, `punkt_tab` and `stopwords`, but `textstat` reaches for **cmudict** for syllable counting. `angle-readability-change` attempt 1 failed with `Error loading cmudict: refusing to connect by unvalidated hostname` — the sandbox correctly blocking a runtime download. The script self-healed on attempt 2, so this cost one compile attempt rather than the angle, but it would recur on every readability angle (a recurring family — five appearances across runs).
 
-**Fix:** add `cmudict` to the baked corpus list. Consider `wordnet` and `averaged_perceptron_tagger` too if POS-tagging angles recur (one appeared in Run 10).
+**Fix landed:** `Dockerfile`'s `cbias-analysis` target now also bakes `cmudict`, plus `wordnet` and `averaged_perceptron_tagger` (the plan's own "consider adding" suggestion — POS-tagging appeared once, in Run 10, and the marginal cost of baking these in alongside the already-required rebuild is near zero). Same `download_dir=$NLTK_DATA` / `chmod -R a+rX` treatment as the corpora Issue 14 fixed, so the location/permission fix already applies to all six. Needs a rebuild (`docker build --target cbias-analysis -t cbias-analysis:latest .`) and a live run with a readability angle to confirm no compile attempt is spent on this anymore.
 
-**16. Host-side `UnicodeDecodeError` corrupts the execution oracle (Run 17).** Twice during realisation:
+**16. RESOLVED, unconfirmed on a live run — host-side `UnicodeDecodeError` corrupts the execution oracle (Run 17).** Twice during realisation:
 
 ```
 UnicodeDecodeError: 'charmap' codec can't decode byte 0x81 in position 149
   File "...\subprocess.py", line 1614, in _readerthread
 ```
 
-The Windows host is decoding container stdout as cp1252. **This kills the reader thread, so `exec_output` may be silently truncated or empty** — and `exec_output` feeds the execution verdict, the near-empty-output backstop (Issue 11), and the compile-retry feedback. That makes this a correctness bug in the oracle itself, not a cosmetic host annoyance: a script could fail, have its traceback lost to a decode error, and be judged on a blank string.
+The Windows host was decoding container stdout as cp1252. **This kills the reader thread, so `exec_output` may be silently truncated or empty** — and `exec_output` feeds the execution verdict, the near-empty-output backstop (Issue 11), and the compile-retry feedback. That makes this a correctness bug in the oracle itself, not a cosmetic host annoyance: a script could fail, have its traceback lost to a decode error, and be judged on a blank string.
 
-**Fix:** pass `encoding="utf-8", errors="replace"` to the `subprocess.run` call in `execute_script_in_docker`. Do this before the next run — it silently undermines every other measurement.
+**Fix landed:** `execute_script_in_docker`'s `subprocess.run` call now passes `encoding="utf-8", errors="replace"` explicitly instead of relying on `text=True`'s locale-dependent default — the container emits UTF-8 (every generated script is required to reconfigure stdout as UTF-8, per `CLAUDE.md`), so this pins decoding to what's actually being sent rather than the Windows host's cp1252 preferred encoding, and `errors="replace"` means a genuinely malformed byte degrades to a replacement character instead of crashing the reader thread and losing the rest of the output. Compile-checked; needs a live run to confirm no further `UnicodeDecodeError`.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -339,12 +339,14 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 3. **Fix the merge-log direction** (Live Issue 6) — **RESOLVED (Runs 14–15).** `_dedup_angles` attaches each merge's actual survivor (`survivor_id`) and the console prints `kept [X]` alongside the merge-time `->` arrow. Both runs fired a merge and the line read self-consistently — Run 15: `merged [self-identified-role-shift] -> [stakeholder-hybridity-depth] (0.240, within_iteration) kept [stakeholder-hybridity-depth]`, with the higher-scoring member correctly surviving.
 
 **Ordering before D7 (Run 17):**
-1. **Issue 16 — host-side Unicode crash.** Do this first: it silently corrupts `exec_output`, which every other measurement depends on. One-line fix.
-2. **Issue 15 — bake `cmudict`.** One line, removes a recurring wasted compile attempt on the readability family.
-3. **Issue 8 — `delivered_score`.** The remaining D7 blocker, now demonstrated three times (0.09, 0.81, 0.87/1.00).
+1. **Issue 16 — host-side Unicode crash.** Do this first: it silently corrupts `exec_output`, which every other measurement depends on. **Fixed, unconfirmed on a live run.**
+2. **Issue 15 — bake `cmudict`.** Removes a recurring wasted compile attempt on the readability family. **Fixed (plus `wordnet`/`averaged_perceptron_tagger`), unconfirmed on a live run — needs an image rebuild.**
+3. **Issue 8 — `delivered_score`.** The remaining D7 blocker, now demonstrated three times (0.09, 0.81, 0.87/1.00). Not yet started.
 4. **§10 Tier 1 + Tier 2 library expansion.** Last, so its effect is measurable against a clean baseline.
 
 Issues 13 and 14 are resolved. Run 17 produced no `not_realisable` angles at all — the first run to do so — which is consistent with the nltk repair working, though no oscillating loop arose to exercise Issue 13's fix.
+
+**Before the next run: rebuild the `cbias-analysis` image** (`docker build --target cbias-analysis -t cbias-analysis:latest .`) to pick up Issue 15's corpora — Issue 16's fix is pure Python and needs no rebuild.
 
 **All other D7 prerequisites are resolved and confirmed (Runs 14–15).** Issues 9, 10, 6 and 11 are closed on live runs, and Issue 7's `disconfirmed` calibration is confirmed. **D7 now has real content to display**: Run 15 produced a top-tier `realised_null` with a plot and a genuine finding, plus three `not_realisable` entries whose `requires` fields are the provisioning signal (§10).
 
