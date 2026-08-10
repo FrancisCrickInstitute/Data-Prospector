@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 12)
+# Converger → Diverger conversion plan (rev. 13)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -116,8 +116,9 @@ The evidence base for every threshold in this document.
 | 14 | 0.09 / 0.14 | working | `pattern_reasoning` + post-realisation dump confirmed. Dedup 8→7 (0.326). Realisation: **0 realised** — all three failures were the *same* data-loading bug (Live Issue 11), diagnosable only because of `pattern_reasoning` |
 | 15 | 0.13 / 0.14 | working | **Fail-fast fix validated. First `realised_null`.** Dedup 8→7 (0.240, `kept` line correct). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised_null** (`delivered_score=1.00`, real PNG), 0 pattern-not-shown, 3 not realisable. Insight floor a new low: 0.10 |
 | 16 | 0.11 / 0.12 | working | **Per-attempt logging pays off immediately.** Dedup 8→6 (two merges, 0.285 + 0.413). 0 solid / 5 caveat / 1 unsupportable. Realisation: **2 realised_null**, 1 pattern-not-shown, 1 not realisable. Compile-loop oscillation exposed (Issue 13); nltk corpora found missing (Issue 14) |
+| 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 
-**Divergence is solved.** Both axes are healthy and have been for thirteen consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for fourteen consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
@@ -187,7 +188,9 @@ Four things validated at once: the three-way split distinguishes disconfirmation
 
 **Run 16 makes this much sharper, and promotes it to a D7 blocker.** `feedback-latent-importance` scored **0.81** for a script that produced *one entirely blank PNG* and never created its second required plot. The rubric rewards structural compliance — auto-detects filenames, handles missing data gracefully, clean and minimal code — almost independently of whether anything was actually produced.
 
-It still gates nothing mechanically, but **a gallery displaying `0.81` beside an empty chart would actively mislead the reader**, which defeats the purpose of building one. Fix before D7 by scoping the rubric to the angle, or by telling `validate_realization` the script implements one angle rather than the full report — and consider making artifact-emptiness a hard cap on the score regardless of structural criteria met.
+**Run 17 demonstrates it twice more, at the top of the scale.** `abstract-to-talk-conversion` produced acceptance rates of *exactly 0.00 for every year* — a degenerate all-zero result from a broken matching heuristic — and scored **0.87**. `role-training-hybridization` silently dropped half its data (charts titled "2024 vs 2025" containing only 2025) and scored **1.00**, the maximum. Three separate demonstrations now across Runs 12, 16 and 17.
+
+It still gates nothing mechanically, but **a gallery displaying `1.00` beside a chart that silently lost half its data would actively mislead the reader**, which defeats the purpose of building one. Fix before D7 by scoping the rubric to the angle, or by telling `validate_realization` the script implements one angle rather than the full report — and consider making artifact-emptiness a hard cap on the score regardless of structural criteria met.
 
 **9. FIXED, unconfirmed on a live run — `pattern_reasoning` is requested but never surfaced (Run 13).** The realisation validator was asked for `<pattern_reasoning>` and the field was discarded: the console printed `pattern_not_shown (delivered_score=0.67)` and nothing about why. **This was the same audit gap that existed for `unsupportable` verdicts before `soundness_reasoning` was added** — and fixing that one immediately proved the judge was right, so the precedent was direct.
 
@@ -225,7 +228,7 @@ Three fixes landed together:
 
 **Not yet run live.** The next run should show, for any `not_realisable` angle, either a repeated-error abort (saving 1-2 wasted compile attempts) or a genuinely different error per attempt (proof the compiler is trying different repairs, just not succeeding) — confirm against Run 15's `speaker-industry-alignment`/`semantic-drift-similarity`/`survey-blind-spots` if they recur. Likely split, worth confirming from the logs rather than assuming: `semantic-drift-similarity` is almost certainly the `sentence-transformers` model-weights problem (§10 — requested in five consecutive runs now), while `speaker-industry-alignment` is likely the ragged Programme CSVs (see Data notes — headerless, column meanings drift between years). Neither is a code-quality failure and both have known remedies.
 
-**13. The verbatim abort compares consecutive attempts only, so an oscillating loop escapes it (Run 16).** Per-attempt logging (Issue 12's fix) immediately exposed a pathology that was previously invisible. `semantic-topic-shift`:
+**13. RESOLVED (fixed; no oscillation arose in Run 17 to exercise it) — the verbatim abort compared consecutive attempts only, so an oscillating loop escaped it (Run 16).** Per-attempt logging (Issue 12's fix) immediately exposed a pathology that was previously invisible. `semantic-topic-shift`:
 
 - Attempt 1 — `ModuleNotFoundError: transformers`
 - Attempt 2 — `NameError: name 'os' is not defined` (the compiler dropped the import and broke something else)
@@ -237,13 +240,28 @@ That is cycling, not repairing. The abort did not fire because 1≠2 and 2≠3, 
 
 The oscillation also shows the abort cannot fix the underlying case: when the blocker is a missing library the compiler has no good move — removing the import breaks the analysis, keeping it fails execution. That is a §10 provisioning question, not a compile-loop question.
 
-**14. The nltk corpora are not actually in the image (Run 16).** §10 and Issue 11 record the corpora as baked in at build time (with the `inisec.py` workaround), but `abstract-convergence` attempt 1 failed with `Attempted to load 'corpora/stopwords.zip/stopwords/'` after searching `/tmp/nltk_data`, `/usr/local/nltk_data`, `/usr/share/nltk_data` and finding nothing. Either the build-time `nltk.download` silently failed or it wrote outside the search path.
+**14. RESOLVED (Run 17) — the nltk corpora were not actually in the image (Run 16).** §10 and Issue 11 record the corpora as baked in at build time (with the `inisec.py` workaround), but `abstract-convergence` attempt 1 failed with `Attempted to load 'corpora/stopwords.zip/stopwords/'` after searching `/tmp/nltk_data`, `/usr/local/nltk_data`, `/usr/share/nltk_data` and finding nothing. Either the build-time `nltk.download` silently failed or it wrote outside the search path.
 
 **Root cause confirmed directly against the live image** (`docker run` with the real `DOCKER_SANDBOX_FLAGS` runtime conditions, not just reading source): the `RUN python -P -c "...nltk.download(...)"` step in the Dockerfile executes as root with no `HOME` override, so `nltk.download()`'s default target is `/root/nltk_data` — confirmed present there (`ls /root/nltk_data/corpora/stopwords*`). Two independent reasons that's unreachable at runtime:
 1. **Wrong location.** The sandbox runs `--user 1000:1000` with `HOME=/tmp` (a fresh, empty tmpfs), so `nltk.data.path` at runtime is `[/tmp/nltk_data, /usr/local/nltk_data, /usr/local/share/nltk_data, /usr/local/lib/nltk_data, /usr/share/nltk_data, ...]` — `/root/nltk_data` is never on that list, for any `HOME` value the sandbox would plausibly set.
 2. **Wrong permissions.** `/root` is mode `700` (root-only) regardless, so even a search-path match would have failed for the non-root runtime user.
 
 **RESOLVED — rebuild confirmed.** `Dockerfile`'s `cbias-analysis` target now downloads straight into `/usr/local/share/nltk_data` (explicit `download_dir=`, a path unconditionally on nltk's default search list independent of `HOME`), `chmod -R a+rX`'s it so the non-root runtime user can read it, and sets `ENV NLTK_DATA=/usr/local/share/nltk_data` as a second, independent way to reach the same directory. Confirmed against a fresh `docker build --target cbias-analysis -t cbias-analysis:latest .` — `nltk.data.find('corpora/stopwords')` now returns `OK` under the real sandbox conditions (`--user 1000:1000`, `HOME=/tmp`, fresh tmpfs). Still to confirm on a live pipeline run: no compile attempt burned on this for any nltk-touching angle. The script self-healed on attempt 2 in Run 16 (presumably by inlining a stopword list), so this was not fatal — but it burned a compile attempt every time an angle touched nltk. **A regression, not an expansion request.**
+
+**15. `textstat` needs the `cmudict` corpus, which is not baked in (Run 17).** The Dockerfile bakes `punkt`, `punkt_tab` and `stopwords`, but `textstat` reaches for **cmudict** for syllable counting. `angle-readability-change` attempt 1 failed with `Error loading cmudict: refusing to connect by unvalidated hostname` — the sandbox correctly blocking a runtime download. The script self-healed on attempt 2, so this costs one compile attempt rather than the angle, but it will recur on every readability angle (a recurring family — five appearances across runs).
+
+**Fix:** add `cmudict` to the baked corpus list. Consider `wordnet` and `averaged_perceptron_tagger` too if POS-tagging angles recur (one appeared in Run 10).
+
+**16. Host-side `UnicodeDecodeError` corrupts the execution oracle (Run 17).** Twice during realisation:
+
+```
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x81 in position 149
+  File "...\subprocess.py", line 1614, in _readerthread
+```
+
+The Windows host is decoding container stdout as cp1252. **This kills the reader thread, so `exec_output` may be silently truncated or empty** — and `exec_output` feeds the execution verdict, the near-empty-output backstop (Issue 11), and the compile-retry feedback. That makes this a correctness bug in the oracle itself, not a cosmetic host annoyance: a script could fail, have its traceback lost to a decode error, and be judged on a blank string.
+
+**Fix:** pass `encoding="utf-8", errors="replace"` to the `subprocess.run` call in `execute_script_in_docker`. Do this before the next run — it silently undermines every other measurement.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -320,7 +338,13 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 2. **Fix the dump's data flow** (Live Issue 10) — **RESOLVED (Run 14).** `_write_angle_dump` now runs after realisation instead of before it; Run 14's dump carried `realization_status`/`delivered_score`/`pattern_reasoning` on every realized angle.
 3. **Fix the merge-log direction** (Live Issue 6) — **RESOLVED (Runs 14–15).** `_dedup_angles` attaches each merge's actual survivor (`survivor_id`) and the console prints `kept [X]` alongside the merge-time `->` arrow. Both runs fired a merge and the line read self-consistently — Run 15: `merged [self-identified-role-shift] -> [stakeholder-hybridity-depth] (0.240, within_iteration) kept [stakeholder-hybridity-depth]`, with the higher-scoring member correctly surviving.
 
-**Ordering before D7 (Run 16):** (1) Issue 13 — abort on *any* repeated feedback, not just consecutive — **fixed, unconfirmed on a live run**; (2) Issue 14 — verify/repair the nltk corpora in the image — **resolved, image rebuild confirmed, live pipeline run still outstanding**; (3) §10 Tier 1 + Tier 2 library expansion; (4) **Issue 8 — `delivered_score`**, now a blocker rather than polish. Do 1–2 before 3 or the expansion's effect cannot be measured against a clean baseline.
+**Ordering before D7 (Run 17):**
+1. **Issue 16 — host-side Unicode crash.** Do this first: it silently corrupts `exec_output`, which every other measurement depends on. One-line fix.
+2. **Issue 15 — bake `cmudict`.** One line, removes a recurring wasted compile attempt on the readability family.
+3. **Issue 8 — `delivered_score`.** The remaining D7 blocker, now demonstrated three times (0.09, 0.81, 0.87/1.00).
+4. **§10 Tier 1 + Tier 2 library expansion.** Last, so its effect is measurable against a clean baseline.
+
+Issues 13 and 14 are resolved. Run 17 produced no `not_realisable` angles at all — the first run to do so — which is consistent with the nltk repair working, though no oscillating loop arose to exercise Issue 13's fix.
 
 **All other D7 prerequisites are resolved and confirmed (Runs 14–15).** Issues 9, 10, 6 and 11 are closed on live runs, and Issue 7's `disconfirmed` calibration is confirmed. **D7 now has real content to display**: Run 15 produced a top-tier `realised_null` with a plot and a genuine finding, plus three `not_realisable` entries whose `requires` fields are the provisioning signal (§10).
 
@@ -390,6 +414,12 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 
 This is a property of the data, not a defect: **on n=37–60 with four time points, methodological sophistication and defensibility are in direct tension**, and the achievable frontier is *simple method, modest claim* — where Run 12's one realised angle sits. Expect ~3 of 8 angles per run to be spent on ambitious ideas the dataset cannot support. That is a meaningful fraction of the budget and worth surfacing in the gallery (D7 tier 4) rather than discarding, since "what this dataset cannot support" is itself useful to the organising committee.
 
+**The pipeline has produced its first actionable finding (Run 17).** `angle-readability-change` came back `realised`, `delivered_score=1.00`: Flesch Reading Ease **12.35 → 10.40 → 8.80 → 7.88** and Flesch-Kincaid Grade Level **17.24 → 17.53 → 17.65 → 17.91**, monotonic across all four years. CBIAS abstracts have become steadily harder to read. A quantified four-year trend on a non-obvious metric, and the first output an organising committee could act on directly. Retire it into Already Explored once acted on.
+
+**The `realised_null` judgments are getting sharper, not just more frequent.** Run 17's `angle-satisfaction-profile-clusters` did not merely report "no trend" — it diagnosed *why* the hypothesis failed: the two clusters found were a single satisfaction **gradient** (every item higher in Cluster 0 than Cluster 1) rather than the claimed trade-off archetypes, prevalence bounced without direction (63→73→51→73%), and χ² against self-reported role was non-significant (p=0.42). Three independent lines of refutation, unprompted.
+
+**The judge distinguishes a degenerate result from a credible null.** Run 17's `abstract-to-talk-conversion` produced acceptance rates of exactly 0.00 for every year — which *looks* like disconfirmation. The judge classified it `pattern_not_shown`, reasoning that this was "almost certainly a pipeline/matching bug rather than a genuine finding that 'no abstracts became talks' — the output is uninterpretable with respect to the claimed pattern, not a credible disconfirmation of it." That is the hardest case the three-way split has to handle, and it handled it. It also caught `role-training-hybridization` plotting only 2025 data under a chart titled "2024 vs 2025" — an internal title-vs-content inconsistency.
+
 **The stakeholder-blurring hypothesis has now been disconfirmed twice, independently.** Run 15's `stakeholder-hybridity-depth` found dual-discipline training falling 22.6% → 16.2% (2024→2025); Run 16's `hybrid-background-blurring` found multi-domain proportion falling 86.8% → 81.1% over the same window. **Different angles, different hybridity definitions, same direction.** That is convergent evidence against an appealing hypothesis — the diverger producing a replicated result rather than a one-off, which is worth more to the organising committee than either finding alone. Guiding question 5 should probably be reframed in the report on that basis.
 
 **The anti-target keeps sinking the same family further.** `ticket-type-composition-trend` scored **0.10** in Run 15 — a new floor, below the 0.20 that the same family scored in Runs 9 and 11. Six runs of progressively harder marking on per-year category counts, without any prompt change. The insight judge is not just discriminating; it is discriminating *consistently* against a family the anti-target names only obliquely.
@@ -428,6 +458,7 @@ When implemented:
 
 **Model weights are not pip installs.** `sentence-transformers` and BERTopic download weights on first use; with no runtime network they fail after a successful install. Baking weights into the image is a much heavier lift and a reasonable place to draw the line.
 - **Cheap interim win — done, before D6.** `scipy`, `scikit-learn`, `nltk`, `seaborn` and `textstat` were added to the base image. Small relative to torch, and covered everything ideation asked for on Run 8 - avoided D6 reporting a ~7/8 failure rate that would have been purely provisioning and told nothing about angle quality.
+- **The baked corpus list must track what libraries actually reach for.** `punkt`/`punkt_tab`/`stopwords` were not enough: Run 17 showed `textstat` wants `cmudict` (Issue 15). Treat this as the same moving target as the package list itself.
 - **`nltk` corpora are not a pip install.** `nltk.download()` fetches stopwords/tokenisers at runtime — the model-weights problem in miniature. Under `--network none` the package installs fine and then fails on first use. Bake the corpora in at build time. **Run 16 showed this was broken; resolved — see Live Issue 14.**
 
 ### Expansion decision (Run 16)
