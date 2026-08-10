@@ -33,7 +33,23 @@ WORKDIR /work
 # the cwd, and every absolute path is trivially "relative to" root - triggers a spurious block
 # on nltk's own `import locale` if this runs before WORKDIR is set. `-P`/PYTHONSAFEPATH does not
 # help here: the guard reads Path.cwd() directly, not sys.path.
-RUN python -P -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords')"
+#
+# Live Issue 14: without an explicit download_dir, this lands in /root/nltk_data (this RUN executes
+# as root, no HOME override yet) - a path that is BOTH unreadable (mode 700) AND absent from the
+# search list DOCKER_SANDBOX_FLAGS' runtime user actually uses (--user 1000:1000, HOME=/tmp, so
+# nltk.data.path is [/tmp/nltk_data (empty tmpfs), /usr/local/nltk_data, /usr/local/share/nltk_data,
+# /usr/local/lib/nltk_data, /usr/share/nltk_data, ...] - /root/nltk_data is never in it regardless of
+# HOME). Fixed by downloading straight into a system-wide path that IS unconditionally on that list,
+# then making it world-readable so the non-root runtime user can actually open it; NLTK_DATA is set
+# as a second, env-based way to reach the same directory that does not depend on nltk's default
+# search-path construction at all. Verified against a real container: see DIVERGER_PLAN.md Issue 14.
+ENV NLTK_DATA=/usr/local/share/nltk_data
+RUN python -P -c "\
+import nltk; \
+nltk.download('punkt', download_dir='$NLTK_DATA'); \
+nltk.download('punkt_tab', download_dir='$NLTK_DATA'); \
+nltk.download('stopwords', download_dir='$NLTK_DATA')" \
+    && chmod -R a+rX "$NLTK_DATA"
 
 
 # Default sandbox image for bioimage_config.py.
