@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 13)
+# Converger → Diverger conversion plan (rev. 14)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -117,8 +117,9 @@ The evidence base for every threshold in this document.
 | 15 | 0.13 / 0.14 | working | **Fail-fast fix validated. First `realised_null`.** Dedup 8→7 (0.240, `kept` line correct). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised_null** (`delivered_score=1.00`, real PNG), 0 pattern-not-shown, 3 not realisable. Insight floor a new low: 0.10 |
 | 16 | 0.11 / 0.12 | working | **Per-attempt logging pays off immediately.** Dedup 8→6 (two merges, 0.285 + 0.413). 0 solid / 5 caveat / 1 unsupportable. Realisation: **2 realised_null**, 1 pattern-not-shown, 1 not realisable. Compile-loop oscillation exposed (Issue 13); nltk corpora found missing (Issue 14) |
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
+| 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 
-**Divergence is solved.** Both axes are healthy and have been for fourteen consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for fifteen consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
@@ -263,6 +264,24 @@ The Windows host was decoding container stdout as cp1252. **This kills the reade
 
 **Fix landed:** `execute_script_in_docker`'s `subprocess.run` call now passes `encoding="utf-8", errors="replace"` explicitly instead of relying on `text=True`'s locale-dependent default — the container emits UTF-8 (every generated script is required to reconfigure stdout as UTF-8, per `CLAUDE.md`), so this pins decoding to what's actually being sent rather than the Windows host's cp1252 preferred encoding, and `errors="replace"` means a genuinely malformed byte degrades to a replacement character instead of crashing the reader thread and losing the rest of the output. Compile-checked; needs a live run to confirm no further `UnicodeDecodeError`.
 
+**17. BLOCKER — `domain_notes` reaches only the workers, so the compile-retry loop repairs path bugs blind (Run 18).** Three of four realised angles failed to find data: `registration-timing-as-demographic-proxy` (`No *Attendees*.csv files found in current or data directory`, 3 attempts) and `abstract-readability-trend` (`No directories matching '*_Abstracts'`, 3 attempts). Meanwhile `ticket-type-composition` read the Attendees CSVs correctly, so the mount is fine — this is per-script path resolution.
+
+**The instructions were already correct and already present.** `cbias_config.DOMAIN_NOTES` carries an `EXACT PATHS` block stating `{INPUT_FOLDER}/Attendees/...`, `{INPUT_FOLDER}/Abstracts/<year>_Abstracts/<n>_Abstract.txt`, and verbatim warnings — *"a flat glob directly on `Abstracts/*.txt` will find nothing"* and *"do not search the top level for CSVs/txt files directly."* Both failing scripts did precisely the forbidden thing. **Restating the paths is not the fix; they are already stated.**
+
+The actual cause is distribution: `grep domain_notes pipeline.py` returns exactly one call site — `_call_worker`'s cached prefix. **Neither `compile_script` nor the orchestrator receives it.** So when the retry loop rewrites a script after a path failure it sees the traceback but not the layout that would fix it, and repairs blind. That matches the observed behaviour exactly: `registration-timing` failed three times with *worsening* path guesses, and `abstract-readability-trend` **realised at `delivered_score=1.00` in Run 17 and was `not_realisable` in Run 18** — same angle, same data, opposite outcome. Nondeterministic worker path handling with no compiler-side recovery.
+
+**Fix:**
+1. Thread `domain_notes` into `COMPILER_PROMPT_PREFIX` (and consider the orchestrator, which currently designs architectures without knowing the layout). It is run-stable, so it belongs in the cached prefix — no per-attempt cost.
+2. **`DOMAIN_NOTES` is stale:** it says "three sub-directories" when there are now four. `Programs/` is absent from the `EXACT PATHS` block entirely, which likely explains why programme-parsing angles have been unreliable throughout (Runs 13, 15, 17). Add it and correct the count.
+
+Note this is *not* a return of Issue 11: fail-fast worked correctly — these raised and burned attempts rather than exiting 0 with a fake success. The failure is visible precisely because the earlier fixes are working.
+
+**FIXED, unconfirmed on a live run.** Both parts landed:
+1. `domain_notes` now flows into both prompts this issue named, not just the worker: `COMPILER_PROMPT_PREFIX` gained a `Domain notes:` block (`compile_script` passes `config.domain_notes`), and `ORCHESTRATOR_PROMPT_PREFIX` gained the same (`_run_one_design`'s orchestrator call passes it too — the "consider" from the fix list above was implemented, not just the compiler). Both are cache-prefix content, run-stable, no per-attempt or per-angle cost. A compile retry can now see the exact paths/columns it got wrong, not just the traceback.
+2. `cbias_config.DOMAIN_NOTES` corrected: "three sub-directories" → "four", and a new `Programs/` entry added to both the `EXACT PATHS` block (`Programs/CBIAS_<year>_Program_Day_<n>.csv`) and a full descriptive bullet (headerless/ragged column meaning, drifts by year, and — the one exception in this file — speaker names here are real, unanonymised data, not scrubbed like every other source).
+
+Needs a live run to confirm: fewer/no path-resolution `not_realisable` results, and specifically that `abstract-readability-trend`-style angles stop flip-flopping between runs on identical data.
+
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
 ### Known ceiling: dedup is lexical
@@ -291,8 +310,8 @@ Programme CSVs are headerless and ragged: column 1 is a time *or* `Session N`, c
 |---|---|---|
 | Ideation | `report`, ideation criteria, `input_data`, anti-targets | `stance`, `guiding_question`, `existing_angles`, `n` |
 | D5 judges | `report`, ideation criteria, `input_data`/schema, anti-targets | the individual angle |
-| D6 orchestrator | `report` (the TRUE report, not the angle brief), `input_data`, deliverable rubric | the angle being realised (hypothesis/variables/rough_method/why_non_obvious) |
-| D6 workers/compiler | existing splits, unchanged | — |
+| D6 orchestrator | `report` (the TRUE report, not the angle brief), `input_data`, deliverable rubric, `domain_notes` (added Live Issue 17) | the angle being realised (hypothesis/variables/rough_method/why_non_obvious) |
+| D6 workers/compiler | existing splits, `domain_notes` now also in the compiler prefix (added Live Issue 17, was worker-only) | — |
 | D6 validator (`validate_realization`) | `report`, deliverable rubric | `claimed_pattern`, script, execution output |
 
 **Parallel fan-out defeats the cache on first use.** N concurrent calls all start before any writes the cache, so all N miss on iteration 1 and hit only from iteration 2. Note it when reading cost figures rather than concluding caching is broken.
@@ -338,15 +357,14 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 2. **Fix the dump's data flow** (Live Issue 10) — **RESOLVED (Run 14).** `_write_angle_dump` now runs after realisation instead of before it; Run 14's dump carried `realization_status`/`delivered_score`/`pattern_reasoning` on every realized angle.
 3. **Fix the merge-log direction** (Live Issue 6) — **RESOLVED (Runs 14–15).** `_dedup_angles` attaches each merge's actual survivor (`survivor_id`) and the console prints `kept [X]` alongside the merge-time `->` arrow. Both runs fired a merge and the line read self-consistently — Run 15: `merged [self-identified-role-shift] -> [stakeholder-hybridity-depth] (0.240, within_iteration) kept [stakeholder-hybridity-depth]`, with the higher-scoring member correctly surviving.
 
-**Ordering before D7 (Run 17):**
-1. **Issue 16 — host-side Unicode crash.** Do this first: it silently corrupts `exec_output`, which every other measurement depends on. **Fixed, unconfirmed on a live run.**
-2. **Issue 15 — bake `cmudict`.** Removes a recurring wasted compile attempt on the readability family. **Fixed (plus `wordnet`/`averaged_perceptron_tagger`), unconfirmed on a live run — needs an image rebuild.**
-3. **Issue 8 — `delivered_score`.** The remaining D7 blocker, now demonstrated three times (0.09, 0.81, 0.87/1.00). Not yet started.
-4. **§10 Tier 1 + Tier 2 library expansion.** Last, so its effect is measurable against a clean baseline.
+**Ordering before D7 (Run 18):**
+1. **Issue 17 — thread `domain_notes` into the compiler prefix, and fix the stale `DOMAIN_NOTES`** (`Programs/` missing from EXACT PATHS; "three sub-directories" should read four). Now the top blocker: it cost 2 of 4 realised angles in Run 18, one of which had realised at `delivered_score=1.00` the run before. **Fixed, unconfirmed on a live run.**
+2. **Issue 8 — `delivered_score`.** Demonstrated four times now (0.09, 0.81, 0.87/1.00, and Run 18's 0.92 on an insight-0.15 angle). Not yet started.
+3. **§10 Tier 1 + Tier 2 library expansion.** `sentence-transformers` alone cost a third Run 18 angle — five consecutive runs have now requested it.
 
-Issues 13 and 14 are resolved. Run 17 produced no `not_realisable` angles at all — the first run to do so — which is consistent with the nltk repair working, though no oscillating loop arose to exercise Issue 13's fix.
+Issues 13, 14, 15 and 16 are resolved. Issues 15 and 16 were confirmed by Run 18 (no nltk corpus failures, no `UnicodeDecodeError`). Run 17 produced no `not_realisable` angles at all, but Run 18 produced three, so that was not a stable improvement — Issue 17 is why.
 
-**Before the next run: rebuild the `cbias-analysis` image** (`docker build --target cbias-analysis -t cbias-analysis:latest .`) to pick up Issue 15's corpora — Issue 16's fix is pure Python and needs no rebuild.
+**Before the next run: rebuild the `cbias-analysis` image** (`docker build --target cbias-analysis -t cbias-analysis:latest .`) whenever the Dockerfile changes — pure-Python fixes need no rebuild.
 
 **All other D7 prerequisites are resolved and confirmed (Runs 14–15).** Issues 9, 10, 6 and 11 are closed on live runs, and Issue 7's `disconfirmed` calibration is confirmed. **D7 now has real content to display**: Run 15 produced a top-tier `realised_null` with a plot and a genuine finding, plus three `not_realisable` entries whose `requires` fields are the provisioning signal (§10).
 
