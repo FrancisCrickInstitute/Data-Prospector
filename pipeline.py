@@ -356,13 +356,16 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
             "architecture and functions above don't touch.\n"
         )
 
-    # Split at the analysis/functions/library_notes/seed boundary: identical across every
-    # sequential compile/execute retry for this design (only error_feedback changes attempt to
-    # attempt), so it's passed as a cache_prefix rather than folded into one flat prompt.
+    # Split at the analysis/functions/library_notes/domain_notes/seed boundary: identical across
+    # every sequential compile/execute retry for this design (only error_feedback changes attempt
+    # to attempt), so it's passed as a cache_prefix rather than folded into one flat prompt.
+    # domain_notes (Live Issue 17) lets a retry fix a path/column bug against the real layout
+    # instead of guessing blind from the traceback alone.
     compiler_prefix = COMPILER_PROMPT_PREFIX.format(
         analysis=analysis,
         functions=functions_text,
         library_notes=config.available_libraries,
+        domain_notes=config.domain_notes,
         seed_section=seed_section,
     )
     compiler_suffix = COMPILER_PROMPT_SUFFIX.format(error_feedback=error_section)
@@ -958,6 +961,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     # this run, so cached as a prefix; the angle itself varies per call and stays in the suffix.
     orchestrator_prefix = format_prompt(
         ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=deliverable_rubric, input_data=input_metadata,
+        domain_notes=config.domain_notes,
     )
     orchestrator_suffix = format_prompt(
         ORCHESTRATOR_PROMPT_SUFFIX,

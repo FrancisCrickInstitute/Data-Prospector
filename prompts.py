@@ -89,6 +89,9 @@ Report (background context only - the angle below, not the whole report, is what
 
 Input Data: {input_data}
 
+Domain notes (exact paths/columns of the real data - design against these, not an assumed layout):
+{domain_notes}
+
 Success Criteria (the finished script must satisfy every item below - no more, no less):
 {criteria}
 """
@@ -185,6 +188,11 @@ The tags are metadata markers only—do not include them in the actual Python co
 # Split in two so compile_script can cache the prefix: it's identical across the (up to 3)
 # sequential compile/execute retries for one design, since only error_feedback changes between
 # attempts - see the cache_prefix argument to llm_call.
+#
+# domain_notes added (DIVERGER_PLAN.md Live Issue 17): previously only WORKER_PROMPT_PREFIX carried
+# the exact paths/columns, so when a worker got a path wrong and execution failed, the compile-retry
+# loop rewrote the script from the traceback alone, with no way to see the real layout that would
+# fix it - repairing blind. Now the compiler sees the same domain notes the worker did.
 COMPILER_PROMPT_PREFIX = """
 Integrate these functions into one complete, executable Python script.
 
@@ -194,6 +202,8 @@ Functions:
 {functions}
 
 Libraries: {library_notes}
+Domain notes (exact paths/columns of the real data - fix any path/column bug against these, not a guess):
+{domain_notes}
 {seed_section}"""
 
 COMPILER_PROMPT_SUFFIX = """{error_feedback}

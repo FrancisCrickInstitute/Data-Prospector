@@ -41,10 +41,11 @@ Available libraries for imports:
 """
 
 DOMAIN_NOTES = """
-Analyse four years (2022-2025) of anonymised CBIAS data, in three sub-directories under the data
+Analyse four years (2022-2025) of anonymised CBIAS data, in four sub-directories under the data
 directory (or INPUT_FOLDER env var). This is anonymised data (see the module docstring) - some
 identifying columns/fields present in the original raw data have been removed entirely; don't assume
-fields like attendee name, email, or precise location exist.
+fields like attendee name, email, or precise location exist. Programs/ is the one exception - see
+below.
 
 EXACT PATHS - build globs against these, not an assumed/simplified layout. Getting this wrong means
 zero files load and the script has nothing to analyse:
@@ -56,8 +57,10 @@ zero files load and the script has nothing to analyse:
 - Abstracts:  {INPUT_FOLDER}/Abstracts/<year>_Abstracts/<n>_Abstract.txt  (one directory level PER
   YEAR under Abstracts/ - a flat glob directly on Abstracts/*.txt will find nothing; glob
   Abstracts/*_Abstracts/*.txt or walk one level down first)
-All three sub-directories (Attendees/, Feedback/, Abstracts/) are direct children of the data
-directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt files directly.
+- Programs:   {INPUT_FOLDER}/Programs/CBIAS_<year>_Program_Day_<n>.csv  (<n> is 1 or 2 - two files
+  per year, one per symposium day)
+All four sub-directories (Attendees/, Feedback/, Abstracts/, Programs/) are direct children of the
+data directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt files directly.
 
 - Attendees/CBIAS_<year>_Attendees.csv - one row per registration. Columns: Order date, Purchaser
   country, Event name/ID/start date/start time/timezone/location, Ticket quantity/tier/type, Currency,
@@ -92,6 +95,15 @@ directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt files d
   "Additional Keywords" value is a Python-list-literal string (e.g.
   ["Segmentation","Object Tracking"]) with occasional stray "\\n" inside entries - strip whitespace after
   parsing.
+
+- Programs/CBIAS_<year>_Program_Day_<n>.csv - one file per symposium day, two per year. HEADERLESS
+  and RAGGED: do not assume column headers or a fixed column meaning. Column 1 holds a time OR a
+  "Session N" label; column 2 holds a speaker name OR a session theme OR an agenda item like
+  "Registration & Exhibition"; column 3 holds an affiliation OR a session chair; column 4 holds a
+  talk title - and which of these a given row holds shifts between years, so parse defensively by
+  row shape/content rather than by fixed column index. Speaker names here ARE real, unanonymised
+  data (public information, published by the Crick) - the identifying-fields-removed caveat above
+  does not apply to this file.
 """
 
 _ABSTRACT_FIELD_LABELS = [
