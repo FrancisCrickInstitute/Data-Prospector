@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 14)
+# Converger → Diverger conversion plan (rev. 15)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -118,8 +118,9 @@ The evidence base for every threshold in this document.
 | 16 | 0.11 / 0.12 | working | **Per-attempt logging pays off immediately.** Dedup 8→6 (two merges, 0.285 + 0.413). 0 solid / 5 caveat / 1 unsupportable. Realisation: **2 realised_null**, 1 pattern-not-shown, 1 not realisable. Compile-loop oscillation exposed (Issue 13); nltk corpora found missing (Issue 14) |
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
+| 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
 
-**Divergence is solved.** Both axes are healthy and have been for fifteen consecutive runs. Do not spend further effort here.
+**Divergence is solved.** Both axes are healthy and have been for sixteen consecutive runs. Do not spend further effort here.
 
 > **The diversity log and dedup no longer measure the same thing.** `_log_iteration_diversity` uses `_token_set`; `_angle_signature` double-weights `hypothesis`/`variables_involved`. Run 8 capped at 0.16 in the diversity log while dedup found a pair above 0.22. Not a bug — but dedup behaviour can no longer be read off the diversity numbers, and the two must not be treated as interchangeable.
 
@@ -188,6 +189,10 @@ Four things validated at once: the three-way split distinguishes disconfirmation
 **8. BLOCKER for D7 — `delivered_score` grades structural compliance, not delivery (Runs 12, 16).** The extracted rubric demands loading *all four* data types across all years and emitting a data-gaps list. A readability angle needs Abstracts only and has no reason to produce a gaps list, so narrow angles lose criteria they were never meant to satisfy — `lda-topic-evolution` scored **0.09** while executing cleanly, which is a scope mismatch, not a quality signal.
 
 **Run 16 makes this much sharper, and promotes it to a D7 blocker.** `feedback-latent-importance` scored **0.81** for a script that produced *one entirely blank PNG* and never created its second required plot. The rubric rewards structural compliance — auto-detects filenames, handles missing data gracefully, clean and minimal code — almost independently of whether anything was actually produced.
+
+**Run 19 is decisive: `delivered_score` and `insight` are close to uncorrelated.** `angle-1` scored **1.00** delivered on 0.82 insight; `stakeholder-hybridity-analysis` scored **1.00** delivered while the judge's own `pattern_reasoning` notes that one of its three plots "resolves to a single year (2025) only... so it cannot support a trend either way". A script with a demonstrably broken plot took the maximum score. Meanwhile the genuinely confirmed finding (`readability-complexity-trend`) scored 0.93 and the sharpest disconfirmation (`industry-speaker-attendee-alignment`) 0.94 — a range of 0.93–1.00 spanning outputs of wildly different worth.
+
+**The judge is doing the real quality work in `pattern_reasoning`; `delivered_score` measures rubric compliance and little else.** For D7 this settles three things: rank the top tier on **insight**, show `pattern_reasoning` prominently as the substance, and either fix `delivered_score` or omit it from the gallery entirely.
 
 **Run 17 demonstrates it twice more, at the top of the scale.** `abstract-to-talk-conversion` produced acceptance rates of *exactly 0.00 for every year* — a degenerate all-zero result from a broken matching heuristic — and scored **0.87**. `role-training-hybridization` silently dropped half its data (charts titled "2024 vs 2025" containing only 2025) and scored **1.00**, the maximum. Three separate demonstrations now across Runs 12, 16 and 17.
 
@@ -264,7 +269,7 @@ The Windows host was decoding container stdout as cp1252. **This kills the reade
 
 **Fix landed:** `execute_script_in_docker`'s `subprocess.run` call now passes `encoding="utf-8", errors="replace"` explicitly instead of relying on `text=True`'s locale-dependent default — the container emits UTF-8 (every generated script is required to reconfigure stdout as UTF-8, per `CLAUDE.md`), so this pins decoding to what's actually being sent rather than the Windows host's cp1252 preferred encoding, and `errors="replace"` means a genuinely malformed byte degrades to a replacement character instead of crashing the reader thread and losing the rest of the output. Compile-checked; needs a live run to confirm no further `UnicodeDecodeError`.
 
-**17. BLOCKER — `domain_notes` reaches only the workers, so the compile-retry loop repairs path bugs blind (Run 18).** Three of four realised angles failed to find data: `registration-timing-as-demographic-proxy` (`No *Attendees*.csv files found in current or data directory`, 3 attempts) and `abstract-readability-trend` (`No directories matching '*_Abstracts'`, 3 attempts). Meanwhile `ticket-type-composition` read the Attendees CSVs correctly, so the mount is fine — this is per-script path resolution.
+**17. RESOLVED (Run 19) — `domain_notes` reached only the workers, so the compile-retry loop repaired path bugs blind (Run 18).** Three of four realised angles failed to find data: `registration-timing-as-demographic-proxy` (`No *Attendees*.csv files found in current or data directory`, 3 attempts) and `abstract-readability-trend` (`No directories matching '*_Abstracts'`, 3 attempts). Meanwhile `ticket-type-composition` read the Attendees CSVs correctly, so the mount is fine — this is per-script path resolution.
 
 **The instructions were already correct and already present.** `cbias_config.DOMAIN_NOTES` carries an `EXACT PATHS` block stating `{INPUT_FOLDER}/Attendees/...`, `{INPUT_FOLDER}/Abstracts/<year>_Abstracts/<n>_Abstract.txt`, and verbatim warnings — *"a flat glob directly on `Abstracts/*.txt` will find nothing"* and *"do not search the top level for CSVs/txt files directly."* Both failing scripts did precisely the forbidden thing. **Restating the paths is not the fix; they are already stated.**
 
@@ -276,7 +281,7 @@ The actual cause is distribution: `grep domain_notes pipeline.py` returns exactl
 
 Note this is *not* a return of Issue 11: fail-fast worked correctly — these raised and burned attempts rather than exiting 0 with a fake success. The failure is visible precisely because the earlier fixes are working.
 
-**FIXED, unconfirmed on a live run.** Both parts landed:
+**CONFIRMED (Run 19).** 4/4 angles executed — zero `not_realisable`, zero data-discovery failures, the **first 100% realisation rate in the project's history**. `readability-complexity-trend` realised again, settling the Run 17/18 flip-flop: it was compiler blindness, not an impossible angle. Both parts landed:
 1. `domain_notes` now flows into both prompts this issue named, not just the worker: `COMPILER_PROMPT_PREFIX` gained a `Domain notes:` block (`compile_script` passes `config.domain_notes`), and `ORCHESTRATOR_PROMPT_PREFIX` gained the same (`_run_one_design`'s orchestrator call passes it too — the "consider" from the fix list above was implemented, not just the compiler). Both are cache-prefix content, run-stable, no per-attempt or per-angle cost. A compile retry can now see the exact paths/columns it got wrong, not just the traceback.
 2. `cbias_config.DOMAIN_NOTES` corrected: "three sub-directories" → "four", and a new `Programs/` entry added to both the `EXACT PATHS` block (`Programs/CBIAS_<year>_Program_Day_<n>.csv`) and a full descriptive bullet (headerless/ragged column meaning, drifts by year, and — the one exception in this file — speaker names here are real, unanonymised data, not scrubbed like every other source).
 
@@ -357,10 +362,12 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 2. **Fix the dump's data flow** (Live Issue 10) — **RESOLVED (Run 14).** `_write_angle_dump` now runs after realisation instead of before it; Run 14's dump carried `realization_status`/`delivered_score`/`pattern_reasoning` on every realized angle.
 3. **Fix the merge-log direction** (Live Issue 6) — **RESOLVED (Runs 14–15).** `_dedup_angles` attaches each merge's actual survivor (`survivor_id`) and the console prints `kept [X]` alongside the merge-time `->` arrow. Both runs fired a merge and the line read self-consistently — Run 15: `merged [self-identified-role-shift] -> [stakeholder-hybridity-depth] (0.240, within_iteration) kept [stakeholder-hybridity-depth]`, with the higher-scoring member correctly surviving.
 
-**Ordering before D7 (Run 18):**
-1. **Issue 17 — thread `domain_notes` into the compiler prefix, and fix the stale `DOMAIN_NOTES`** (`Programs/` missing from EXACT PATHS; "three sub-directories" should read four). Now the top blocker: it cost 2 of 4 realised angles in Run 18, one of which had realised at `delivered_score=1.00` the run before. **Fixed, unconfirmed on a live run.**
-2. **Issue 8 — `delivered_score`.** Demonstrated four times now (0.09, 0.81, 0.87/1.00, and Run 18's 0.92 on an insight-0.15 angle). Not yet started.
-3. **§10 Tier 1 + Tier 2 library expansion.** `sentence-transformers` alone cost a third Run 18 angle — five consecutive runs have now requested it.
+**Ordering before D7 (Run 19):**
+1. **Issue 8 — `delivered_score`.** The only remaining blocker. Demonstrated five times (0.09, 0.81, 0.87/1.00, Run 18's 0.92-on-insight-0.15, and Run 19's 1.00 for a script with a broken plot). Not yet started.
+2. **Descriptive angle ids** — readability only, but `angle-1` reappeared in Run 19 *as the run's highest-insight angle* (0.82). It will look anonymous at the top of the gallery. One line in `ANGLE_GENERATION_PROMPT_SUFFIX`.
+3. **§10 Tier 1 + Tier 2 library expansion.** No longer urgent — Run 19 had zero `not_realisable` angles — but `sentence-transformers` has been requested in five runs and will resurface.
+
+Issue 17 is resolved and confirmed. Run 19 achieved 4/4 realisation with no data-discovery failures at all.
 
 Issues 13, 14, 15 and 16 are resolved. Issues 15 and 16 were confirmed by Run 18 (no nltk corpus failures, no `UnicodeDecodeError`). Run 17 produced no `not_realisable` angles at all, but Run 18 produced three, so that was not a stable improvement — Issue 17 is why.
 
@@ -440,7 +447,13 @@ This is a property of the data, not a defect: **on n=37–60 with four time poin
 
 **The judge distinguishes a degenerate result from a credible null.** Run 17's `abstract-to-talk-conversion` produced acceptance rates of exactly 0.00 for every year — which *looks* like disconfirmation. The judge classified it `pattern_not_shown`, reasoning that this was "almost certainly a pipeline/matching bug rather than a genuine finding that 'no abstracts became talks' — the output is uninterpretable with respect to the claimed pattern, not a credible disconfirmation of it." That is the hardest case the three-way split has to handle, and it handled it. It also caught `role-training-hybridization` plotting only 2025 data under a chart titled "2024 vs 2025" — an internal title-vs-content inconsistency.
 
-**The stakeholder-blurring hypothesis has now been disconfirmed twice, independently.** Run 15's `stakeholder-hybridity-depth` found dual-discipline training falling 22.6% → 16.2% (2024→2025); Run 16's `hybrid-background-blurring` found multi-domain proportion falling 86.8% → 81.1% over the same window. **Different angles, different hybridity definitions, same direction.** That is convergent evidence against an appealing hypothesis — the diverger producing a replicated result rather than a one-off, which is worth more to the organising committee than either finding alone. Guiding question 5 should probably be reframed in the report on that basis.
+**The readability decline has replicated.** Run 17 found Flesch Reading Ease 12.35 → 10.40 → 8.80 → 7.88; Run 19, via a different implementation, found 19.62 → 19.40 → 17.35 → 15.41. Different absolute values (different text-extraction and cleaning choices), **same direction and same monotonicity across all four years**. Two independent confirmations — the strongest positive finding the pipeline has produced.
+
+**The stakeholder-blurring hypothesis has now been disconfirmed three times, independently.** Run 15's `stakeholder-hybridity-depth` found dual-discipline training falling 22.6% → 16.2%; Run 16's `hybrid-background-blurring` found multi-domain proportion falling 86.8% → 81.1%; Run 19's `stakeholder-hybridity-analysis` found an essentially flat ~70% rate. **Three angles, three hybridity definitions, no support for "increasingly blurred" in any of them.** Treat this as settled and **reframe guiding question 5 in the report** — the diverger has answered it, in the opposite direction from its premise. Leaving it as-is spends a question slot per iteration re-litigating a closed question.
+
+**A new finding worth acting on (Run 19).** `industry-speaker-attendee-alignment` came back `realised_null` with ρ=−0.40: industry *speaker* share rising steadily while industry *attendee* share falls. The programme is moving toward industry as the audience moves away from it. Concrete and actionable for the organising committee, and the opposite of the angle's own hypothesis.
+
+**The judge catches partial execution, not just wrong results.** Run 19's `angle-1` was marked `realised_null` on the theme that *did* have a clean surveyed→removed transition (mentions declining 0.033 → 0.019 → 0 → 0, opposite the claim) — and the reasoning separately notes the script "never identifies or tests 'added' topics... so that part is simply absent rather than supported." Half-answered claims are being flagged as half-answered rather than silently passing.
 
 **The anti-target keeps sinking the same family further.** `ticket-type-composition-trend` scored **0.10** in Run 15 — a new floor, below the 0.20 that the same family scored in Runs 9 and 11. Six runs of progressively harder marking on per-year category counts, without any prompt change. The insight judge is not just discriminating; it is discriminating *consistently* against a family the anti-target names only obliquely.
 
