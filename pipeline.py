@@ -499,13 +499,21 @@ _PATTERN_OUTCOME_TO_STATUS = {
 
 async def validate_realization(compiled_script: str, report: str, deliverable_rubric: str,
                                 claimed_pattern: str, exec_output: str, config: PipelineConfig,
-                                artifacts: list[dict] = None,
+                                angle_scope: str = "", artifacts: list[dict] = None,
                                 artifacts_dir: str = None) -> tuple[str, float, bool, str]:
     """D6: check whether a realized script's actual output legibly shows ONE angle's claimed
     pattern - the PRIMARY judgment (DIVERGER_PLAN.md D6 item 3), replacing the converger's "meets
     requirements" framing. The deliverable rubric's mechanical checklist (file counts, etc.) is
     still checked and reported, but graded alongside pattern_outcome rather than gating it - the
     same graded-not-gated shape as D5-calibrate's soundness verdict.
+
+    angle_scope (DIVERGER_PLAN.md Live Issue 8) is the angle's own declared variables/method -
+    deliverable_rubric is one shared checklist for the WHOLE report, cached identically across
+    every angle in a run, so without this a narrow single-angle script gets graded (and penalized)
+    against bullets it was never designed to touch. Passed to the validator so it can SKIP
+    (not emit a <criterion> tag for) bullets that are out of scope for this angle by design,
+    rather than either hardcoding a per-angle rubric (extra LLM call, breaks the prefix cache) or
+    a blind mechanical cap. Varies per angle, so it lives in the suffix, not the cached prefix.
 
     Returns (pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, feedback).
     pattern_outcome is one of _PATTERN_OUTCOMES, or None if the validator emitted anything outside
@@ -529,6 +537,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     validator_suffix = REALIZATION_VALIDATOR_PROMPT_SUFFIX.format(
         content=compiled_script,
         claimed_pattern=claimed_pattern,
+        angle_scope=angle_scope or "(not specified)",
         # Keep the TAIL: the script prints metrics then data-gap suggestions at the very end
         execution_result=f"Console output:\n{exec_output[-3000:]}\n\nFiles actually produced on disk:\n{artifacts_listing}"
     )
@@ -1055,9 +1064,15 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     # checklist is reported alongside but does not gate status - graded, not gated, matching
     # D5-calibrate's soundness verdict. An unparseable pattern_outcome (None) maps to
     # "pattern_not_shown" - the conservative default, since it gives no positive evidence either way.
+    # Live Issue 8: the angle's own declared scope, not the whole report, is what the deliverable
+    # rubric should be judged against for this script - see validate_realization's docstring.
+    angle_scope = (
+        f"Variables: {angle.get('variables_involved', '')}\n"
+        f"Method: {angle.get('rough_method', '')}"
+    )
     pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, realization_feedback = await validate_realization(
         compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
-        artifacts=artifacts, artifacts_dir=artifacts_dir)
+        angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir)
     status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
     # Live Issue 9: pattern_reasoning is the whole point of the three-way split - without it,
     # pattern_not_shown and a plausible disconfirmation are indistinguishable from the console alone.

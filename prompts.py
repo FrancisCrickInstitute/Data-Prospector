@@ -241,8 +241,10 @@ The <response> tags are METADATA MARKERS ONLY—do not include them in the Pytho
 
 # Split in two so validate_realization can cache the prefix: report + criteria (the
 # deliverable_rubric) are identical across every angle realized in a run, so cached; claimed_pattern
-# (the specific angle's hypothesis) varies per angle, same as script/execution output, so all three
-# stay in the suffix - see the cache_prefix argument to llm_call.
+# (the specific angle's hypothesis) and angle_scope (Live Issue 8 - variables/method, so the
+# validator can skip rubric bullets that are out of scope for this one angle by design) vary per
+# angle, same as script/execution output, so all three stay in the suffix - see the cache_prefix
+# argument to llm_call.
 REALIZATION_VALIDATOR_PROMPT_PREFIX = """
 Check if this successfully-executed script's actual output satisfies the deliverable requirements
 below, and legibly demonstrates its claimed pattern.
@@ -257,7 +259,11 @@ REALIZATION_VALIDATOR_PROMPT_SUFFIX = """
 Script: {content}
 Execution Output: {execution_result}
 
-This script exists to realize ONE specific candidate analysis angle. Its claimed pattern is:
+This script exists to realize ONE specific candidate analysis angle, not the whole report. Its
+declared scope is:
+{angle_scope}
+
+Its claimed pattern is:
 {claimed_pattern}
 
 If PNG images are attached to this message, they are the actual plots the script produced (up to a
@@ -282,8 +288,17 @@ ACTUAL output above (console output, the "Files actually produced on disk" listi
 images) — NOT against what the code merely claims to do. A file the requirements require that is
 0-byte or missing is NOT met, even if the code calls a save function on it.
 
-Emit exactly one <criterion met="true"/> or <criterion met="false"/> tag per bullet, in the same
-order as the Deliverable Requirements, and nothing else inside this block:
+The Deliverable Requirements describe the WHOLE report, but this script only realizes the ONE angle
+scoped above. Before judging a bullet, ask: is this bullet even ABOUT something this angle's declared
+scope could touch (e.g. it names a variable/metric/comparison this angle doesn't involve, or a
+deliverable format this angle was never going to produce by design)? If so, SKIP it - do not emit a
+<criterion> tag for it at all, and do not count it in feedback either way. Do NOT skip a bullet just
+because the script failed to satisfy it, produced a weak/null result, or you're unsure whether it
+counts - skipping is only for bullets that are out of scope BY DESIGN, not for shortfalls. When in
+doubt, judge it (met="false") rather than skip it.
+
+Emit exactly one <criterion met="true"/> or <criterion met="false"/> tag per bullet that is in scope,
+in the same order as the Deliverable Requirements, and nothing else inside this block:
 
 <criteria_result>
 <criterion met="true"/>
@@ -348,7 +363,7 @@ Return your response as one <angles> block containing exactly {n} <angle> blocks
 
 <angles>
 <angle>
-<id>short slug, e.g. angle-1</id>
+<id>short descriptive slug naming what the angle actually analyses, e.g. "readability-trend" or "ticket-type-composition" - NOT a generic placeholder like "angle-1" or "angle-2"</id>
 <variables_involved>which fields/columns this angle uses</variables_involved>
 <hypothesis>what pattern or relationship this angle expects to find</hypothesis>
 <question_or_stakeholder_served>which guiding question or stakeholder this serves</question_or_stakeholder_served>
