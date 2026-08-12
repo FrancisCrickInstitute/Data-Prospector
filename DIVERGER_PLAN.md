@@ -291,6 +291,16 @@ Note this is *not* a return of Issue 11: fail-fast worked correctly — these ra
 
 Needs a live run to confirm: fewer/no path-resolution `not_realisable` results, and specifically that `abstract-readability-trend`-style angles stop flip-flopping between runs on identical data.
 
+**18. FIXED, unconfirmed on a live run — the criteria-extraction call mirrored the report's own markdown headers instead of emitting `<ideation_criteria>`/`<deliverable_rubric>` tags (Run 20).** `CRITERIA_PROMPT` asks for two tagged XML blocks, but the model (`requirements_evaluator_model`, Sonnet) responded with plain markdown instead — `# IDEATION CRITERIA` as an ATX heading followed by prose, no tags anywhere. `extract_xml` found nothing for either tag (`0 / 0 chars extracted`), so the existing loud-fallback (Live Issue 0) fired correctly and degraded both `ideation_criteria` and `deliverable_rubric` to the full raw report — not a crash, but a real quality loss: D6's realization validator judges the deliverable rubric bullet-by-bullet (and, since Live Issue 8, skips bullets out of scope for the angle), and "the whole report" is neither bulleted nor scoped, so that machinery has nothing to work with.
+
+**Likely cause:** the task report itself is heavily markdown-formatted (`#`/`##` headings throughout), and `CRITERIA_PROMPT` labels its own two sections "FIRST - IDEATION CRITERIA" / "SECOND - DELIVERABLE RUBRIC" in a similar all-caps style just above the tag examples — plausibly enough to prime the model to echo the report's own formatting convention back instead of switching into the requested tags.
+
+**Fix landed, two parts:**
+1. `CRITERIA_PROMPT` now explicitly forbids markdown headings and any text outside the two tags, and explicitly calls out not to mirror the report's own formatting — the direct prompt-level fix.
+2. Added `_extract_markdown_section()` as a secondary extraction pass, tried only when `extract_xml` comes back empty for a tag: it recovers the same content from under an ATX heading naming the section (`# IDEATION CRITERIA` / `# DELIVERABLE RUBRIC`), stopping at the next such heading or end of text. This is the same "tolerate minor formatting drift" pattern `_parse_xml_items` already uses for `<task>`/`<angle>` blocks, applied here so an exact repeat of this failure recovers the real content instead of degrading to the raw-report fallback. Verified standalone against the actual malformed response text from this run — both sections extract correctly.
+
+Needs a live run to confirm no recurrence of the WARNING, and — if it does recur despite the prompt fix — that the markdown fallback recovers usable criteria instead of falling through to the raw-report degrade.
+
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
 ### Known ceiling: dedup is lexical
