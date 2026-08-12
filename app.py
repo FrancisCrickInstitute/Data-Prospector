@@ -5,8 +5,6 @@ Supports multiple domain configs (bioimage, trello, etc.) via --config flag.
 
 import argparse
 import asyncio
-from datetime import datetime
-from pathlib import Path
 
 from pipeline import generate_and_optimize
 
@@ -17,7 +15,7 @@ async def main(report_path: str, data_dir: str, output_dir: str, max_iterations:
     with open(report_path, 'r', encoding='utf-8') as f:
         report_content = f.read()
 
-    final_script = await generate_and_optimize(
+    result = await generate_and_optimize(
         report=report_content,
         config=CONFIG,
         data_dir=data_dir,
@@ -27,21 +25,23 @@ async def main(report_path: str, data_dir: str, output_dir: str, max_iterations:
         angles_per_iteration=angles_per_iteration,
     )
 
-    # TODO(diverger): D2 onward, generate_and_optimize returns a text summary of generated angles,
-    # not a script - this still writes it under analysis_script_<ts>.py (misleading filename/
-    # extension) so the write path stays untouched. D7 formally ripples the real structured
-    # gallery result into app.py per DIVERGER_PLAN.md; deliberately not anticipated here.
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = Path(output_dir) / f"analysis_script_{timestamp}.py"
-
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(final_script)
-
+    # D7: generate_and_optimize returns a structured result (all_angles + the paths it wrote),
+    # not a script or a plain-text blob - there is nothing left for app.py to write itself. The
+    # gallery is the deliverable; this is just pointing the user at it and the two files/dir that
+    # sit alongside it for anyone who wants the full detail behind the skim.
     print("\n" + "=" * 80)
-    print("FINAL COMPILED SCRIPT")
+    print("RUN COMPLETE")
     print("=" * 80)
-    print(f"\nScript saved to: {output_file}\n")
+    print(f"\n{len(result['all_angles'])} angle(s) surfaced this run.")
+    if result["gallery_path"]:
+        print(f"Gallery:         {result['gallery_path']}")
+    if result["dump_path"]:
+        print(f"Surfaced angles: {result['dump_path']}")
+    if result["scripts_dir"]:
+        print(f"Scripts:         {result['scripts_dir']}")
+    if not result["gallery_path"]:
+        print("(No output_dir given, so nothing was written to disk - see the console log above.)")
+    print()
 
 
 if __name__ == "__main__":

@@ -286,7 +286,7 @@ a clean disconfirmation are NOT the same thing, even though neither "shows the p
   unreadable, contradicts itself, measures the wrong thing, or is otherwise uninterpretable.
 
 <pattern_outcome>[shown, disconfirmed, or not_shown - exactly one of these three words, nothing else]</pattern_outcome>
-<pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show, and why that maps to the outcome chosen above]</pattern_reasoning>
+<pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show, and why that maps to the outcome chosen above. Also mention, as information alongside the finding rather than a reason to change the verdict above, whether the console output includes or omits a statistical test of the claim (e.g. a significance test, confidence interval) - a plausible four-point trend and a significance-tested one are both worth surfacing, but a reader should know which they're looking at]</pattern_reasoning>
 
 SECOND, judge EACH bullet in the Deliverable Requirements above, in the same order, against the
 ACTUAL output above (console output, the "Files actually produced on disk" listing, and any attached

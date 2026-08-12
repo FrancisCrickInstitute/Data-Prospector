@@ -889,7 +889,7 @@ def _judgment_sort_key(angle: dict) -> tuple:
     return (soundness_rank, insight_rank)
 
 
-def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
+def _write_angle_dump(all_angles: list[dict], output_dir: str, timestamp: str) -> str:
     """D5-calibrate item 5: dump this run's ranked, judged AND realized angles to a human-readable
     file. Called after D6's realize step (Live Issue 10 fix - previously called before it, so the
     dump only ever carried D5's soundness/insight judgments and never realization_status/
@@ -904,12 +904,15 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
     automatically - automatic retirement would suppress angles that merely resemble a prior one,
     which the plan explicitly wants to avoid.
 
+    timestamp is passed in (D7) rather than generated here, so this file, the gallery
+    (_write_gallery) and the per-angle scripts directory for the same run all share one run
+    identifier instead of each stamping a fractionally different clock read.
+
     Returns the path written, or "" if output_dir is falsy.
     """
     if not output_dir:
         return ""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = Path(output_dir) / f"surfaced_angles_{timestamp}.md"
 
     lines = [
@@ -941,6 +944,174 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str) -> str:
                 lines.append(f"- pattern_reasoning: {angle['pattern_reasoning']}")
             if angle.get("artifacts"):
                 lines.append(f"- artifacts: {_format_artifacts(angle['artifacts'])}")
+        lines.append("")
+
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return str(path)
+
+
+# D7: status -> heading label for the top gallery tier. Both statuses share one tier (ranked by
+# insight, not separated) - see _write_gallery's docstring for why a disconfirmation is not
+# demoted beneath a confirmation.
+_GALLERY_STATUS_LABELS = {"realised": "realised — pattern shown", "realised_null": "realised — disconfirmed"}
+
+
+def _gallery_entry_images(angle: dict) -> list[str]:
+    """Relative markdown image paths for one angle's non-empty PNG artifacts (D7 item 2), relative
+    to output_dir - the gallery file lives there and artifacts sit under output_dir/artifacts/<id>/
+    (execute_script_in_docker's artifacts_dir), so a plain relative path resolves for any viewer
+    opened at output_dir without embedding/copying the images a second time."""
+    artifacts = angle.get("artifacts") or []
+    angle_id = angle.get("id", "?")
+    return [
+        f"artifacts/{angle_id}/{a['name']}"
+        for a in artifacts
+        if a["size"] > 0 and a["name"].lower().endswith(".png")
+    ]
+
+
+def _script_rel_path(script_path: str) -> str:
+    """The scripts/<run_timestamp>/<angle_id>.py path relative to output_dir, as the gallery links
+    it - script_path is stored absolute, so this strips it back to the two path segments the
+    gallery lives alongside (the scripts dir is a sibling of the gallery file, both directly under
+    output_dir)."""
+    p = Path(script_path)
+    return f"{p.parent.name}/{p.name}"
+
+
+def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
+    """Render one realized angle's markdown block - shared by the top tier (realised/realised_null)
+    and the pattern_not_shown tier, just with a status label on the heading for the former.
+    Deliberately omits delivered_score (DIVERGER_PLAN.md Live Issue 8/D7): even scoped to the
+    angle, it can score a script that silently dropped half its data at 1.00, so displaying it as
+    a quality number would mislead exactly the reader this gallery is for. pattern_reasoning is
+    the substance - shown prominently as "Finding" instead.
+    """
+    angle_id = angle.get("id", "?")
+    insight = angle.get("insight_score")
+    insight_str = f"{insight:.2f}" if insight is not None else "unranked"
+
+    if top_tier:
+        label = _GALLERY_STATUS_LABELS.get(angle.get("realization_status"), angle.get("realization_status", "?"))
+        heading = f"### {angle_id} — {label}"
+    else:
+        heading = f"### {angle_id}"
+    lines = [heading, f"_insight: {insight_str}_", ""]
+    if angle.get("hypothesis"):
+        lines.append(f"- **Hypothesis:** {angle['hypothesis']}")
+    if angle.get("question_or_stakeholder_served"):
+        lines.append(f"- **Serves:** {angle['question_or_stakeholder_served']}")
+    if angle.get("pattern_reasoning"):
+        lines.append(f"- **Finding:** {angle['pattern_reasoning']}")
+    if angle.get("soundness_caveat"):
+        lines.append(f"- **Caveat:** {angle['soundness_caveat']}")
+    for img in _gallery_entry_images(angle):
+        lines.append(f"\n![{angle_id}]({img})")
+    if angle.get("script_path"):
+        lines.append(f"\n[script](scripts/{_script_rel_path(angle['script_path'])})")
+    lines.append("")
+    return lines
+
+
+def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> str:
+    """D7: emit a self-contained, skimmable markdown gallery - the pipeline's actual deliverable.
+    Replaces the plain-text ranked summary generate_and_optimize used to return as its whole
+    result (D2-D6 placeholder - see that function's docstring). Four tiers, never flattened into
+    one ranked list (D7 item 3), because the statuses answer different questions:
+
+    - realised / realised_null TOGETHER, ranked by INSIGHT (not soundness, and not the
+      realization order) - Run 20 showed the run's three highest-insight angles all came back
+      realised_null while the single realised angle was second-lowest on insight, so a
+      soundness-first or realised-first sort would bury the run's most interesting result under
+      its safest one. A clean disconfirmation closes a question and is shown as a finding here,
+      not demoted beneath a confirmation.
+    - pattern_not_shown - executed, but illegible. A real quality outcome, shown secondary.
+    - not_realisable - an ENGINEERING outcome, not a quality one (DIVERGER_PLAN.md D6 item 5).
+      Listed prominently with `requires`, since that list is the signal for what to provision next
+      (DIVERGER_PLAN.md §10).
+    - unsupportable - never reaches realization, but the soundness reasoning is itself
+      informative: what the dataset cannot support is a finding about the dataset, not a dead end.
+
+    Angles judged but never selected for realization this run (below --realize-top-k) get one line
+    each in a closing "also generated" section - full detail for those already lives in
+    surfaced_angles_<timestamp>.md, which sits alongside this file.
+
+    Returns the path written, or "" if output_dir is falsy.
+    """
+    if not output_dir:
+        return ""
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    path = Path(output_dir) / f"gallery_{timestamp}.md"
+
+    realized_top = [a for a in all_angles if a.get("realization_status") in ("realised", "realised_null")]
+    realized_top.sort(
+        key=lambda a: a.get("insight_score") if a.get("insight_score") is not None else -1.0, reverse=True)
+    not_shown = [a for a in all_angles if a.get("realization_status") == "pattern_not_shown"]
+    not_realisable = [a for a in all_angles if a.get("realization_status") == "not_realisable"]
+    unsupportable = [a for a in all_angles if a.get("soundness_verdict") == "unsupportable"]
+    considered_ids = {a.get("id") for a in all_angles if a.get("realization_status") or a.get("soundness_verdict") == "unsupportable"}
+    also_generated = [a for a in all_angles if a.get("id") not in considered_ids]
+
+    lines = [
+        f"# Diverger gallery — {timestamp}", "",
+        f"{len(all_angles)} candidate angle(s) surfaced this run: {len(realized_top)} realised or "
+        f"disconfirmed, {len(not_shown)} executed but illegible, {len(not_realisable)} not "
+        f"realisable, {len(unsupportable)} unsupportable by the data.", "",
+    ]
+
+    if realized_top:
+        lines.append("## Realised & disconfirmed — findings worth a look")
+        lines.append("")
+        lines.append("_Ranked by insight, not delivery mechanics - a clean disconfirmation ranks "
+                      "alongside a confirmation, not beneath it._")
+        lines.append("")
+        for angle in realized_top:
+            lines.extend(_gallery_entry(angle, top_tier=True))
+
+    if not_shown:
+        lines.append("## Pattern not shown — executed, but the output didn't legibly demonstrate the claim")
+        lines.append("")
+        for angle in not_shown:
+            lines.extend(_gallery_entry(angle, top_tier=False))
+
+    if not_realisable:
+        lines.append("## Not realisable — engineering / provisioning gaps, not quality judgements")
+        lines.append("")
+        for angle in not_realisable:
+            lines.append(f"### {angle.get('id', '?')}")
+            if angle.get("hypothesis"):
+                lines.append(f"- **Hypothesis:** {angle['hypothesis']}")
+            if angle.get("requires"):
+                lines.append(f"- **Requires:** {angle['requires']}")
+            feedback = (angle.get("realization_feedback") or "").strip()
+            if feedback:
+                lines.append(f"- **Why blocked:** {feedback[:400]}")
+            lines.append("")
+
+    if unsupportable:
+        lines.append("## Unsupportable — the data can't support these, by design")
+        lines.append("")
+        lines.append("_Never realised - knowing what this dataset cannot support is itself a finding._")
+        lines.append("")
+        for angle in unsupportable:
+            lines.append(f"### {angle.get('id', '?')}")
+            if angle.get("hypothesis"):
+                lines.append(f"- **Hypothesis:** {angle['hypothesis']}")
+            if angle.get("soundness_reasoning"):
+                lines.append(f"- **Why:** {angle['soundness_reasoning']}")
+            lines.append("")
+
+    if also_generated:
+        lines.append("## Also generated, not realised this run")
+        lines.append("")
+        lines.append("_Judged but ranked below this run's --realize-top-k cutoff, so no code was "
+                      "written or run for these. Full detail (soundness/insight for every angle) "
+                      "is in the surfaced_angles dump alongside this file._")
+        lines.append("")
+        for angle in also_generated:
+            insight = angle.get("insight_score")
+            insight_str = f"{insight:.2f}" if insight is not None else "unranked"
+            lines.append(f"- **{angle.get('id', '?')}** (insight {insight_str}): {angle.get('hypothesis', '')}")
         lines.append("")
 
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -1160,25 +1331,31 @@ async def generate_angles(report: str, ideation_criteria: str, input_metadata: s
 
 async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: str = None,
                                 max_iterations: int = 2, output_dir: str = None,
-                                realize_top_k: int = 4, angles_per_iteration: int = 12) -> str:
-    """D3/D3a/D3b/D4/D5/D6: ideation loop, fanned out, then judged, then deduped, then selectively
-    realized. Each iteration fires angles_per_iteration independent generate_angles calls (n=1
-    each) concurrently via asyncio.gather, cycling config.design_stances and the parsed guiding
-    questions across calls independently (D3a) for intra-iteration diversity - concurrent calls
-    can't see each other, so these two cycling axes are the only lever within an iteration.
-    Cross-iteration diversity instead comes from {existing_angles}: the accumulated archive of
-    every angle proposed so far, fed back into ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation
-    finishes, D5 scores every archived angle for non-obviousness (judge_insight) and soundness
-    (judge_soundness), THEN D4 dedups the whole archive by token-set similarity (D6-fix item 2:
-    judging first lets dedup keep the highest-scoring member of each cluster instead of a
-    text-length proxy) and the survivors are ranked by both judgments. D6 then realizes only the
-    top realize_top_k non-unsupportable angles - code is written and run for that small selection
-    only, never for the whole archive.
+                                realize_top_k: int = 4, angles_per_iteration: int = 12) -> dict:
+    """D3/D3a/D3b/D4/D5/D6/D7: ideation loop, fanned out, then judged, then deduped, then
+    selectively realized, then written up as a gallery. Each iteration fires angles_per_iteration
+    independent generate_angles calls (n=1 each) concurrently via asyncio.gather, cycling
+    config.design_stances and the parsed guiding questions across calls independently (D3a) for
+    intra-iteration diversity - concurrent calls can't see each other, so these two cycling axes
+    are the only lever within an iteration. Cross-iteration diversity instead comes from
+    {existing_angles}: the accumulated archive of every angle proposed so far, fed back into
+    ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation finishes, D5 scores every archived angle for
+    non-obviousness (judge_insight) and soundness (judge_soundness), THEN D4 dedups the whole
+    archive by token-set similarity (D6-fix item 2: judging first lets dedup keep the
+    highest-scoring member of each cluster instead of a text-length proxy) and the survivors are
+    ranked by both judgments. D6 then realizes only the top realize_top_k non-unsupportable angles
+    - code is written and run for that small selection only, never for the whole archive.
 
-    Returns a plain-text summary of every surviving angle, ranked best-first by D5's judgment (a
-    string, not a script) so app.py's existing file-write path keeps working unmodified - D7
-    replaces this with the real structured gallery result. Realized angles additionally carry
-    realization_status/realization_feedback/delivered_score/artifacts in that summary.
+    Returns a dict, not a script or plain-text summary (D7 - the pre-D7 versions of this function
+    returned a formatted string, which app.py wrote out under a misleading analysis_script_<ts>.py
+    filename since D2 stopped this pipeline from producing a single script):
+    - "all_angles": every surviving (post-dedup) angle dict, ranked best-first by
+      _judgment_sort_key, each carrying its D5 judgment and (if realized) D6 result fields.
+    - "summary_text": the same plain-text ranked summary this function used to return outright -
+      kept for console logging / non-visual consumers, not the deliverable itself anymore.
+    - "gallery_path" / "dump_path": paths to the two files written to output_dir (_write_gallery,
+      _write_angle_dump), or "" if output_dir wasn't given.
+    - "scripts_dir": the directory each realized angle's compiled script was written into, or None.
     """
     input_metadata = config.extract_input_metadata(data_dir) if data_dir else "(No input data provided)"
 
@@ -1314,7 +1491,8 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     print(f"{'=' * 80}\n")
 
     if not archive:
-        return "(No angles were generated.)"
+        return {"all_angles": [], "summary_text": "(No angles were generated.)", "gallery_path": "",
+                "dump_path": "", "scripts_dir": None}
 
     # D5: judge EVERY archived angle - not just the post-dedup subset - for non-obviousness and
     # soundness, BEFORE dedup runs (D6-fix item 2, DIVERGER_PLAN.md Live Issue 6: dedup used to run
@@ -1372,7 +1550,8 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     all_angles = [rec["angle"] for rec in kept_records]
 
     if not all_angles:
-        return "(No angles were generated.)"
+        return {"all_angles": [], "summary_text": "(No angles were generated.)", "gallery_path": "",
+                "dump_path": "", "scripts_dir": None}
 
     all_angles.sort(key=_judgment_sort_key, reverse=True)
 
@@ -1398,7 +1577,13 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         f"({skipped_unsupportable} unsupportable angle(s) skipped)\n"
     )
 
+    # D7: one timestamp shared by the gallery, the surfaced_angles dump, and the scripts
+    # directory for this run, so the three files/dirs a human needs to cross-reference for one
+    # run all carry the same run identifier instead of each stamping a fractionally different
+    # clock read.
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     artifacts_base = Path(output_dir) / "artifacts" if output_dir else None
+    scripts_dir = Path(output_dir) / "scripts" / timestamp if output_dir else None
     realize_calls = [
         _run_one_design(
             angle, report, deliverable_rubric, input_metadata, config, data_dir,
@@ -1422,6 +1607,15 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         angle["delivered_score"] = result["delivered_score"]
         angle["artifacts"] = result["artifacts"]
         angle["artifacts_dir"] = result["artifacts_dir"]
+        # D7 item 4: persist the compiled script itself, not just its judged output - written even
+        # for not_realisable angles (the last compile attempt, however broken) since a human
+        # debugging a provisioning gap wants to see what the compiler actually produced. Skipped
+        # only if compile_script never returned anything at all (script is None/empty).
+        if scripts_dir and result.get("script"):
+            scripts_dir.mkdir(parents=True, exist_ok=True)
+            script_path = scripts_dir / f"{angle.get('id', '?')}.py"
+            script_path.write_text(result["script"], encoding="utf-8")
+            angle["script_path"] = str(script_path)
 
     realised_count = sum(1 for a in to_realize if a.get("realization_status") == "realised")
     realised_null_count = sum(1 for a in to_realize if a.get("realization_status") == "realised_null")
@@ -1438,10 +1632,17 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     # realization_status/delivered_score/pattern_reasoning for the angles that were realized, not
     # just the D5 judgments - D7's gallery needs both halves, and there is no cost to waiting: the
     # human never consults this file mid-run, only after generate_and_optimize returns.
-    dump_path = _write_angle_dump(all_angles, output_dir)
+    dump_path = _write_angle_dump(all_angles, output_dir, timestamp)
     if dump_path:
         print(f"[dump] Surfaced angles (judged + realized) written to {dump_path} - curate into "
               f"the report's Already Explored section as needed.\n")
+
+    # D7: the actual deliverable - a skimmable markdown gallery, tiered by outcome and ranked by
+    # insight within the top tier, not the flat best-first list below (which stays as summary_text
+    # for console logging / non-visual consumers - see this function's docstring).
+    gallery_path = _write_gallery(all_angles, output_dir, timestamp)
+    if gallery_path:
+        print(f"[gallery] Gallery written to {gallery_path}\n")
 
     lines = [f"{len(all_angles)} candidate analysis angle(s) generated, ranked best-first:\n"]
     for angle in all_angles:
@@ -1470,4 +1671,11 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             if angle.get("artifacts"):
                 lines.append(f"  artifacts: {_format_artifacts(angle['artifacts'])}")
         lines.append("")
-    return "\n".join(lines)
+
+    return {
+        "all_angles": all_angles,
+        "summary_text": "\n".join(lines),
+        "gallery_path": gallery_path,
+        "dump_path": dump_path,
+        "scripts_dir": str(scripts_dir) if scripts_dir else None,
+    }
