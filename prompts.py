@@ -66,6 +66,11 @@ an idea has already been chosen. Identify:
 
 If the report is silent on a dimension for either output, say so rather than assuming a default.
 
+Output ONLY the two XML blocks below, wrapping each output in its tag exactly as shown - no markdown
+headings (e.g. "# IDEATION CRITERIA"), no other text before, between, or after them. This applies
+even if the report itself is written with markdown headings - do not mirror the report's own
+formatting back into this response.
+
 <ideation_criteria>
 [Concise bullet-point rubric for judging analysis IDEAS - guiding questions, stakeholders, anti-targets, data constraints]
 </ideation_criteria>

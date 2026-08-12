@@ -162,6 +162,23 @@ def extract_xml(text: str, tag: str) -> str:
     return match.group(1) if match else ""
 
 
+def _extract_markdown_section(text: str, label: str, other_label: str) -> str:
+    """Secondary extraction for generate_and_optimize's criteria call (Live Issue 18): recovers
+    text under a markdown-style ATX heading naming `label` (e.g. '# IDEATION CRITERIA') when the
+    model ignores the requested <ideation_criteria>/<deliverable_rubric> tags and instead mirrors
+    the report's own markdown formatting back into its response - observed live (Run 20, Sonnet)
+    against a report whose own text was heavily ATX-headed. Only tried after extract_xml() comes
+    back empty for a given tag; captures from the end of the labeled heading line to the start of
+    the next heading naming `other_label`, or end of text."""
+    start_match = re.search(rf'^\s*#{{1,3}}\s*{re.escape(label)}\s*$', text, re.IGNORECASE | re.MULTILINE)
+    if not start_match:
+        return ""
+    end_match = re.search(rf'^\s*#{{1,3}}\s*{re.escape(other_label)}\s*$', text[start_match.end():],
+                           re.IGNORECASE | re.MULTILINE)
+    end = start_match.end() + end_match.start() if end_match else len(text)
+    return text[start_match.end():end].strip()
+
+
 def format_prompt(template: str, **kwargs) -> str:
     """Format a prompt template, raising a clear error if a variable is missing."""
     try:
@@ -1188,6 +1205,16 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
                                            model=config.requirements_evaluator_model, cache_prompt=True)
         ideation_criteria = extract_xml(criteria_response, "ideation_criteria").strip()
         deliverable_rubric = extract_xml(criteria_response, "deliverable_rubric").strip()
+        # Live Issue 18: the model occasionally ignores the <ideation_criteria>/<deliverable_rubric>
+        # tags and mirrors the report's own markdown headers back instead (e.g. '# IDEATION
+        # CRITERIA') - try recovering the same content under that heading before giving up and
+        # degrading to the raw-report fallback below.
+        if not ideation_criteria:
+            ideation_criteria = _extract_markdown_section(
+                criteria_response, "IDEATION CRITERIA", "DELIVERABLE RUBRIC")
+        if not deliverable_rubric:
+            deliverable_rubric = _extract_markdown_section(
+                criteria_response, "DELIVERABLE RUBRIC", "IDEATION CRITERIA")
         if not ideation_criteria or not deliverable_rubric:
             raise ValueError(
                 f"Criteria response missing <ideation_criteria> and/or <deliverable_rubric> "
