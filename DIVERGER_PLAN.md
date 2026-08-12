@@ -198,6 +198,10 @@ Four things validated at once: the three-way split distinguishes disconfirmation
 
 It still gates nothing mechanically, but **a gallery displaying `1.00` beside a chart that silently lost half its data would actively mislead the reader**, which defeats the purpose of building one. Fix before D7 by scoping the rubric to the angle, or by telling `validate_realization` the script implements one angle rather than the full report — and consider making artifact-emptiness a hard cap on the score regardless of structural criteria met.
 
+**FIXED, unconfirmed on a live run — scoped the rubric to the angle.** Chose the first of the three options above (user decision), not the hard artifact-emptiness cap. `validate_realization` now takes an `angle_scope` parameter (the angle's own `variables_involved` + `rough_method`, built in `_run_one_design` and passed alongside `claimed_pattern`) and `REALIZATION_VALIDATOR_PROMPT_SUFFIX` instructs the judge to SKIP — not emit a `<criterion>` tag for — any rubric bullet that is out of scope for this angle *by design*, while explicitly cautioning it not to skip a bullet the script merely failed to satisfy. Since `delivered_score` is computed purely as met/total over emitted `<criterion>` tags (`_CRITERION_PATTERN`), an omitted tag drops out of both numerator and denominator with no scoring-logic change in `pipeline.py`. `angle_scope` varies per angle so it lives in the suffix, not the cached prefix — zero extra LLM calls, no cache regression.
+
+**Known limitation, deliberately not addressed by this fix:** this only corrects the *scope* mismatch (narrow angles penalised for rubric bullets they were never meant to satisfy). It does **not** add a mechanical floor for the blank-PNG/degenerate-result failure mode that produced Run 16's 0.81 (one blank PNG, second plot never created), Run 17's 0.87/1.00 (all-zero acceptance rates; half the data silently dropped), and Run 19's 1.00 (a plot that "resolves to a single year... cannot support a trend either way") — a script can still score well on in-scope bullets it technically executed while the actual output is worthless. The user selected "scope the rubric to the angle" over the hard-cap option; if degenerate-but-in-scope results keep scoring high after this lands, that's the next thing to revisit, not a sign this fix failed. Needs a live run to confirm the scoping behaves as intended (plausible failure mode to watch for: the judge over-skips, e.g. treating a bullet as "out of scope" because the script failed it rather than because it was never meant to touch it).
+
 **9. FIXED, unconfirmed on a live run — `pattern_reasoning` is requested but never surfaced (Run 13).** The realisation validator was asked for `<pattern_reasoning>` and the field was discarded: the console printed `pattern_not_shown (delivered_score=0.67)` and nothing about why. **This was the same audit gap that existed for `unsupportable` verdicts before `soundness_reasoning` was added** — and fixing that one immediately proved the judge was right, so the precedent was direct.
 
 It bit because Run 13 returned **0 disconfirmed**, and that was uninterpretable. The two `pattern_not_shown` results were plausible disconfirmation candidates: `readability-and-complexity-trends` (0.53) and `program-speaker-role-blur` (0.67) both executed, produced artifacts, and delivered most of the rubric. If readability came out flat across four years that is a `disconfirmed` finding; if the plot was unreadable it is `not_shown`. From that output alone the two were indistinguishable, so the three-way split couldn't be calibrated.
@@ -317,7 +321,7 @@ Programme CSVs are headerless and ragged: column 1 is a time *or* `Session N`, c
 | D5 judges | `report`, ideation criteria, `input_data`/schema, anti-targets | the individual angle |
 | D6 orchestrator | `report` (the TRUE report, not the angle brief), `input_data`, deliverable rubric, `domain_notes` (added Live Issue 17) | the angle being realised (hypothesis/variables/rough_method/why_non_obvious) |
 | D6 workers/compiler | existing splits, `domain_notes` now also in the compiler prefix (added Live Issue 17, was worker-only) | — |
-| D6 validator (`validate_realization`) | `report`, deliverable rubric | `claimed_pattern`, script, execution output |
+| D6 validator (`validate_realization`) | `report`, deliverable rubric | `claimed_pattern`, `angle_scope` (added Live Issue 8 — lets the judge skip rubric bullets out of scope for this angle), script, execution output |
 
 **Parallel fan-out defeats the cache on first use.** N concurrent calls all start before any writes the cache, so all N miss on iteration 1 and hit only from iteration 2. Note it when reading cost figures rather than concluding caching is broken.
 
@@ -363,8 +367,8 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 3. **Fix the merge-log direction** (Live Issue 6) — **RESOLVED (Runs 14–15).** `_dedup_angles` attaches each merge's actual survivor (`survivor_id`) and the console prints `kept [X]` alongside the merge-time `->` arrow. Both runs fired a merge and the line read self-consistently — Run 15: `merged [self-identified-role-shift] -> [stakeholder-hybridity-depth] (0.240, within_iteration) kept [stakeholder-hybridity-depth]`, with the higher-scoring member correctly surviving.
 
 **Ordering before D7 (Run 19):**
-1. **Issue 8 — `delivered_score`.** The only remaining blocker. Demonstrated five times (0.09, 0.81, 0.87/1.00, Run 18's 0.92-on-insight-0.15, and Run 19's 1.00 for a script with a broken plot). Not yet started.
-2. **Descriptive angle ids** — readability only, but `angle-1` reappeared in Run 19 *as the run's highest-insight angle* (0.82). It will look anonymous at the top of the gallery. One line in `ANGLE_GENERATION_PROMPT_SUFFIX`.
+1. **Issue 8 — `delivered_score`.** Demonstrated five times (0.09, 0.81, 0.87/1.00, Run 18's 0.92-on-insight-0.15, and Run 19's 1.00 for a script with a broken plot). **FIXED, unconfirmed on a live run** — scoped the rubric to the angle via a new `angle_scope` parameter on `validate_realization` (user-selected fix; see the Live Issues section). Does not address the blank-PNG/degenerate-result cases (Runs 16, 17, 19) — the hard-cap option was not selected. No longer blocks D7 pending confirmation, but watch the next run for over-skipping.
+2. **Descriptive angle ids** — readability only, but `angle-1` reappeared in Run 19 *as the run's highest-insight angle* (0.82). It will look anonymous at the top of the gallery. **FIXED, unconfirmed on a live run.** `ANGLE_GENERATION_PROMPT_SUFFIX`'s `<id>` field (human-owned) now asks for a short descriptive slug naming what the angle analyses and explicitly rules out generic `angle-N` placeholders. `_ensure_unique_id`'s collision suffixing is unchanged, so a genuine duplicate still resolves the same way.
 3. **§10 Tier 1 + Tier 2 library expansion.** No longer urgent — Run 19 had zero `not_realisable` angles — but `sentence-transformers` has been requested in five runs and will resurface.
 
 Issue 17 is resolved and confirmed. Run 19 achieved 4/4 realisation with no data-discovery failures at all.
@@ -377,7 +381,7 @@ Issues 13, 14, 15 and 16 are resolved. Issues 15 and 16 were confirmed by Run 18
 
 One new item, **not a D7 blocker**: Live Issue 12 (fail-fast costs 3× compile budget on impossible angles, and the retry loop was unaudited) — **fixed, unconfirmed on a live run.** Per-attempt FAIL feedback is now logged and returned, and the loop aborts early on a verbatim-repeated error. Same "surface the reasoning" fix that made Issues 9 and 11 tractable, one stage upstream; the gallery does not depend on it.
 
-Also outstanding, readability-only: **descriptive angle ids** (`angle-1` reappeared in Run 12). Collisions are handled mechanically, but the gallery is where it shows.
+Also fixed, readability-only, unconfirmed on a live run: **descriptive angle ids** (`angle-1` reappeared in Run 12, and again as the top-insight angle in Run 19). Collisions were already handled mechanically, but the gallery is where the generic label shows — see the ordering list above.
 
 Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but the number should not be *displayed* as a quality measure until it is fixed.
 
@@ -412,7 +416,7 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 4. Also write each angle's generated script.
 5. Build it to skim in under a minute. The human makes the final "is this actually interesting" call.
 
-**Do not display `delivered_score` as a quality number** until Live Issue 8 is fixed — it currently penalises narrow angles for not doing the whole report.
+**Do not display `delivered_score` as a quality number** until Live Issue 8 is confirmed fixed on a live run — a fix (scoping the rubric to the angle) has landed but is unconfirmed, and even once confirmed it only corrects the scope mismatch, not the blank-PNG/degenerate-result cases (Runs 16, 17, 19) — `pattern_reasoning` remains the primary signal for the gallery either way.
 
 ---
 
