@@ -1,8 +1,8 @@
-# Converger → Diverger conversion plan (rev. 17)
+# Converger → Diverger conversion plan (rev. 18)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
-**D1–D6 are complete.** The pipeline now ideates, diverges, dedups, judges — with a graded (not gated) soundness verdict — and selectively realises only the top-ranked angles into executed, Docker-verified scripts. What remains is the gallery (D7) and stopping/economy (D8). D6 is confirmed working end-to-end on a live `cbias` run — see §3 for what it implemented and the current live issues.
+**D1–D7 are complete.** The pipeline now ideates, diverges, dedups, judges — with a graded (not gated) soundness verdict — selectively realises only the top-ranked angles into executed, Docker-verified scripts, and writes the result up as a tiered markdown gallery. What remains is stopping/economy (D8). D6 is confirmed working end-to-end on a live `cbias` run; **D7 is implemented but unconfirmed on a live run** — see §3 for what each implemented and the current live issues.
 
 **Read this whole document before starting. Then implement ONE step at a time, stopping after each for review and a live run.**
 
@@ -93,6 +93,17 @@ The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s ne
 `compile_script`, `_call_worker`, `execute_script_in_docker`, `_format_artifacts`, `_load_plot_images` were revived **unchanged**, per the spec's own instruction — see §6 (now empty of dormant code). Realised angles' artifacts land in `output_dir/artifacts/<angle_id>/`; the compiled script itself is kept in memory but not yet written to disk — D7 item 3's job, deliberately not pulled forward.
 
 **Report** — rewritten three times: plot taxonomy, metric counts and PNG counts removed; guiding questions levelled; anti-target list inlined from `djpbarry/cbias-survey`; programme CSVs pre-downloaded so Q4 is answerable without network access; Q5 reworded to drop post-attendance collaboration; `<year>_Abstracts` notation replaced (it was producing XML parse failures every iteration when the model copied it into `<variables_involved>`).
+
+**D7 — implemented, unconfirmed on a live run.** `generate_and_optimize` now returns a dict (`all_angles`, `summary_text`, `gallery_path`, `dump_path`, `scripts_dir`) instead of a plain-text blob; `app.py` no longer writes a misleadingly-named `analysis_script_<ts>.py` and just points at what was written. All five D7 "Changes" items landed:
+1. Structured return (above) — the ripple into `app.py` the spec called for.
+2. `_write_gallery` emits `gallery_<ts>.md` into `output_dir`, markdown + a sibling images directory (the user's choice over a self-contained single-file HTML artifact, since this is a local CLI pipeline writing to disk, not a hosted page) — images are referenced via relative paths straight into the existing `artifacts/<angle_id>/` directories rather than copied a second time.
+3. **Four tiers, not one ranked list**, exactly as specified: `realised`/`realised_null` together at the top, ranked by **insight** (not soundness, and not realization order — Run 20 showed the run's highest-insight angles disconfirm more often than they confirm, so this is a deliberate departure from `all_angles`'s own soundness-first sort); `pattern_not_shown` secondary; `not_realisable` shown prominently with `requires`; `unsupportable` shown with `soundness_reasoning`. A closing "also generated" section one-lines everything judged but below `--realize-top-k`, pointing at the full-detail dump alongside it.
+4. Each realized angle's compiled script is now written to `output_dir/scripts/<run_ts>/<angle_id>.py` (previously kept in memory only, per D6's own note) and linked from its gallery entry.
+5. `delivered_score` is deliberately **omitted** from the gallery entirely (not just de-prioritized) — the D7 spec's "do not display until Issue 8 is confirmed fixed" instruction, taken to its natural conclusion given Issue 8's fix only ever addressed the scope mismatch, not the blank-PNG/dropped-data cases. `pattern_reasoning` carries the substance instead, shown as "Finding" on every top-tier entry.
+
+**Issue 19 bundled into this same pass** (cheap, same code path): `REALIZATION_VALIDATOR_PROMPT_SUFFIX`'s `<pattern_reasoning>` tag now also asks the judge to note whether the console output includes or omits a statistical test of the claim — informational only, not a verdict input, per Issue 19's own "do not add a significance requirement" conclusion.
+
+`_write_angle_dump` now takes `timestamp` as a parameter instead of stamping its own, so the dump, the gallery, and the scripts directory for one run all share a single run identifier — `_write_gallery` verified standalone (synthetic angle data covering all four tiers plus the "also generated" section) before this landed; a live run is still needed to confirm the real thing reads as intended and that no fifth outcome shape was missed.
 
 ### Run log
 
@@ -202,6 +213,8 @@ It still gates nothing mechanically, but **a gallery displaying `1.00` beside a 
 **FIXED, unconfirmed on a live run — scoped the rubric to the angle.** Chose the first of the three options above (user decision), not the hard artifact-emptiness cap. `validate_realization` now takes an `angle_scope` parameter (the angle's own `variables_involved` + `rough_method`, built in `_run_one_design` and passed alongside `claimed_pattern`) and `REALIZATION_VALIDATOR_PROMPT_SUFFIX` instructs the judge to SKIP — not emit a `<criterion>` tag for — any rubric bullet that is out of scope for this angle *by design*, while explicitly cautioning it not to skip a bullet the script merely failed to satisfy. Since `delivered_score` is computed purely as met/total over emitted `<criterion>` tags (`_CRITERION_PATTERN`), an omitted tag drops out of both numerator and denominator with no scoring-logic change in `pipeline.py`. `angle_scope` varies per angle so it lives in the suffix, not the cached prefix — zero extra LLM calls, no cache regression.
 
 **Known limitation, deliberately not addressed by this fix:** this only corrects the *scope* mismatch (narrow angles penalised for rubric bullets they were never meant to satisfy). It does **not** add a mechanical floor for the blank-PNG/degenerate-result failure mode that produced Run 16's 0.81 (one blank PNG, second plot never created), Run 17's 0.87/1.00 (all-zero acceptance rates; half the data silently dropped), and Run 19's 1.00 (a plot that "resolves to a single year... cannot support a trend either way") — a script can still score well on in-scope bullets it technically executed while the actual output is worthless. The user selected "scope the rubric to the angle" over the hard-cap option; if degenerate-but-in-scope results keep scoring high after this lands, that's the next thing to revisit, not a sign this fix failed. Needs a live run to confirm the scoping behaves as intended (plausible failure mode to watch for: the judge over-skips, e.g. treating a bullet as "out of scope" because the script failed it rather than because it was never meant to touch it).
+
+**Resolved for D7's purposes by omission, not by trusting this fix as sufficient.** The scope-skip fix above is still live (it improves `delivered_score` as a number), but since it demonstrably doesn't close the degenerate-result gap, D7's gallery does not display `delivered_score` at all — see §3's D7 entry. This settles the "is `delivered_score` fixed enough to show" question without needing the scoping behaviour confirmed first; the scoping fix itself is still worth confirming on a live run on its own merits (it still feeds `_write_angle_dump`), just no longer a D7 blocker.
 
 **9. FIXED, unconfirmed on a live run — `pattern_reasoning` is requested but never surfaced (Run 13).** The realisation validator was asked for `<pattern_reasoning>` and the field was discarded: the console printed `pattern_not_shown (delivered_score=0.67)` and nothing about why. **This was the same audit gap that existed for `unsupportable` verdicts before `soundness_reasoning` was added** — and fixing that one immediately proved the judge was right, so the precedent was direct.
 
@@ -313,6 +326,8 @@ Needs a live run to confirm no recurrence of the WARNING, and — if it does rec
 
 **The only change worth making:** have `validate_realization` mention in `pattern_reasoning` whether the claim was statistically tested, as *information beside the plot*. No new machinery — the validator already sees the console output. Not a gate, not a ranking input, not a separate tier.
 
+**FIXED, bundled into D7, unconfirmed on a live run.** `REALIZATION_VALIDATOR_PROMPT_SUFFIX`'s `<pattern_reasoning>` tag now explicitly asks for this, worded the same way — informational only, no change to `pattern_outcome`'s three-way vocabulary or to how any tier is ranked.
+
 **20. `applymap` — the compiler writes against an older pandas API than the image provides (Run 20).** `feedback-persona-mca` attempt 2 died on `profile.applymap(...)`, removed in pandas 3.0. Recovered on attempt 3, so it cost one attempt. If it recurs, add the installed pandas version (and the `applymap` → `map` note) to `DOMAIN_NOTES`, which now reaches the compiler as of Issue 17.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
@@ -398,6 +413,8 @@ The underlying guardrail (§2 — do not delete code a later step is scheduled t
 
 Issues 17 and 18 are resolved and confirmed. Runs 19 and 20 both achieved 100% realisation, with all four D6 outcome states now exercised.
 
+**D7 itself is now implemented** (see §3) — all four ordering items above were resolved before or alongside it: Issue 8 resolved by omitting `delivered_score` from the gallery outright rather than trusting the scope-only fix as sufficient; Issue 19 bundled directly into the same pass; §10 and Issue 20 remain not-urgent, unchanged. **Needs a live run** to confirm the gallery reads as intended against a real archive covering all four tiers plus the "also generated" section.
+
 **Scope check before starting D7.** The pipeline's job is to surface *leads worth a second look*, not results that survive rigorous scrutiny — that judgement is the human's at D7 (§11). Rev 16 of this plan briefly drifted the other way (a retraction, and a proposal to gate `realised` on significance testing); both are corrected in Issue 19. When a future issue proposes adding a judge, raising a bar, or suppressing an output, check it against this paragraph first. **On this dataset the achievable frontier is "interesting but caveated" — a stricter bar does not raise quality, it selects for boring.**
 
 Issues 13, 14, 15 and 16 are resolved. Issues 15 and 16 were confirmed by Run 18 (no nltk corpus failures, no `UnicodeDecodeError`). Run 17 produced no `not_realisable` angles at all, but Run 18 produced three, so that was not a stable improvement — Issue 17 is why.
@@ -428,22 +445,22 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 
 ---
 
-### D7 — Gallery, not a winner
+### D7 — Gallery, not a winner — **IMPLEMENTED, unconfirmed on a live run**
 
-**Prerequisites: Live Issues 9 and 10.** The status split (Issue 7) has shipped, but the gallery needs the *reasoning* behind each status (Issue 9) and a data source that actually contains realisation results (Issue 10). Building on a status label with no explanation would give the reader a verdict they cannot evaluate.
+**Prerequisites: Live Issues 9 and 10.** The status split (Issue 7) has shipped, but the gallery needs the *reasoning* behind each status (Issue 9) and a data source that actually contains realisation results (Issue 10). Building on a status label with no explanation would give the reader a verdict they cannot evaluate. Both resolved (Run 14) before this landed.
 
-**Changes**
-1. `generate_and_optimize` returns a structured result, not a string. **This ripples into `app.py`**, which currently writes `analysis_script_<ts>.py`; the console header "FINAL COMPILED SCRIPT" is also now inaccurate.
-2. Emit a self-contained gallery into `output_dir`. Per angle: its plot(s), a one-line "what's surprising here", **the soundness caveat as a visible confidence note**, which question/stakeholder it serves, and its realisation status.
-3. **Four presentation tiers, not one ranked list** — the statuses answer different questions and must not be flattened:
-   - `realised` and `realised_null` **together at the top**, ranked by insight. A clean disconfirmation closes a question and is often more useful than a confirmation; label it as such rather than demoting it. Show `pattern_reasoning` alongside the plot — for a `realised_null` it *is* the finding.
-   - `pattern_not_shown` — executed but the output does not show the claim. A quality outcome; show it, secondary.
-   - `not_realisable` — an *engineering* outcome (missing library). List these prominently **with their `requires`**, because that list is the signal telling you what to provision next (§10).
-   - `unsupportable` angles never reach realisation, but are worth listing with their `soundness_reasoning` — Run 12's three were the most *sophisticated* angles in the run, and knowing what the dataset cannot support is itself a finding.
-4. Also write each angle's generated script.
-5. Build it to skim in under a minute. The human makes the final "is this actually interesting" call.
+**Changes — all five shipped, see §3's D7 entry for the implementation detail:**
+1. `generate_and_optimize` returns a structured result, not a string. **This rippled into `app.py`**, which used to write `analysis_script_<ts>.py`; it now just reports the paths `generate_and_optimize` wrote.
+2. Emit a gallery into `output_dir` (markdown + a sibling images directory, not a single self-contained file — this is a local CLI pipeline writing to disk, not a hosted artifact). Per angle: its plot(s), the finding (`pattern_reasoning`), **the soundness caveat as a visible confidence note**, which question/stakeholder it serves, and its realisation status.
+3. **Four presentation tiers, not one ranked list** — shipped as specified:
+   - `realised` and `realised_null` **together at the top**, ranked by insight. A clean disconfirmation closes a question and is often more useful than a confirmation; label it as such rather than demoting it. `pattern_reasoning` shown alongside the plot — for a `realised_null` it *is* the finding.
+   - `pattern_not_shown` — executed but the output does not show the claim. A quality outcome; shown secondary.
+   - `not_realisable` — an *engineering* outcome (missing library). Listed prominently **with their `requires`**, because that list is the signal telling you what to provision next (§10).
+   - `unsupportable` angles never reach realisation, but are listed with their `soundness_reasoning` — knowing what the dataset cannot support is itself a finding.
+4. Each realized angle's compiled script is now written to disk (`output_dir/scripts/<run_ts>/<angle_id>.py`) and linked from its gallery entry.
+5. Built to skim in under a minute — four short tiers plus a one-line-per-angle closing section, not a full data dump (the surfaced_angles file alongside it has that). The human makes the final "is this actually interesting" call.
 
-**Do not display `delivered_score` as a quality number** until Live Issue 8 is confirmed fixed on a live run — a fix (scoping the rubric to the angle) has landed but is unconfirmed, and even once confirmed it only corrects the scope mismatch, not the blank-PNG/degenerate-result cases (Runs 16, 17, 19) — `pattern_reasoning` remains the primary signal for the gallery either way.
+**`delivered_score` is not displayed** — not merely de-prioritized. Live Issue 8's fix (scoping the rubric to the angle) landed but only ever corrected the scope mismatch, not the blank-PNG/degenerate-result cases (Runs 16, 17, 19) where a script that silently dropped data still scored 1.00, so trusting the number once "confirmed" would still mislead. `pattern_reasoning` is the gallery's only quality signal.
 
 ---
 
