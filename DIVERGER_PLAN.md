@@ -1,8 +1,12 @@
-# Converger → Diverger conversion plan (rev. 18)
+# Converger → Diverger conversion plan (rev. 20)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
-**D1–D7 are complete.** The pipeline now ideates, diverges, dedups, judges — with a graded (not gated) soundness verdict — selectively realises only the top-ranked angles into executed, Docker-verified scripts, and writes the result up as a tiered markdown gallery. What remains is stopping/economy (D8). D6 is confirmed working end-to-end on a live `cbias` run; **D7 is implemented but unconfirmed on a live run** — see §3 for what each implemented and the current live issues.
+**D1–D7 are complete and confirmed on live runs.** The pipeline ideates, diverges, dedups, judges — with a graded (not gated) soundness verdict — selectively realises only the top-ranked angles into executed, Docker-verified scripts, and writes the result up as a tiered markdown gallery. **D7 confirmed on Run 21** (`gallery_20260812_204611.md`): all four tiers render, relative image paths resolve, script links are correct, `delivered_score` is absent as designed, and Issue 19's testing-status note appears in both top-tier Findings. **The functional programme is finished.**
+
+**One non-cleanup item remains: Live Issue 21.** Run 21 lost two of its four realisations to a `max_tokens` failure inside `validate_realization`, and the failure was mislabelled in the gallery as a provisioning gap. That is a correctness bug in the oracle, not polish — fix it before D-consolidate.
+
+**Rev. 19 added a structural review of the whole repository (§12) and a new step — D-consolidate — that acts on it.** The finding, in one line: *the architecture is not over-complex, but the repository around it has drifted badly out of step with what the code now does.* `README.md` and `CLAUDE.md` describe the converger and contain zero occurrences of the words "angle" or "gallery"; the documented default entrypoint is broken; `pipeline.py` has grown to 1681 lines of which roughly a third is run archaeology that duplicates this document. **D-consolidate runs before D8**, because `CLAUDE.md` is what briefs the coding agent making every future change, and a wrong brief is a cause of drift rather than a symptom of it. With D7 confirmed, D-consolidate and Issue 21 are the whole of the remaining near-term work.
 
 **Read this whole document before starting. Then implement ONE step at a time, stopping after each for review and a live run.**
 
@@ -30,11 +34,11 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 
 - **One step at a time.** Implement, commit, run on the `cbias` config, review output, then continue. There is no pass/fail oracle in a diverger — the human reading the output *is* the test.
 - **Human-owned prompts stay human-owned.** `ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*` and `SOUNDNESS_JUDGE_*` are now filled in. Do not rewrite them; propose changes and let the human make them. The `*_FALLBACK` counterparts have been removed (see §3) now that these are stable — a missing/empty human-owned prompt is a hard failure now, not a silent generic substitute.
-- **Do not delete dormant code.** See §6.
+- **Do not delete dormant code.** See §6. *Dormant* means "a later step is scheduled to revive it". It does **not** cover genuinely dead code — a value computed and never read, a formatted string no caller consumes. §6 records that nothing is currently dormant, so D-consolidate's deletions do not conflict with this guardrail; check §6 before deleting anything and add to it if you leave something temporarily unused.
 - **Follow the caching convention (§4) for every new prompt.**
 - **Reuse, don't rewrite.** `_parse_xml_items`, `_jaccard`/`_token_set`, `_log_iteration_diversity`, `_angle_record`, `_dedup_angles`, `llm_call` (semaphore + images + `cache_prefix` + provider routing), `extract_xml`, `format_prompt`, the Docker sandbox and artifact copy-out all carry over.
 - **Instrument before tuning.** Every threshold here should be set from observed numbers. §3's run log is the evidence base.
-- **Keep it a template.** No new frameworks, no tree-search controllers, no persistent Elo ratings, no async task queues.
+- **Keep it a template.** No new frameworks, no tree-search controllers, no persistent Elo ratings, no async task queues. *This guardrail has held on the architecture and failed on the repository* — see §12.3. D-consolidate item 3 forces an explicit decision about whether "template" is still the honest description, because two of the three shipped domain configs are now vestigial and one of them is the broken default.
 - **Prompts live in `prompts.py`.**
 
 ### Out of scope
@@ -94,7 +98,7 @@ The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s ne
 
 **Report** — rewritten three times: plot taxonomy, metric counts and PNG counts removed; guiding questions levelled; anti-target list inlined from `djpbarry/cbias-survey`; programme CSVs pre-downloaded so Q4 is answerable without network access; Q5 reworded to drop post-attendance collaboration; `<year>_Abstracts` notation replaced (it was producing XML parse failures every iteration when the model copied it into `<variables_involved>`).
 
-**D7 — implemented, unconfirmed on a live run.** `generate_and_optimize` now returns a dict (`all_angles`, `summary_text`, `gallery_path`, `dump_path`, `scripts_dir`) instead of a plain-text blob; `app.py` no longer writes a misleadingly-named `analysis_script_<ts>.py` and just points at what was written. All five D7 "Changes" items landed:
+**D7 — implemented and CONFIRMED (Run 21).** `generate_and_optimize` now returns a dict (`all_angles`, `summary_text`, `gallery_path`, `dump_path`, `scripts_dir`) instead of a plain-text blob; `app.py` no longer writes a misleadingly-named `analysis_script_<ts>.py` and just points at what was written. All five D7 "Changes" items landed:
 1. Structured return (above) — the ripple into `app.py` the spec called for.
 2. `_write_gallery` emits `gallery_<ts>.md` into `output_dir`, markdown + a sibling images directory (the user's choice over a self-contained single-file HTML artifact, since this is a local CLI pipeline writing to disk, not a hosted page) — images are referenced via relative paths straight into the existing `artifacts/<angle_id>/` directories rather than copied a second time.
 3. **Four tiers, not one ranked list**, exactly as specified: `realised`/`realised_null` together at the top, ranked by **insight** (not soundness, and not realization order — Run 20 showed the run's highest-insight angles disconfirm more often than they confirm, so this is a deliberate departure from `all_angles`'s own soundness-first sort); `pattern_not_shown` secondary; `not_realisable` shown prominently with `requires`; `unsupportable` shown with `soundness_reasoning`. A closing "also generated" section one-lines everything judged but below `--realize-top-k`, pointing at the full-detail dump alongside it.
@@ -103,7 +107,11 @@ The two prompt-wording changes this needed (`SOUNDNESS_JUDGE_PROMPT_SUFFIX`'s ne
 
 **Issue 19 bundled into this same pass** (cheap, same code path): `REALIZATION_VALIDATOR_PROMPT_SUFFIX`'s `<pattern_reasoning>` tag now also asks the judge to note whether the console output includes or omits a statistical test of the claim — informational only, not a verdict input, per Issue 19's own "do not add a significance requirement" conclusion.
 
-`_write_angle_dump` now takes `timestamp` as a parameter instead of stamping its own, so the dump, the gallery, and the scripts directory for one run all share a single run identifier — `_write_gallery` verified standalone (synthetic angle data covering all four tiers plus the "also generated" section) before this landed; a live run is still needed to confirm the real thing reads as intended and that no fifth outcome shape was missed.
+`_write_angle_dump` now takes `timestamp` as a parameter instead of stamping its own, so the dump, the gallery, and the scripts directory for one run all share a single run identifier.
+
+**Run 21 confirms it against a real archive.** `gallery_20260812_204611.md`: two top-tier entries (one `realised`, one `realised_null`, interleaved and insight-ranked), two `not_realisable`, an "also generated" section for the two below the cutoff. Relative image paths resolve; `[script](scripts/<run_ts>/<angle_id>.py)` is correctly single-prefixed, settling empirically the double-`scripts/` question raised at review time (§12.6); `delivered_score` appears nowhere. No fifth outcome shape was missed. **The insight-ranking decision is vindicated on its first real archive:** the 0.85 disconfirmation leads the 0.78 confirmation, exactly the Run 20 argument for interleaving rather than sorting `realised` first.
+
+One presentation note, not a defect: the `Finding` and `Hypothesis` blocks are long — a full paragraph each — so the "skim in under a minute" criterion (D7 item 5) is met for the *structure* but is borderline for the *prose*. Both fields come straight from the judge and the angle schema, so shortening them is a prompt change, not a gallery change. Leave it until a human has skimmed two or three galleries and can say whether it actually gets in the way.
 
 ### Run log
 
@@ -130,6 +138,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 21 | — | — | **D7 CONFIRMED — the gallery is real.** Archive 6 post-dedup; realize-top-k 4. **1 realised, 1 realised_null, 0 pattern-not-shown, 2 not realisable — but both "not realisable" are Live Issue 21, not provisioning.** 0 unsupportable, a first. Issue 19's testing-status note present in both Findings. Stakeholder-blurring *confirmed* as a state claim after three disconfirmations of the trend claim (see §8) |
 | 20 | 0.10 / 0.09 | working | **Second consecutive 100% realisation.** Dedup 8→6 (0.230 + 0.393). 0 solid / 5 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Issue 18's fix held (clean extraction, descriptive slugs). **The readability finding failed to replicate under significance testing — see Issue 19** |
 
 **Divergence is solved.** Both axes are healthy and have been for seventeen consecutive runs. Do not spend further effort here.
@@ -326,9 +335,33 @@ Needs a live run to confirm no recurrence of the WARNING, and — if it does rec
 
 **The only change worth making:** have `validate_realization` mention in `pattern_reasoning` whether the claim was statistically tested, as *information beside the plot*. No new machinery — the validator already sees the console output. Not a gate, not a ranking input, not a separate tier.
 
-**FIXED, bundled into D7, unconfirmed on a live run.** `REALIZATION_VALIDATOR_PROMPT_SUFFIX`'s `<pattern_reasoning>` tag now explicitly asks for this, worded the same way — informational only, no change to `pattern_outcome`'s three-way vocabulary or to how any tier is ranked.
+**RESOLVED (Run 21).** `REALIZATION_VALIDATOR_PROMPT_SUFFIX`'s `<pattern_reasoning>` tag now explicitly asks for this, worded the same way — informational only, no change to `pattern_outcome`'s three-way vocabulary or to how any tier is ranked. Both of Run 21's top-tier entries carry it unprompted and in the right register: `undefined-acronym-density-trend` reports bootstrap 95% CIs and reasons from their overlap; `stakeholder-hybridity-index` states plainly that *no formal significance test or confidence interval is reported; the finding is descriptive only*, then separately notes that the raw co-occurrence matrix corroborates the pattern independently of the weaker derived metric. That is exactly the intended shape — the reader can see which kind of evidence they are looking at without the verdict having moved.
 
 **20. `applymap` — the compiler writes against an older pandas API than the image provides (Run 20).** `feedback-persona-mca` attempt 2 died on `profile.applymap(...)`, removed in pandas 3.0. Recovered on attempt 3, so it cost one attempt. If it recurs, add the installed pandas version (and the `applymap` → `map` note) to `DOMAIN_NOTES`, which now reaches the compiler as of Issue 17.
+
+**21. A failed judge call is mislabelled as a provisioning gap, and discards a possibly-successful Docker run (Run 21).** Two of four realised angles — `feedback-satisfaction-driver-shift` and `program-abstract-alignment-vs-attendee-mix` — came back as:
+
+```
+ValueError("No text content in response (stop_reason=max_tokens,
+  blocks=['thinking']). The token budget was likely consumed by thinking...")
+```
+
+That is `validate_realization` exhausting its budget in the thinking phase. Note `llm_call` **already retried at double** (8192 → 16384) before raising, so this is a two-strikes failure, not a one-off.
+
+**Three separate problems, in ascending order of seriousness.**
+
+1. **Wrong tier.** `generate_and_optimize`'s `isinstance(result, Exception)` branch sets `realization_status = "not_realisable"`, so the gallery files both under *"Not realisable — engineering / provisioning gaps"* and prints their `requires` fields (`scipy`, `statsmodels`) beside them. **Both libraries have been in the image since §10's interim fix.** A reader concludes there is a provisioning gap; there is none. This is a *third* failure class — infrastructure — leaking into a tier D6 item 5 and §10 both insist must stay clean. `requires` in particular should not be displayed for a failure that has nothing to do with libraries.
+
+2. **The compiled script is discarded.** The exception branch `continue`s before reaching `if scripts_dir and result.get("script")`, so nothing is written to `scripts/<run_ts>/`. D7 item 4's rationale — *"a human debugging a provisioning gap wants to see what the compiler actually produced"* — applies with more force here, not less: the script is the only remaining evidence of what happened.
+
+3. **The Docker spend is written off.** `validate_realization` is only reached after a verified execution PASS (FAIL returns early, SKIPPED short-circuits — see `_run_one_design`). So both angles very likely **compiled, ran in the sandbox, and produced artifacts**, and the whole chain was thrown away because the judge could not fit its reasoning in 16k. Run 21's 50% realisation rate is a `max_tokens` figure wearing a provisioning costume.
+
+**Fix, three parts, all small:**
+1. **Raise `validate_realization`'s `max_tokens`.** `compile_script` already passes `16384` explicitly; the validator uses the 8192 default and doubles to 16384 on retry, which was not enough twice in one run. It is the most context-heavy call in the pipeline (report + rubric + angle scope + script + console output + up to `_MAX_VALIDATOR_IMAGES` PNGs), so the default is simply wrong for it. Pass an explicit larger budget rather than raising the global default.
+2. **Give infrastructure failure its own status.** A fourth value — `realization_error` — or at minimum a flag that keeps it out of the provisioning tier and suppresses `requires`. The plan has been strict about never conflating engineering outcomes with quality outcomes; this is the same principle one category further out.
+3. **Persist whatever exists on the exception path.** Return a partial result from `_run_one_design` rather than letting the exception escape, so the script and artifacts survive. Cheapest version: wrap the `validate_realization` call in `_run_one_design` itself, so a judge failure degrades to a status rather than destroying the design's output.
+
+**Verify:** a run in which a validator call fails should still write the script, list the real artifacts, and keep the angle out of the provisioning tier.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -415,6 +448,15 @@ Issues 17 and 18 are resolved and confirmed. Runs 19 and 20 both achieved 100% r
 
 **D7 itself is now implemented** (see §3) — all four ordering items above were resolved before or alongside it: Issue 8 resolved by omitting `delivered_score` from the gallery outright rather than trusting the scope-only fix as sufficient; Issue 19 bundled directly into the same pass; §10 and Issue 20 remain not-urgent, unchanged. **Needs a live run** to confirm the gallery reads as intended against a real archive covering all four tiers plus the "also generated" section.
 
+**Ordering from here (rev. 20).** The D7 confirmation run is **done** (Run 21) and the functional programme with it. What is left:
+
+1. **Live Issue 21** — the `max_tokens` failure in `validate_realization`, its mislabelling as a provisioning gap, and the discarded script. **This is not cleanup**: it is a correctness bug in the oracle that cost Run 21 half its realisations and reported the loss under the wrong cause. Small fix, high value, do it first.
+2. **D-consolidate.** Docs, entrypoint, module split, dead weight. No behaviour change. Items 1–3 (the docs and the entrypoint) go first regardless, because every subsequent change is made by an agent reading `CLAUDE.md` — and item 4's module split is much easier to review if it lands after Issue 21 rather than tangled with it.
+3. **Report edit — guiding question 5.** Cheap, and overdue: retire it as *two* findings, not one (§8). Costs a question slot every iteration until done.
+4. **D8** (saturation stopping, economy instrumentation). Unchanged, except that its docs item has moved into D-consolidate.
+
+Two of D-consolidate's items are *measurements*, not changes — whether dedup still earns its ~115 lines now that it runs after judging, and whether iteration 2 has ever contributed a realised angle. Both are answerable from the existing run logs and both could remove code rather than add it. Take them before deciding anything.
+
 **Scope check before starting D7.** The pipeline's job is to surface *leads worth a second look*, not results that survive rigorous scrutiny — that judgement is the human's at D7 (§11). Rev 16 of this plan briefly drifted the other way (a retraction, and a proposal to gate `realised` on significance testing); both are corrected in Issue 19. When a future issue proposes adding a judge, raising a bar, or suppressing an output, check it against this paragraph first. **On this dataset the achievable frontier is "interesting but caveated" — a stricter bar does not raise quality, it selects for boring.**
 
 Issues 13, 14, 15 and 16 are resolved. Issues 15 and 16 were confirmed by Run 18 (no nltk corpus failures, no `UnicodeDecodeError`). Run 17 produced no `not_realisable` angles at all, but Run 18 produced three, so that was not a stable improvement — Issue 17 is why.
@@ -464,6 +506,102 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 
 ---
 
+### D-consolidate — Repo hygiene, honest docs, and dead weight
+
+**Goal:** close the gap between what the repository *says* it is and what the code now does. No behaviour change, no new capability — every item either deletes something, moves something, or corrects a statement that is currently false. Evidence for all of it is in §12.
+
+**Run it before D8.** Not because D8 depends on it, but because item 1 changes the brief every future agent works from.
+
+#### Changes
+
+**1. Rewrite `CLAUDE.md`. Highest leverage item in this document.**
+
+It currently diagrams `Criteria extraction → Orchestrator → Workers → Compiler+Execution → Requirements Evaluator` — the converger — and contains **zero occurrences of "angle" or "gallery"**. It documents `--max-iterations 5` as a redesign count and does not mention `--realize-top-k` or `--angles-per-iteration`. It says the pipeline produces "a **standalone Python analysis script**".
+
+This is the file Claude Code reads before touching anything, so **the agent doing the work has been briefed on an architecture that no longer exists for the whole of D2–D7.** That is a plausible partial explanation for items 5–7 below: an agent told the system is a converger will add to it rather than restructure it. Rewrite it to describe the real flow:
+
+```
+criteria split → ideate (fan-out, N angles) → judge (insight + soundness)
+  → dedup → rank → realise top-k → gallery
+```
+
+Include: the four `realization_status` outcomes and what each means, the three-way soundness vocabulary, the fact that `delivered_score` exists but is deliberately not displayed, and the human-owned-prompts guardrail (§2).
+
+**2. Rewrite `README.md`.** Same drift, plus concrete falsehoods a new user would hit immediately:
+- Claims the pipeline refines "a standalone Python analysis script" and ends "A design passes → Final Script". It returns a gallery.
+- Documents `--designs-per-iteration` (removed in D6) and omits `--realize-top-k` and `--angles-per-iteration` (both live).
+- Lists configs as `{bioimage, trello}`; there are three.
+- Describes best-of-N and "seeded mutation" — both deleted in D1/D3 (`pick_best_seed`/`pick_other_seed`, §6).
+
+**3. Fix or retire the default entrypoint — and decide the template question while you are there.**
+
+`pixi run python app.py` with no arguments is the command both documents give as the primary entrypoint. It selects `bioimage_config`, which defaults to `./inputs/report/report_20260710_202254.md` and `./inputs/images` — **neither path exists in the repository.** The documented happy path is broken.
+
+Behind that is the identity question this fork has been deferring. Two honest options, and the choice determines several items below:
+
+- **(a) It is a CBIAS research instrument.** Make `cbias` the default config, delete or clearly mark `bioimage_config.py` and `trello_config.py` as untested examples, and amend §2's "keep it a template" guardrail to say what is actually being kept — a *simple, single-module, no-framework* pipeline, which is the property that has genuinely held.
+- **(b) It is still a template.** Then the bioimage and trello paths must actually run, which means shipping sample inputs for at least one of them and confirming the diverger's ideation/judging stages produce something sensible on a domain that is not a four-year survey dataset. Note that no such run has ever been done: **every one of the twenty runs in §3 is `cbias`.**
+
+Both configs currently *import* cleanly against `PipelineConfig` — that is real and worth keeping — but importing is not running. Recommendation is (a), on the evidence: the report format, the anti-target loop, `DOMAIN_NOTES`, the guiding-question parser and every calibrated threshold in this document are CBIAS-shaped.
+
+**4. Split `pipeline.py`.** 1681 lines in one module, with a 349-line `generate_and_optimize` and a 166-line `_run_one_design`. Mechanical, no behaviour change; the seams already exist:
+
+| Module | Contents |
+|---|---|
+| `llm.py` | `_client_for_model`, `llm_call`, `_image_blocks`, `LLM_SEMAPHORE` |
+| `parsing.py` | `extract_xml`, `_extract_markdown_section`, `format_prompt`, `_parse_xml_items`, `parse_tasks`, `parse_angles`, `_parse_guiding_questions` |
+| `sandbox.py` | `DOCKER_SANDBOX_FLAGS`, `execute_script_in_docker`, `validate_execution`, `_format_artifacts`, `_load_plot_images` |
+| `ideation.py` | `generate_angles`, `_angle_record`, `_ensure_unique_id`, `_log_iteration_diversity`, `_token_set`, `_jaccard`, `_angle_signature`, `_pick_representative`, `_dedup_angles` |
+| `judging.py` | `judge_insight`, `judge_soundness`, `_judgment_sort_key`, `_format_angle` |
+| `realization.py` | `_run_one_design`, `compile_script`, `_call_worker`, `validate_realization` |
+| `output.py` | `_write_gallery`, `_write_angle_dump`, `_gallery_entry`, `_gallery_entry_images`, `_script_rel_path` |
+| `pipeline.py` | `generate_and_optimize` only — the orchestration, readable on one screen |
+
+While doing it: **replace `from prompts import *`.** The star import makes 24 prompt constants unresolvable to any static check, so nothing will ever tell you when a prompt goes unused or a name is misspelled until it fails at runtime.
+
+**5. Move run archaeology out of the code comments and into this document.**
+
+`pipeline.py` is ~34% comment and docstring, with **103 references** to Live Issue numbers, run numbers, or D-phase labels. `generate_and_optimize`'s docstring alone is 27 lines and names seven phases.
+
+The comments are individually good — they record *why*, which is the valuable half and must survive. What should not survive in source is *when*: "Run 20 showed", "Live Issue 8", "D6-fix item 2". That history already lives here, in a document specifically maintained for it, and keeping it in both places means a reader has to reconstruct seven phases of project history to understand a six-stage pipeline.
+
+**The rule to apply:** keep the reason, drop the citation. `# Ranked by insight, not delivery mechanics — a clean disconfirmation is often the more useful result` stays. `(DIVERGER_PLAN.md Live Issue 8/D7, Run 20)` goes. Where the history genuinely matters, one pointer to the section here is enough.
+
+Rough estimate: 250–350 lines removed without losing a single decision.
+
+**6. Delete dead weight.** All three confirmed by inspection at `96d297f`:
+- **`summary_text`** — ~25 lines of string formatting built at the end of `generate_and_optimize`, returned in the result dict, and consumed by nothing. `app.py` prints paths and counts only. Its docstring says it is "kept for console logging / non-visual consumers"; there are none. Delete it, or actually print it.
+- **`delivered_pass`** — computed in `validate_realization` (`total > 0 and met == total`), returned, unpacked by its single caller, and never used. It is a vestige of the converger's boolean gate. Delete.
+- The `_MIN_SUCCESS_OUTPUT_CHARS` / `_CRITERION_PATTERN` / `_PATTERN_OUTCOME_TO_STATUS` constants are all live and should stay — listing them here only so nobody sweeps them up with the above.
+
+**7. Measure, then decide: does dedup still earn its ~115 lines?**
+
+`_dedup_angles` plus `_angle_signature`, `_pick_representative`, `_token_set` and `_jaccard` is roughly 115 lines with a hand-calibrated threshold (0.22, §3) and a documented lexical ceiling. It was originally justified by saving downstream cost.
+
+**It no longer saves anything.** D6-fix item 2 correctly moved judging *before* dedup, so all N angles are judged either way. Realisation takes the top-k off a ranked list, and a merged duplicate would rank adjacent to its twin rather than displacing anything a human would miss. So dedup's entire remaining output is *removing a few rows from a gallery* — and the "also generated" section one-lines the survivors regardless.
+
+Before deleting it, check the run log for the case it is actually protecting against: **has a merge ever removed an angle that would otherwise have entered the top-k and duplicated a slot?** Runs 8–20 record every merge and its score. If the answer is no across thirteen runs, dedup is a display nicety costing 115 lines and a calibrated constant, and the honest move is to delete it and let the gallery show near-duplicates — which a human skimming for leads can dismiss in a second, and which would incidentally make the lexical-ceiling problem (§3, "Known ceiling") disappear rather than needing an embedding-based fix later.
+
+If the answer is yes, keep it and record the case here so the question stays settled.
+
+**8. Measure: does iteration 2 earn its keep?**
+
+The default run is `--max-iterations 2 --angles-per-iteration 12 --realize-top-k 4` — **24 angles generated, 48 Opus judge calls, 4 realised**, roughly 110 LLM calls total (§12.4). Iteration 2's only divergence pressure is `{existing_angles}` in the prompt suffix.
+
+From the run logs: **has any realised angle ever come from iteration 2?** If not, `--max-iterations 1 --angles-per-iteration 16` produces a comparable archive for roughly two-thirds of the judging bill. Note the confound before concluding: cross-iteration divergence is reported "working" in every run since Run 4, so iteration 2 is demonstrably producing *different* angles — the question is narrower, whether any of them have ever been good enough to realise.
+
+This also interacts with D8 item 1, which wants the across-iteration merge fraction as a saturation signal. **Do this measurement before setting that threshold** — if iteration 2 contributes nothing realisable, a saturation criterion measured across iterations is measuring a stage that should not exist.
+
+#### Explicitly not in scope
+
+- **Any change to the judge prompts, stances, thresholds or tiering.** Divergence is solved, the judges are validated (§8). This step touches structure and documentation only.
+- **Adding tests or CI.** Worth wanting, but there is still no oracle in a diverger (§2) — the human reading the gallery is the test. A test suite here would pin plumbing, not quality, and the plumbing is about to move in item 4. Revisit after the split, when the module boundaries are stable enough to be worth pinning.
+- **The `pipeline.py` rewrite as a redesign.** Item 4 is `git mv`-shaped: move functions, fix imports, change nothing else. If a split tempts you into restructuring the logic, stop and put the restructure in a separate commit.
+
+**Verify:** a reader who has never seen this project can run the pipeline from `README.md` alone and get a gallery; `grep -c "Live Issue\|Run 1[0-9]" pipeline.py` returns something close to zero; `python -m pyflakes *.py` runs clean; no module exceeds ~400 lines.
+
+---
+
 ### D8 — Saturation stopping and economy instrumentation
 
 **Changes**
@@ -471,7 +609,7 @@ Live Issue 8 (`delivered_score` scope mismatch) can wait; it gates nothing, but 
 2. **Verify caching** (§4) — the outstanding one-off measurement.
 3. Instrument **cost per distinct angle surfaced**, reporting cached vs uncached input tokens alongside it. Replaces `req_score` as the number to tune against.
 4. Confirm model tiering end to end against §5.
-5. Update `README.md` and `CLAUDE.md` to describe the diverger.
+5. ~~Update `README.md` and `CLAUDE.md` to describe the diverger.~~ **Moved to D-consolidate**, and promoted — this was the lowest-numbered item of a deferred step, and it turned out to be the highest-leverage defect in the repository. See §12.1.
 
 ---
 
@@ -503,7 +641,11 @@ Both results are true. A monotonic four-point decline is real in the data; it is
 
 **Bold angles disconfirm; safe angles confirm (Run 20).** The run's three highest-insight angles (0.78, 0.75, 0.75) all came back `realised_null`, while the single `realised` angle scored **0.55** — second-lowest in the run. This is not a defect: an angle is interesting *because* it hypothesises something non-obvious, and non-obvious hypotheses are more often wrong. But it means a gallery that leads with `realised` leads with its least interesting result. Reinforces ranking the top tier on **insight**, with `realised` and `realised_null` interleaved rather than separated.
 
-**The stakeholder-blurring hypothesis has now been disconfirmed three times, independently.** Run 15's `stakeholder-hybridity-depth` found dual-discipline training falling 22.6% → 16.2%; Run 16's `hybrid-background-blurring` found multi-domain proportion falling 86.8% → 81.1%; Run 19's `stakeholder-hybridity-analysis` found an essentially flat ~70% rate. **Three angles, three hybridity definitions, no support for "increasingly blurred" in any of them.** Treat this as settled and **reframe guiding question 5 in the report** — the diverger has answered it, in the opposite direction from its premise. Leaving it as-is spends a question slot per iteration re-litigating a closed question.
+**Stakeholder blurring: the trend is dead, the state is confirmed — and the distinction matters (Runs 15, 16, 19, 21).** Three independent disconfirmations of the *trend* claim: Run 15's `stakeholder-hybridity-depth` found dual-discipline training falling 22.6% → 16.2%; Run 16's `hybrid-background-blurring` found multi-domain proportion falling 86.8% → 81.1%; Run 19's `stakeholder-hybridity-analysis` found an essentially flat ~70% rate. Three angles, three hybridity definitions, no support for "increasingly blurred" in any of them.
+
+**Run 21 then `realised` a fourth angle on the same territory — and it is not a contradiction.** `stakeholder-hybridity-index` (insight 0.78) tested whether boundaries *are* blurred rather than whether they are *becoming* blurred, and found extensive off-diagonal role×training-domain overlap: facility staff, PhD students, postdocs and research scientists all reporting meaningful counts across image analysis, machine learning, computer vision and cell/molecular biology alike, with non-trivial hybridity scores across virtually every role in both years. Cross-sectional, 2024/25 only (n=53, n=37), descriptive rather than tested — and the judge said all of that unprompted.
+
+**So the retirement note for guiding question 5 needs to be more precise than "settled".** Write both halves into Already Explored: *the community is hybrid (established, four angles, one confirming state and three disconfirming trend); it is not becoming more hybrid over 2022–2025 (established, three independent definitions).* Retiring the question wholesale would discard the positive finding along with the dead premise; retiring it as "no trend" alone would leave the state claim open and it will keep being re-proposed. **This is the clearest demonstration yet that the anti-target list needs to name claims, not topics** — four angles on one topic produced two genuinely different, both-useful answers.
 
 **A new finding worth acting on (Run 19).** `industry-speaker-attendee-alignment` came back `realised_null` with ρ=−0.40: industry *speaker* share rising steadily while industry *attendee* share falls. The programme is moving toward industry as the audience moves away from it. Concrete and actionable for the organising committee, and the opposite of the angle's own hypothesis.
 
@@ -569,3 +711,74 @@ Keep "not realisable" strictly separate from "unsound"/"pattern_not_shown" in th
 ## 11. Expectation setting
 
 This will surface a wider, cheaper spread of angles than the converger, some non-obvious — a real improvement over a pipeline that reflects the author's own priors back at them. It will not out-think a domain expert on their own data. Treat it as a fast idea-generator that occasionally surprises, with the human at D7 as the actual evaluation function. Building around that division of labour, rather than trying to automate the judgement away, is what makes the compute worth spending.
+
+
+---
+
+## 12. Structural review (at `96d297f`, rev. 19)
+
+The evidence base for D-consolidate, in the same spirit as §3's run log: measured, not asserted. Taken against a clean clone at commit `96d297f` (206 commits).
+
+### 12.1 The verdict
+
+**The architecture is not over-complex. The repository around it is.**
+
+Worth stating the negative first, because it is the part that could have gone wrong and did not. The control flow is still a straight line — criteria → ideate → judge → dedup → realise top-k → gallery. No supervisor, no asynchronous task queue, no Elo, no persistent ratings, no meta-review synthesiser, no multi-strategy reflection agent. §2's "no new frameworks, no tree-search controllers" guardrail held completely. Selective execution (top-k of 24) is a genuine cost control rather than a gesture, judging before dedup was the right ordering, and grading soundness rather than gating on it was the right call. All three domain configs still satisfy `PipelineConfig`.
+
+What grew out of proportion is the file, the prose, and the distance between the documentation and the code.
+
+### 12.2 Growth
+
+| | fork point `fe6e197` (17 Jul) | `96d297f` (12 Aug) |
+|---|---|---|
+| `pipeline.py` | 811 lines | **1681** |
+| `prompts.py` | 209 | 454 |
+| `app.py` | 102 | 117 |
+| largest function | — | `generate_and_optimize`, **349 lines** |
+| second largest | — | `_run_one_design`, 166 lines |
+| `pipeline.py` comment + docstring | — | **~34%** (196 comment, ~390 docstring lines) |
+| references to Live Issues / run numbers / D-phases in `pipeline.py` | — | **103** |
+
+A doubling of the core module is not obviously wrong for a fork that changed its output from one script to a tiered gallery. The 34% and the 103 are the numbers that matter: this document and the source are now maintaining the same history in parallel.
+
+### 12.3 Documentation drift — the actual defect
+
+Measured, not impressionistic: **`README.md` and `CLAUDE.md` contain zero occurrences of "angle" or "gallery".** They describe the converger, in detail, accurately, as of mid-July.
+
+`CLAUDE.md` is the serious one because it is the brief Claude Code works from. For the whole of D2–D7 the agent implementing this plan has been told the system is an orchestrator/worker/compiler/evaluator pipeline producing a standalone script. That makes the drift self-reinforcing rather than merely untidy — and it is the single cheapest thing in this document to fix.
+
+The documented default entrypoint (`pixi run python app.py`, no arguments) selects `bioimage_config`, whose default report and data directories do not exist in the repository.
+
+Underneath both is the identity question. Every one of the twenty runs logged in §3 is `cbias`. The report format, the anti-target curation loop, `DOMAIN_NOTES`, the guiding-question parser, the 0.22 dedup threshold and the "n=37–60 across four time points" reasoning that shapes both judges are all CBIAS-specific. The repo still advertises itself as a reusable domain-agnostic template with two other configs; in practice it is a research instrument with two vestigial ones, and the broken default is the visible symptom of that. D-consolidate item 3 forces the choice.
+
+### 12.4 Cost shape
+
+At default settings (`--max-iterations 2 --angles-per-iteration 12 --realize-top-k 4`):
+
+| Stage | Calls | Tier |
+|---|---|---|
+| Criteria extraction | 1 | Sonnet |
+| Ideation | 24 | cheap (DeepSeek on cbias) |
+| Judging (insight + soundness) | **48** | **Opus** |
+| Realisation (4 × orchestrator + ~5 workers + ≤3 compilers + 1 validator) | ~36 | mixed |
+| **Total** | **~110** | |
+
+**Run 21 adds a third, sharper observation:** realisation spend can be lost *after* it is incurred. Two of four angles paid the full orchestrator + workers + compiler + Docker chain and then had the result discarded by a failed judge call (Live Issue 21), which does not show up anywhere in the table below because the calls all succeeded — only the last one did not return usable text. Any cost-per-distinct-angle figure (D8 item 3) must count realisations *retained*, not realisations *attempted*, or it will flatter the pipeline exactly when it is failing.
+
+Two further observations rather than conclusions. Judging is 44% of the call count and sits on the most expensive tier — justified, since with `req_score` gone those two judges *are* the quality bar (§5), and they share a cached prefix. But 20 of the 24 judged angles are never realised and appear in the gallery as a single line each. And the generation-to-realisation ratio is 6:1, which is a defensible number for a diverger and an expensive one to leave unexamined. D-consolidate items 7 and 8 are the two measurements that would settle whether it is the right ratio.
+
+### 12.5 Dead weight found
+
+- `summary_text` — built, returned, consumed by nothing.
+- `delivered_pass` — computed, returned, unpacked, never read.
+- `from prompts import *` — 24 constants invisible to static analysis.
+
+Small individually; listed because they are the tail end of the converger and their presence is the clearest single sign that deletions have lagged behind additions.
+
+### 12.6 Two prior concerns, closed
+
+Both flagged during the D7 review and both resolve correctly on inspection, recorded here so they are not re-raised:
+
+- **`_script_rel_path` does not double the `scripts/` prefix.** It returns `<run_ts>/<angle_id>.py` from an absolute path; the caller prepends `scripts/`. The resulting link is `scripts/<run_ts>/<angle_id>.py`, correct.
+- **`considered_ids` does not over-exclude.** An angle with a failed soundness judge (`None`) and no realisation falls into "also generated", which is the correct catch-all for it.
+
