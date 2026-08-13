@@ -135,14 +135,25 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
     # These models use adaptive thinking; if max_tokens is exhausted during the
     # thinking phase the response comes back with a thinking block but no text.
     # Retry once with a larger budget before giving up.
+    #
+    # Live Issue 23: stream rather than call create() directly. The SDK refuses to send any
+    # non-streaming request whose max_tokens implies a possible >10-minute response - and the
+    # retry-at-double step below can reach that ceiling on its own once max_tokens is raised
+    # (DIVERGER_PLAN.md Live Issue 23: the Issue 21 fix that doubled the global default to
+    # 16384 also doubled every retry to 32768, which crosses the SDK's non-streaming guard).
+    # Streaming removes the ceiling instead of moving it again, so a genuine thinking-budget
+    # exhaustion still gets a chance to recover on retry rather than failing outright.
+    # get_final_message() returns the same Message-shaped object create() always did, so
+    # nothing below this block - or any caller of llm_call - needs to change.
     async with LLM_SEMAPHORE:
         for attempt, tokens in enumerate((max_tokens, max_tokens * 2)):
-            response = await client.messages.create(
+            async with client.messages.stream(
                 model=model,
                 max_tokens=tokens,
                 system=system_content,
                 messages=messages,
-            )
+            ) as stream:
+                response = await stream.get_final_message()
             text = "".join(block.text for block in response.content if block.type == "text")
             if text.strip():
                 return text
