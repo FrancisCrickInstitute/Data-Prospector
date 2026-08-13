@@ -560,9 +560,14 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     )
 
     images = _load_plot_images(artifacts, artifacts_dir)
+    # Live Issue 21: this is the most context-heavy call in the pipeline (report + rubric +
+    # angle_scope + script + console output + up to _MAX_VALIDATOR_IMAGES PNGs), so the 8192
+    # default was twice not enough in one run (llm_call's own retry-at-double still exhausted at
+    # 16384) - pass an explicit budget matching compile_script's, rather than relying on the
+    # generic default being right for the heaviest caller in the pipeline.
     validator_response = await llm_call(validator_suffix, system_prompt=EVALUATOR_SYSTEM,
                                         model=config.requirements_evaluator_model, cache_prompt=True,
-                                        images=images or None, cache_prefix=validator_prefix)
+                                        max_tokens=16384, images=images or None, cache_prefix=validator_prefix)
     outcome_text = extract_xml(validator_response, "pattern_outcome").strip().lower()
     if outcome_text in _PATTERN_OUTCOMES:
         pattern_outcome = outcome_text
@@ -1003,6 +1008,16 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
         lines.append(f"- **Serves:** {angle['question_or_stakeholder_served']}")
     if angle.get("pattern_reasoning"):
         lines.append(f"- **Finding:** {angle['pattern_reasoning']}")
+    elif angle.get("realization_status") == "realization_error":
+        # Live Issue 21: there is no pattern_reasoning here - the judge call that would have
+        # produced it is exactly what failed - but the script/images below are real, so say so
+        # rather than silently showing an entry with no Finding line and no explanation why.
+        feedback = (angle.get("realization_feedback") or "").strip()
+        lines.append(
+            f"- **Note:** the realisation judge failed after a verified execution, so there is no "
+            f"automated finding for this angle - the script and image(s) below are real; judge "
+            f"them yourself. ({feedback[:300]})"
+        )
     if angle.get("soundness_caveat"):
         lines.append(f"- **Caveat:** {angle['soundness_caveat']}")
     for img in _gallery_entry_images(angle):
@@ -1016,8 +1031,9 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
 def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> str:
     """D7: emit a self-contained, skimmable markdown gallery - the pipeline's actual deliverable.
     Replaces the plain-text ranked summary generate_and_optimize used to return as its whole
-    result (D2-D6 placeholder - see that function's docstring). Four tiers, never flattened into
-    one ranked list (D7 item 3), because the statuses answer different questions:
+    result (D2-D6 placeholder - see that function's docstring). Five tiers, never flattened into
+    one ranked list (D7 item 3, extended by Live Issue 21), because the statuses answer different
+    questions:
 
     - realised / realised_null TOGETHER, ranked by INSIGHT (not soundness, and not the
       realization order) - Run 20 showed the run's three highest-insight angles all came back
@@ -1026,6 +1042,10 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
       its safest one. A clean disconfirmation closes a question and is shown as a finding here,
       not demoted beneath a confirmation.
     - pattern_not_shown - executed, but illegible. A real quality outcome, shown secondary.
+    - realization_error - executed (Docker-verified) but the judge call itself failed
+      (DIVERGER_PLAN.md Live Issue 21). Kept OUT of the not_realisable tier and never shown with
+      `requires` - unlike a provisioning gap, nothing about the angle or the environment was at
+      fault, so labelling it as one would misdirect a reader deciding what to provision next.
     - not_realisable - an ENGINEERING outcome, not a quality one (DIVERGER_PLAN.md D6 item 5).
       Listed prominently with `requires`, since that list is the signal for what to provision next
       (DIVERGER_PLAN.md §10).
@@ -1047,6 +1067,7 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
     realized_top.sort(
         key=lambda a: a.get("insight_score") if a.get("insight_score") is not None else -1.0, reverse=True)
     not_shown = [a for a in all_angles if a.get("realization_status") == "pattern_not_shown"]
+    realization_errors = [a for a in all_angles if a.get("realization_status") == "realization_error"]
     not_realisable = [a for a in all_angles if a.get("realization_status") == "not_realisable"]
     unsupportable = [a for a in all_angles if a.get("soundness_verdict") == "unsupportable"]
     considered_ids = {a.get("id") for a in all_angles if a.get("realization_status") or a.get("soundness_verdict") == "unsupportable"}
@@ -1055,8 +1076,9 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
     lines = [
         f"# Diverger gallery — {timestamp}", "",
         f"{len(all_angles)} candidate angle(s) surfaced this run: {len(realized_top)} realised or "
-        f"disconfirmed, {len(not_shown)} executed but illegible, {len(not_realisable)} not "
-        f"realisable, {len(unsupportable)} unsupportable by the data.", "",
+        f"disconfirmed, {len(not_shown)} executed but illegible, {len(realization_errors)} executed "
+        f"but unscored (judge failure), {len(not_realisable)} not realisable, {len(unsupportable)} "
+        f"unsupportable by the data.", "",
     ]
 
     if realized_top:
@@ -1072,6 +1094,16 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
         lines.append("## Pattern not shown — executed, but the output didn't legibly demonstrate the claim")
         lines.append("")
         for angle in not_shown:
+            lines.extend(_gallery_entry(angle, top_tier=False))
+
+    if realization_errors:
+        lines.append("## Executed, but unscored — the judge call failed, not the analysis")
+        lines.append("")
+        lines.append("_The script compiled, ran in the sandbox, and produced real output; only the "
+                      "final judging call failed (DIVERGER_PLAN.md Live Issue 21). Not a "
+                      "provisioning gap - judge these yourself from the script/image(s) below._")
+        lines.append("")
+        for angle in realization_errors:
             lines.extend(_gallery_entry(angle, top_tier=False))
 
     if not_realisable:
@@ -1148,6 +1180,15 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
       execution was unverifiable (no data_dir / Docker unavailable) - an engineering/provisioning
       outcome, never conflated with "pattern_not_shown" or "realised_null" (DIVERGER_PLAN.md D6
       item 5).
+    - "realization_error": executed (Docker-verified PASS) and DID produce real artifacts/script,
+      but the realization judge call itself failed (e.g. exhausted its token budget) so there is
+      no pattern_outcome to report. A THIRD kind of "not good", distinct from both quality outcomes
+      above and from "not_realisable" - unlike a provisioning gap, nothing about the angle or the
+      environment is at fault, and unlike pattern_not_shown, no judge ever looked at the output.
+      Added post-D7 (DIVERGER_PLAN.md Live Issue 21, Run 21): the exception used to unwind out of
+      this function entirely, discarding the script/artifacts and getting relabelled
+      "not_realisable" one level up - which both threw away a Docker-verified execution and lied
+      about why the angle wasn't realised.
     """
 
     def log(msg):
@@ -1258,9 +1299,27 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         f"Variables: {angle.get('variables_involved', '')}\n"
         f"Method: {angle.get('rough_method', '')}"
     )
-    pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, realization_feedback = await validate_realization(
-        compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
-        angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir)
+    # Live Issue 21: validate_realization is only ever reached after a VERIFIED Docker execution
+    # PASS (FAIL/SKIPPED both return above), so a failure here - e.g. the judge exhausting its
+    # token budget - is an infrastructure failure on real, already-paid-for output, not a sign the
+    # angle couldn't be realised. Catching it HERE (rather than letting it propagate up to
+    # generate_and_optimize's asyncio.gather(..., return_exceptions=True)) is what keeps the
+    # compiled script and artifacts attached to the result: previously the exception unwound past
+    # this whole function, both were discarded, and the angle was mislabelled "not_realisable" -
+    # printing a phantom `requires` gap for a run that had no provisioning problem at all, and
+    # burying the fact that the orchestrator/worker/compiler/Docker spend was NOT wasted.
+    try:
+        pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, realization_feedback = await validate_realization(
+            compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
+            angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir)
+    except Exception as exc:
+        log(f"[realization_error] Judge call failed on a verified execution: {exc!r}")
+        return {
+            "angle_id": angle.get("id", "?"), "realization_status": "realization_error",
+            "realization_feedback": f"Execution succeeded, but the realization judge call failed: {exc!r}",
+            "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+            "artifacts_dir": artifacts_dir, "script": compiled_script,
+        }
     status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
     # Live Issue 9: pattern_reasoning is the whole point of the three-way split - without it,
     # pattern_not_shown and a plausible disconfirmation are indistinguishable from the console alone.
@@ -1621,9 +1680,14 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     realised_null_count = sum(1 for a in to_realize if a.get("realization_status") == "realised_null")
     pattern_not_shown_count = sum(1 for a in to_realize if a.get("realization_status") == "pattern_not_shown")
     not_realisable_count = sum(1 for a in to_realize if a.get("realization_status") == "not_realisable")
+    # Live Issue 21: kept separate from not_realisable_count - conflating them in this log line
+    # would reproduce the exact mislabelling the fix addresses, just one line up instead of in the
+    # gallery.
+    realization_error_count = sum(1 for a in to_realize if a.get("realization_status") == "realization_error")
     print(
         f"[realize] {realised_count} realised, {realised_null_count} realised-null (disconfirmed), "
-        f"{pattern_not_shown_count} pattern not shown, {not_realisable_count} not realisable\n"
+        f"{pattern_not_shown_count} pattern not shown, {not_realisable_count} not realisable, "
+        f"{realization_error_count} realization judge error(s)\n"
     )
 
     # D5-calibrate item 5 / Live Issue 10 fix: dump the ranked, judged AND realized angles for
