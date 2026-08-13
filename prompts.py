@@ -175,10 +175,17 @@ CRITICAL RULES:
    Domain notes above describe (they document real paths/columns) rather than requiring an exact
    case/format match, and do not assume a single directory level - use a recursive search
    (`Path.rglob`/`glob(..., recursive=True)`/`os.walk`) if the exact nesting isn't stated explicitly
-5. One-line docstrings only
-6. Clean, simple, direct code
-7. Use only listed libraries + standard library
-8. If implementing main(): make its FIRST line `sys.stdout.reconfigure(encoding='utf-8')` (and import sys) so UTF-8 output works on all platforms
+5. Rule 2 also applies PER METRIC, not just to the whole function: if this function computes several
+   values (e.g. one metric per year, or several named metrics) and one of them cannot be computed -
+   a missing dependency, an empty subset of data, an unresolvable resource - do not catch that failure
+   and silently write NA/None/0 and continue with the rest. Either raise (if the whole function's
+   output would be misleading without it) or print an explicit, unmissable warning identifying which
+   metric failed and why, so the gap is visible in the console output rather than indistinguishable
+   from "computed, and the value happens to be missing"
+6. One-line docstrings only
+7. Clean, simple, direct code
+8. Use only listed libraries + standard library
+9. If implementing main(): make its FIRST line `sys.stdout.reconfigure(encoding='utf-8')` (and import sys) so UTF-8 output works on all platforms
 
 Wrap your function in <response> tags like this:
 
@@ -218,7 +225,12 @@ RULES:
 3. Minimal, clean code (no defensive try/except unless critical) - in particular, do NOT wrap a
    missing-file/missing-column condition in try/except to print a message and exit cleanly; a script
    that finds no usable data must raise, not exit 0, so the execution check can actually catch it
-4. Remove duplicate/unused functions
+4. Same rule applies PER METRIC: if a worker function silently caught an exception to write NA/None/0
+   for one of several computed values instead of raising or warning loudly, do not "clean up" that
+   catch quietly while integrating it - either let the failure raise, or keep an explicit, unmissable
+   console warning naming the metric and the reason. A script that reports four of five metrics with
+   no indication the fifth failed is a silent partial failure, not a working script
+5. Remove duplicate/unused functions
 
 ENCODING (MANDATORY - always include these, non-negotiable):
 - Line 1 MUST be exactly: # -*- coding: utf-8 -*-

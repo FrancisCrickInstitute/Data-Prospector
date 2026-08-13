@@ -31,6 +31,11 @@ WORKDIR /work
 # (Live Issue 15 - textstat's syllable counter reaches for it on every readability angle, a
 # recurring family), wordnet and averaged_perceptron_tagger (POS-tagging angles, seen once so
 # far) are baked in too so the same runtime-download failure doesn't recur for these corpora.
+# Live Issue 22: modern nltk resolves POS tagging to the `_eng`-suffixed resource name, not the
+# bare one - baking averaged_perceptron_tagger alone left pos_tag() silently unable to find data
+# at runtime (caught and swallowed by the generated script, not a crash), so a script computing
+# five metrics quietly delivered four. Same moving-target list as §10 warns about - bake both
+# names rather than assuming one covers the other.
 # Must run with cwd != "/" (hence WORKDIR above): nltk 3.10's import-hijacking guard
 # (nltk/inisec.py, CWE-427 mitigation) blocks any import whose resolved path is "relative to"
 # the cwd, and every absolute path is trivially "relative to" root - triggers a spurious block
@@ -54,7 +59,8 @@ nltk.download('punkt_tab', download_dir='$NLTK_DATA'); \
 nltk.download('stopwords', download_dir='$NLTK_DATA'); \
 nltk.download('cmudict', download_dir='$NLTK_DATA'); \
 nltk.download('wordnet', download_dir='$NLTK_DATA'); \
-nltk.download('averaged_perceptron_tagger', download_dir='$NLTK_DATA')" \
+nltk.download('averaged_perceptron_tagger', download_dir='$NLTK_DATA'); \
+nltk.download('averaged_perceptron_tagger_eng', download_dir='$NLTK_DATA')" \
     && chmod -R a+rX "$NLTK_DATA"
 
 

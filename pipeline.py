@@ -72,7 +72,7 @@ def _image_blocks(images: list[tuple[str, bytes]]) -> list[dict]:
 
 # Core LLM interface
 async def llm_call(prompt: str, system_prompt: str = None, model: str = None, cache_prompt: bool = False,
-                   max_tokens: int = 8192, images: list[tuple[str, bytes]] = None,
+                   max_tokens: int = 16384, images: list[tuple[str, bytes]] = None,
                    cache_prefix: str = None) -> str:
     """
     Calls the model with the given prompt and returns the response.
@@ -86,7 +86,11 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
             system_prompt is long enough to clear Anthropic's minimum cacheable size (1024 tokens
             for Sonnet/Opus, 2048 for Haiku) - the short role-description system prompts in this
             pipeline generally aren't, so this mostly matters for cache_prefix below instead.
-        max_tokens (int): Maximum tokens in response (default 8192).
+        max_tokens (int): Maximum tokens in response (default 16384 - Live Issue 21/22, Run 22: the
+            8192 default was raised globally after it turned out to be too low for orchestrator and
+            worker calls too, not just the two heaviest callers (compiler, validator) that already
+            overrode it explicitly. Callers with a genuinely light response can still pass a smaller
+            value; this is a floor for a thinking model, not a per-caller-tuned budget).
         images (list[tuple[str, bytes]], optional): (media_type, raw_bytes) pairs, e.g.
             [("image/png", data)], attached as image content blocks between cache_prefix (if any)
             and prompt.
@@ -1180,156 +1184,190 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
       execution was unverifiable (no data_dir / Docker unavailable) - an engineering/provisioning
       outcome, never conflated with "pattern_not_shown" or "realised_null" (DIVERGER_PLAN.md D6
       item 5).
-    - "realization_error": executed (Docker-verified PASS) and DID produce real artifacts/script,
-      but the realization judge call itself failed (e.g. exhausted its token budget) so there is
-      no pattern_outcome to report. A THIRD kind of "not good", distinct from both quality outcomes
-      above and from "not_realisable" - unlike a provisioning gap, nothing about the angle or the
-      environment is at fault, and unlike pattern_not_shown, no judge ever looked at the output.
-      Added post-D7 (DIVERGER_PLAN.md Live Issue 21, Run 21): the exception used to unwind out of
-      this function entirely, discarding the script/artifacts and getting relabelled
-      "not_realisable" one level up - which both threw away a Docker-verified execution and lied
-      about why the angle wasn't realised.
+    - "realization_error": the pipeline broke on this angle for an infrastructure reason - not
+      angle-quality, not provisioning - at some stage from the orchestrator call onward. If the
+      break happened after a verified Docker execution PASS, script/artifacts are real and
+      attached; earlier failures (e.g. a worker call exhausting its token budget) carry whatever
+      of those exists, which may be nothing. A THIRD kind of "not good", distinct from both quality
+      outcomes above and from "not_realisable" - unlike a provisioning gap, nothing about the angle
+      or the environment is at fault, and unlike pattern_not_shown, no judge ever looked at the
+      output. Added post-D7 (DIVERGER_PLAN.md Live Issue 21, Run 21); widened (Run 22) after the
+      same failure recurred at the worker call site, upstream of the original guard, and was
+      mislabelled "not_realisable" exactly as before - the whole function body is now wrapped, not
+      just the validator call, since any of the four llm_call sites in this chain (orchestrator,
+      workers, compiler, validator) can raise it.
     """
 
     def log(msg):
         print(f"  [{label}] {msg}")
 
-    # ORCHESTRATOR: design an architecture for THIS ONE angle.
-    # report/input_data/criteria (deliverable_rubric) are identical across every angle realized
-    # this run, so cached as a prefix; the angle itself varies per call and stays in the suffix.
-    orchestrator_prefix = format_prompt(
-        ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=deliverable_rubric, input_data=input_metadata,
-        domain_notes=config.domain_notes,
-    )
-    orchestrator_suffix = format_prompt(
-        ORCHESTRATOR_PROMPT_SUFFIX,
-        hypothesis=angle.get("hypothesis", ""),
-        variables_involved=angle.get("variables_involved", ""),
-        rough_method=angle.get("rough_method", ""),
-        why_non_obvious=angle.get("why_non_obvious", ""),
-    )
-    orchestrator_response = await llm_call(orchestrator_suffix, system_prompt=ORCHESTRATOR_SYSTEM,
-                                           model=config.orchestrator_model, cache_prompt=True,
-                                           cache_prefix=orchestrator_prefix)
-    analysis = extract_xml(orchestrator_response, "analysis").strip()
-    tasks = parse_tasks(extract_xml(orchestrator_response, "tasks"))
-    log(f"Architecture: {len(tasks)} functions")
-
-    # WORKERS: implement each function in parallel - unchanged from before D6 (item 1). Called
-    # with the TRUE report (not the angle brief) so WORKER_PROMPT_PREFIX stays identical, and
-    # cacheable, across every angle realized this run too.
-    worker_results = await asyncio.gather(
-        *[_call_worker(t, i, report, input_metadata, config) for i, t in enumerate(tasks, 1)]
-    )
-    orchestrator_results = {"analysis": analysis, "worker_results": worker_results}
-
-    # COMPILER + (grounded) EXECUTION: retries up to max_compile_attempts, feeding the execution
-    # error back into the next compile attempt. Live Issue 12 fix: log each attempt's FAIL reason
-    # (same audit-gap pattern as pattern_reasoning - previously only the LAST attempt's feedback
-    # was ever visible, in the eventual not_realisable message) and abort early if an error recurs
-    # verbatim, since that means the compiler isn't repairing anything and the remaining attempts
-    # would just spend Docker/LLM budget for no gain. Live Issue 13 fix: track every FAIL string
-    # seen so far, not just the immediately preceding one - a consecutive-only comparison misses
-    # an oscillating loop (attempt 1 error A, attempt 2 error B, attempt 3 error A again), which
-    # is still going in circles even though no two *adjacent* attempts match.
+    # Live Issue 21 (widened, Run 22): defined up front and populated as each stage completes, so
+    # the except clause at the bottom can always return whatever real output exists, however far
+    # execution got - and `stage` records which call raised, since that's exactly what was missing
+    # last time (the failure was only pinned down by eyeballing which log lines did and didn't fire).
     compiled_script, exec_output, artifacts = None, "", []
-    execution_passed = False
-    exec_verdict = "FAIL"
-    compile_error = ""
-    attempt_feedbacks = []
-    seen_feedbacks = set()
-    aborted_on_repeat = False
-    for attempt in range(max_compile_attempts):
-        log(f"Compile attempt {attempt + 1}/{max_compile_attempts}...")
-        compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error)
-        exec_verdict, exec_feedback, exec_output, artifacts = validate_execution(
-            compiled_script, config, data_dir, artifacts_dir=artifacts_dir)
-        log(f"Execution: {exec_verdict}")
-        # SKIPPED (no Docker) is terminal too - there's no error to fix, so retrying compiles
-        # the same script again for nothing. It is NOT the same as a verified PASS though.
-        if exec_verdict in ("PASS", "SKIPPED"):
-            execution_passed = True
-            break
-        log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[:500]}")
-        attempt_feedbacks.append(exec_feedback)
-        normalized_feedback = exec_feedback.strip()
-        if normalized_feedback in seen_feedbacks:
-            log("  This error already occurred in an earlier attempt - aborting remaining compile "
-                "attempts (the compiler is cycling, not repairing).")
-            aborted_on_repeat = True
-            break
-        seen_feedbacks.add(normalized_feedback)
-        if attempt < max_compile_attempts - 1:
-            compile_error = exec_feedback
-
-    if not execution_passed:
-        attempt_summary = "\n\n".join(
-            f"Attempt {i + 1}: {fb[:1000]}" for i, fb in enumerate(attempt_feedbacks)
-        )
-        abort_note = " (aborted early - the same error recurred verbatim)" if aborted_on_repeat else ""
-        log(f"[not_realisable] Did not execute after {len(attempt_feedbacks)} attempt(s){abort_note}.")
-        return {
-            "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
-            "realization_feedback": f"Execution failed after {len(attempt_feedbacks)} compile attempt(s){abort_note}:\n\n{attempt_summary}",
-            "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
-            "artifacts_dir": artifacts_dir, "script": compiled_script,
-        }
-
-    if exec_verdict == "SKIPPED":
-        # Execution was never verified (no data_dir / Docker unavailable), so there's no real
-        # output to judge - a realization call here is a guaranteed-uninformative judge call paid
-        # for nothing. Short-circuit instead of spending one per realized angle.
-        log("[not_realisable] Execution unverified (no data_dir / Docker unavailable)")
-        return {
-            "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
-            "realization_feedback": f"Execution was not verified, so realization cannot be checked: {exec_feedback}",
-            "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
-            "artifacts_dir": artifacts_dir, "script": compiled_script,
-        }
-
-    # REALIZATION CHECK: only reached on a verified execution PASS (FAIL returned above, SKIPPED
-    # short-circuited above). PRIMARY judgment is a three-way classification of whether/how the
-    # actual output shows THIS angle's claimed pattern (Live Issue 7); the deliverable-rubric
-    # checklist is reported alongside but does not gate status - graded, not gated, matching
-    # D5-calibrate's soundness verdict. An unparseable pattern_outcome (None) maps to
-    # "pattern_not_shown" - the conservative default, since it gives no positive evidence either way.
-    # Live Issue 8: the angle's own declared scope, not the whole report, is what the deliverable
-    # rubric should be judged against for this script - see validate_realization's docstring.
-    angle_scope = (
-        f"Variables: {angle.get('variables_involved', '')}\n"
-        f"Method: {angle.get('rough_method', '')}"
-    )
-    # Live Issue 21: validate_realization is only ever reached after a VERIFIED Docker execution
-    # PASS (FAIL/SKIPPED both return above), so a failure here - e.g. the judge exhausting its
-    # token budget - is an infrastructure failure on real, already-paid-for output, not a sign the
-    # angle couldn't be realised. Catching it HERE (rather than letting it propagate up to
-    # generate_and_optimize's asyncio.gather(..., return_exceptions=True)) is what keeps the
-    # compiled script and artifacts attached to the result: previously the exception unwound past
-    # this whole function, both were discarded, and the angle was mislabelled "not_realisable" -
-    # printing a phantom `requires` gap for a run that had no provisioning problem at all, and
-    # burying the fact that the orchestrator/worker/compiler/Docker spend was NOT wasted.
+    stage = "orchestrator"
     try:
+        # ORCHESTRATOR: design an architecture for THIS ONE angle.
+        # report/input_data/criteria (deliverable_rubric) are identical across every angle realized
+        # this run, so cached as a prefix; the angle itself varies per call and stays in the suffix.
+        orchestrator_prefix = format_prompt(
+            ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=deliverable_rubric, input_data=input_metadata,
+            domain_notes=config.domain_notes,
+        )
+        orchestrator_suffix = format_prompt(
+            ORCHESTRATOR_PROMPT_SUFFIX,
+            hypothesis=angle.get("hypothesis", ""),
+            variables_involved=angle.get("variables_involved", ""),
+            rough_method=angle.get("rough_method", ""),
+            why_non_obvious=angle.get("why_non_obvious", ""),
+        )
+        orchestrator_response = await llm_call(orchestrator_suffix, system_prompt=ORCHESTRATOR_SYSTEM,
+                                               model=config.orchestrator_model, cache_prompt=True,
+                                               cache_prefix=orchestrator_prefix)
+        analysis = extract_xml(orchestrator_response, "analysis").strip()
+        tasks = parse_tasks(extract_xml(orchestrator_response, "tasks"))
+        log(f"Architecture: {len(tasks)} functions")
+
+        # WORKERS: implement each function in parallel - unchanged from before D6 (item 1) except
+        # for return_exceptions=True (Live Issue 21, Run 22): previously one worker exhausting its
+        # token budget took the whole gather down with it, losing the N-1 functions that succeeded
+        # along with it. A failed worker now degrades to a placeholder body that says so, so the
+        # compiler sees an honest gap instead of a missing function it never knew was missing.
+        stage = "workers"
+        worker_raw = await asyncio.gather(
+            *[_call_worker(t, i, report, input_metadata, config) for i, t in enumerate(tasks, 1)],
+            return_exceptions=True,
+        )
+        worker_results = []
+        failed_functions = []
+        for task, result in zip(tasks, worker_raw):
+            func_name = task.get("function", "?")
+            if isinstance(result, Exception):
+                failed_functions.append(func_name)
+                worker_results.append({
+                    "function": func_name,
+                    "description": task.get("description", ""),
+                    "result": (
+                        f"# WORKER CALL FAILED: {result!r}\n"
+                        f"# This function could not be implemented. Work around its absence - omit "
+                        f"or simplify whatever depended on it - rather than assuming it exists."
+                    ),
+                })
+            else:
+                worker_results.append(result)
+        if failed_functions:
+            log(f"Workers: {len(tasks) - len(failed_functions)}/{len(tasks)} succeeded "
+                f"- failed: {', '.join(failed_functions)}")
+        orchestrator_results = {"analysis": analysis, "worker_results": worker_results}
+
+        # COMPILER + (grounded) EXECUTION: retries up to max_compile_attempts, feeding the execution
+        # error back into the next compile attempt. Live Issue 12 fix: log each attempt's FAIL reason
+        # (same audit-gap pattern as pattern_reasoning - previously only the LAST attempt's feedback
+        # was ever visible, in the eventual not_realisable message) and abort early if an error recurs
+        # verbatim, since that means the compiler isn't repairing anything and the remaining attempts
+        # would just spend Docker/LLM budget for no gain. Live Issue 13 fix: track every FAIL string
+        # seen so far, not just the immediately preceding one - a consecutive-only comparison misses
+        # an oscillating loop (attempt 1 error A, attempt 2 error B, attempt 3 error A again), which
+        # is still going in circles even though no two *adjacent* attempts match.
+        stage = "compile"
+        execution_passed = False
+        exec_verdict = "FAIL"
+        compile_error = ""
+        attempt_feedbacks = []
+        seen_feedbacks = set()
+        aborted_on_repeat = False
+        for attempt in range(max_compile_attempts):
+            log(f"Compile attempt {attempt + 1}/{max_compile_attempts}...")
+            compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error)
+            exec_verdict, exec_feedback, exec_output, artifacts = validate_execution(
+                compiled_script, config, data_dir, artifacts_dir=artifacts_dir)
+            log(f"Execution: {exec_verdict}")
+            # SKIPPED (no Docker) is terminal too - there's no error to fix, so retrying compiles
+            # the same script again for nothing. It is NOT the same as a verified PASS though.
+            if exec_verdict in ("PASS", "SKIPPED"):
+                execution_passed = True
+                break
+            log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[:500]}")
+            attempt_feedbacks.append(exec_feedback)
+            normalized_feedback = exec_feedback.strip()
+            if normalized_feedback in seen_feedbacks:
+                log("  This error already occurred in an earlier attempt - aborting remaining compile "
+                    "attempts (the compiler is cycling, not repairing).")
+                aborted_on_repeat = True
+                break
+            seen_feedbacks.add(normalized_feedback)
+            if attempt < max_compile_attempts - 1:
+                compile_error = exec_feedback
+
+        if not execution_passed:
+            attempt_summary = "\n\n".join(
+                f"Attempt {i + 1}: {fb[:1000]}" for i, fb in enumerate(attempt_feedbacks)
+            )
+            abort_note = " (aborted early - the same error recurred verbatim)" if aborted_on_repeat else ""
+            log(f"[not_realisable] Did not execute after {len(attempt_feedbacks)} attempt(s){abort_note}.")
+            return {
+                "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
+                "realization_feedback": f"Execution failed after {len(attempt_feedbacks)} compile attempt(s){abort_note}:\n\n{attempt_summary}",
+                "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+                "artifacts_dir": artifacts_dir, "script": compiled_script,
+            }
+
+        if exec_verdict == "SKIPPED":
+            # Execution was never verified (no data_dir / Docker unavailable), so there's no real
+            # output to judge - a realization call here is a guaranteed-uninformative judge call paid
+            # for nothing. Short-circuit instead of spending one per realized angle.
+            log("[not_realisable] Execution unverified (no data_dir / Docker unavailable)")
+            return {
+                "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
+                "realization_feedback": f"Execution was not verified, so realization cannot be checked: {exec_feedback}",
+                "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+                "artifacts_dir": artifacts_dir, "script": compiled_script,
+            }
+
+        # REALIZATION CHECK: only reached on a verified execution PASS (FAIL returned above, SKIPPED
+        # short-circuited above). PRIMARY judgment is a three-way classification of whether/how the
+        # actual output shows THIS angle's claimed pattern (Live Issue 7); the deliverable-rubric
+        # checklist is reported alongside but does not gate status - graded, not gated, matching
+        # D5-calibrate's soundness verdict. An unparseable pattern_outcome (None) maps to
+        # "pattern_not_shown" - the conservative default, since it gives no positive evidence either way.
+        # Live Issue 8: the angle's own declared scope, not the whole report, is what the deliverable
+        # rubric should be judged against for this script - see validate_realization's docstring.
+        angle_scope = (
+            f"Variables: {angle.get('variables_involved', '')}\n"
+            f"Method: {angle.get('rough_method', '')}"
+        )
+        stage = "validate"
         pattern_outcome, delivered_score, delivered_pass, pattern_reasoning, realization_feedback = await validate_realization(
             compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
             angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir)
+        status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
+        # Live Issue 9: pattern_reasoning is the whole point of the three-way split - without it,
+        # pattern_not_shown and a plausible disconfirmation are indistinguishable from the console alone.
+        log(f"Realization: {status} (delivered_score={delivered_score:.2f}) - {pattern_reasoning}")
+        return {
+            "angle_id": angle.get("id", "?"), "realization_status": status,
+            "realization_feedback": realization_feedback, "pattern_reasoning": pattern_reasoning,
+            "delivered_score": delivered_score, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
+            "script": compiled_script,
+        }
     except Exception as exc:
-        log(f"[realization_error] Judge call failed on a verified execution: {exc!r}")
+        # Live Issue 21 (widened, Run 22): ANY exception from here on down - orchestrator, workers,
+        # compiler, or validator - lands here rather than unwinding out of the function. `stage`
+        # says which call was in flight; compiled_script/exec_output/artifacts carry whatever was
+        # produced before the break, which is real output when the failure is late (validator) and
+        # legitimately empty when it's early (orchestrator). Previously only the validator call was
+        # guarded, so a worker-stage failure (Run 22) still unwound past this function entirely,
+        # discarded the script, and was relabelled "not_realisable" one level up in
+        # generate_and_optimize's asyncio.gather(..., return_exceptions=True) handler - printing a
+        # phantom `requires` gap for a run that had no provisioning problem at all.
+        log(f"[realization_error] Pipeline failed at stage '{stage}': {exc!r}")
         return {
             "angle_id": angle.get("id", "?"), "realization_status": "realization_error",
-            "realization_feedback": f"Execution succeeded, but the realization judge call failed: {exc!r}",
+            "realization_feedback": f"Pipeline failed at stage '{stage}' for this angle: {exc!r}",
             "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
             "artifacts_dir": artifacts_dir, "script": compiled_script,
         }
-    status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
-    # Live Issue 9: pattern_reasoning is the whole point of the three-way split - without it,
-    # pattern_not_shown and a plausible disconfirmation are indistinguishable from the console alone.
-    log(f"Realization: {status} (delivered_score={delivered_score:.2f}) - {pattern_reasoning}")
-    return {
-        "angle_id": angle.get("id", "?"), "realization_status": status,
-        "realization_feedback": realization_feedback, "pattern_reasoning": pattern_reasoning,
-        "delivered_score": delivered_score, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
-        "script": compiled_script,
-    }
 
 
 # D3a: heading match is deliberately loose (any level, any wording containing "guiding
@@ -1653,9 +1691,18 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     ]
     realize_results = await asyncio.gather(*realize_calls, return_exceptions=True)
 
+    # Live Issue 21 (widened, Run 22): _run_one_design now wraps its ENTIRE body in try/except and
+    # always returns a result dict (status "realization_error" on failure, carrying whatever
+    # script/artifacts exist) rather than raising - so this isinstance(result, Exception) branch
+    # should be unreachable in normal operation. return_exceptions=True stays as defense-in-depth
+    # only (e.g. a bug inside _run_one_design's own except handler); if this WARNING ever fires,
+    # that is itself a bug to investigate, not a routine "an angle failed" message - "not_realisable"
+    # here would once again be mislabelling an infrastructure failure as a provisioning gap, exactly
+    # the thing this issue exists to prevent.
     for angle, result in zip(to_realize, realize_results):
         if isinstance(result, Exception):
-            print(f"WARNING: realization failed for angle {angle.get('id', '?')}: {result!r}")
+            print(f"WARNING: realization failed for angle {angle.get('id', '?')} - this should be "
+                  f"unreachable now that _run_one_design catches its own exceptions: {result!r}")
             angle["realization_status"] = "not_realisable"
             angle["realization_feedback"] = f"(realization call failed: {result!r})"
             angle["pattern_reasoning"] = ""
