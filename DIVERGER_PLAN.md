@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 23)
+# Converger → Diverger conversion plan (rev. 24)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -140,6 +140,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 23 | 0.11 / 0.12 | working | `--angles-per-iteration 4`. **Dedup 8→5, three across-iteration merges (0.225, 0.242, 0.309)** — one of them a false positive that removed the run's only guiding-question-5 angle (see Issue 24). 0 solid / 5 caveat / 0 unsupportable. **Issue 21's widened fix fired correctly and completely**: worker resilience logged `Workers: 5/7 succeeded - failed: main, recode_items`, the failure was labelled `realization_error` with `stage='compile'`, the fifth gallery tier rendered with a Note line and no phantom `requires`. New failure though — Issue 23 (SDK streaming ceiling). Readability **disconfirmed** this run, correcting §8 |
 | 22 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. Dedup **8→8, 0 merges**. 0 solid / 7 caveat / 1 unsupportable. Realisation: **2 realised, 1 realised_null, 0 pattern-not-shown, 1 not realisable** — the last is Issue 21 recurring at the *worker* call site, so the Issue 21 fix did not fire (`0 realization judge error(s)`). **Iteration 2 contributed 2 of the 4 realised angles** — settles D-consolidate item 8. Readability decline replicates a fourth time; speaker/attendee sector divergence replicates Run 19. New: Issue 22 (silent metric drop) |
 | 21 | — | — | **D7 CONFIRMED — the gallery is real.** Archive 6 post-dedup; realize-top-k 4. **1 realised, 1 realised_null, 0 pattern-not-shown, 2 not realisable — but both "not realisable" are Live Issue 21, not provisioning.** 0 unsupportable, a first. Issue 19's testing-status note present in both Findings. Stakeholder-blurring *confirmed* as a state claim after three disconfirmations of the trend claim (see §8) |
 | 20 | 0.10 / 0.09 | working | **Second consecutive 100% realisation.** Dedup 8→6 (0.230 + 0.393). 0 solid / 5 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Issue 18's fix held (clean extraction, descriptive slugs). **The readability finding failed to replicate under significance testing — see Issue 19** |
@@ -430,6 +431,43 @@ Two distinct problems, both narrow:
 
 Needs a live run with a readability/style-drift-shaped angle to confirm: no NLTK resource-not-found warnings for POS-tagging, and - if any future metric genuinely can't be computed - that the script says so loudly in the console rather than reporting a silent NA.
 
+**23. `llm_call`'s retry ladder can now build requests the SDK refuses to send (Run 23).** `closed-ended-covariance-themes` died at the compile stage on:
+
+```
+ValueError('Streaming is required for operations that may take longer than
+  10 minutes. See .../anthropic-sdk-python#long-requests')
+```
+
+**This is not the `max_tokens` failure again — it is the fix for it hitting a ceiling.** `compile_script` has passed `max_tokens=16384` explicitly since well before rev. 23 and it has worked for 22 runs, so the refused request is not that one: it is the **retry at `max_tokens * 2` = 32768**. The Anthropic SDK refuses, client-side, any non-streaming request whose budget implies a possible >10-minute response, and 32768 crosses that line.
+
+Two consequences:
+- Raising `llm_call`'s default from 8192 to 16384 (rev. 23, Issue 21) doubled every call site's *retry* to 32768, so this failure mode is now reachable from all four realisation stages rather than only the two that already overrode the default.
+- **Raising budgets is no longer available as a remedy.** The ladder now tops out above what the SDK will send without streaming, so the next occurrence of a genuine thinking-budget exhaustion has nowhere to go.
+
+**Fix: stream.** `client.messages.stream()` is what the SDK's own error points to and it removes the ceiling rather than moving it. Accumulate text blocks from the stream and keep `llm_call`'s return contract identical, so no caller changes. As a stopgap if streaming is more work than it looks, bound the ladder — `min(max_tokens * 2, SDK_NON_STREAMING_CEILING)` — which converts a hard failure into the old, honest "no text content" error.
+
+**Worth naming the pattern.** Issue 21 has now been fixed three times, each time at the site where it last appeared: the validator (rev. 21), then every stage (rev. 23), now the transport itself. Streaming addresses the class rather than the instance, which is the first fix in this sequence that does.
+
+**Verify:** a run in which some call exhausts 16384 should recover on retry rather than raising, and no `realization_error` should carry a streaming message.
+
+**24. Dedup merged two angles serving different guiding questions, removing coverage (Run 23).** `8 → 5 after dedup`, three across-iteration merges:
+
+```
+[stakeholder-role-evaluative-separation] -> [closed-ended-covariance-themes]     (0.242)
+[registration-group-size-structure]      -> [registration-lead-time-and-discount] (0.225)
+[satisfaction-driver-shifts]             -> [closed-ended-covariance-themes]     (0.309)
+```
+
+The second is defensible (both read order-level attendee data) and the third is arguable. **The first is a false positive with a real cost.** `stakeholder-role-evaluative-separation` serves **guiding question 5** — does role identity still predict how attendees evaluate the event — while `closed-ended-covariance-themes` serves **question 3** — do feedback items cluster into themes. They share Likert-item vocabulary and almost nothing else, which is precisely the lexical-vs-semantic failure §3's "Known ceiling" predicts. The merge left **question 5 with no representative in the run at all**, and question 5 is the one §8 has the most open evidence on.
+
+**Do not fix this by tuning the threshold.** §3's ceiling note already explains why 0.22 is not obviously wrong: these merged at 0.225–0.309, inside the near-duplicate band, and lowering it would let genuine duplicates through. The problem is not the number, it is that the measure has no idea what an angle is *for*.
+
+**Fix: a structural guard, not a tuned constant.** Never merge two angles whose `question_or_stakeholder_served` maps to different guiding questions. The field is already on every angle and already parsed by `_parse_guiding_questions`; matching an angle to its question is a substring/index check, not a new model call. Angles serving the same question remain eligible for merging exactly as now.
+
+This is cheap, domain-independent (any report with more than one guiding question benefits), and preserves what dedup is actually good at — collapsing two near-identical attacks on the *same* question — while removing its ability to silently narrow the run's coverage.
+
+**This also settles D-consolidate item 7, in the opposite direction to the rev. 22 lean.** Run 22's zero merges suggested dedup might be inert and deletable. Run 23 shows it is not inert: it is load-bearing and occasionally wrong. Keep it; add the guard; drop the "should we delete it" question.
+
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
 ### Known ceiling: dedup is lexical
@@ -515,12 +553,16 @@ Issues 17 and 18 are resolved and confirmed. Runs 19 and 20 both achieved 100% r
 
 **D7 itself is now implemented** (see §3) — all four ordering items above were resolved before or alongside it: Issue 8 resolved by omitting `delivered_score` from the gallery outright rather than trusting the scope-only fix as sufficient; Issue 19 bundled directly into the same pass; §10 and Issue 20 remain not-urgent, unchanged. **Needs a live run** to confirm the gallery reads as intended against a real archive covering all four tiers plus the "also generated" section.
 
-**Ordering from here (rev. 23).** The D7 confirmation run is **done** (Run 21) and the functional programme with it. What is left:
+**Ordering from here (rev. 24).** The D7 confirmation run is **done** (Run 21) and the functional programme with it. What is left:
 
-1. **Live Issue 21, widened — FIXED, unconfirmed on a live run** (see §3). All four widening parts landed: `return_exceptions=True` on the worker gather with a per-function placeholder on failure, `_run_one_design`'s whole body wrapped with per-stage tracking, `llm_call`'s default `max_tokens` raised globally (8192 → 16384), and per-stage logging falls out of the wrap. **Confirm on the next run** before treating this as closed - ideally zero `realization_error` results.
-1a. **Live Issue 22 — FIXED, unconfirmed on a live run** (see §3). `averaged_perceptron_tagger_eng` baked into the Dockerfile; the no-silent-failure instruction extended to per-metric degradation in both `WORKER_PROMPT_SUFFIX` and `COMPILER_PROMPT_SUFFIX`. Rides the same Dockerfile rebuild as nothing else changed here.
+1. **Live Issue 21, widened — CONFIRMED WORKING (Run 23).** Every part fired as designed: `Workers: 5/7 succeeded - failed: main, recode_items` (resilience), `Pipeline failed at stage 'compile'` (stage tracking), the angle landed in the fifth tier with a Note line and no phantom `requires` (correct categorisation), and `[realize] ... 0 not realisable, 1 realization judge error(s)` (correct counting). **Close it.** The infrastructure-failure class is now visible and correctly labelled wherever it occurs.
+1a. **Live Issue 22 — FIXED (rev. 23), no recurrence in Run 23.** `averaged_perceptron_tagger_eng` baked; no-silent-failure instruction extended in both prompt suffixes.
+1b. **Live Issue 23 — streaming in `llm_call`. Do this first.** It supersedes the remaining budget-raising avenue in Issue 21: the retry ladder can no longer be raised without the SDK refusing to send, so streaming is the only route left. Everything below wants a clean run to land against.
+1c. **Live Issue 24 — the guiding-question guard on dedup.** Small and structural; closes D-consolidate item 7 as a side effect.
 2. **D-consolidate.** Docs, entrypoint, module split, dead weight. No behaviour change. Items 1–3 (the docs and the entrypoint) go first regardless, because every subsequent change is made by an agent reading `CLAUDE.md` — and item 4's module split is much easier to review if it lands after Issue 21 is confirmed rather than tangled with it.
-3. **Report edit — guiding question 5.** Cheap, and overdue: retire it as *two* findings, not one (§8). Costs a question slot every iteration until done.
+3. **Report edit — guiding question 5.** Cheap, and overdue: retire it as *two* findings, not one (§8). Costs a question slot every iteration until done. Note Run 23's dedup false positive (Issue 24) removed this run's only question-5 angle, so the evidence base here is thinner than the run count suggests.
+
+**Deliberately NOT on this list, and the reasoning is worth keeping.** Run 23 also showed an angle declaring `requires: sentence-transformers` — a library not in the image — compiling and passing anyway, presumably by substituting something already available, and being marked `realised`. A review pass proposed making the framework detect this. **Rejected, correctly.** `requires` is instrumentation only, by explicit design (see the comment above `ANGLE_FIELDS` and the `<requires>` tag's own wording: *"this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available"*). Having the realisation judge check method fidelity against `rough_method` would be a **gate**, which §2 and §7 both rule out, and it would bake one report's anti-target list into general pipeline code — exactly the CBIAS-specific-machinery-in-shared-code drift §12 exists to reverse. Whether a substituted method invalidates a finding is domain-dependent and interpretive: it belongs to the human reading the gallery, which is where this pipeline has always put questions of that kind. The script is linked from every gallery entry precisely so that call can be made.
 4. **D8** (saturation stopping, economy instrumentation). Unchanged, except that its docs item has moved into D-consolidate.
 
 Two of D-consolidate's items are *measurements*, not changes — whether dedup still earns its ~115 lines now that it runs after judging, and whether iteration 2 has ever contributed a realised angle. Both are answerable from the existing run logs and both could remove code rather than add it. Take them before deciding anything.
