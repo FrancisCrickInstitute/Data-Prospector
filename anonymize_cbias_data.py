@@ -37,6 +37,16 @@ FEEDBACK_DROP_COLUMNS = [
     "Last modified time",
 ]
 
+# Microsoft Forms exports a "Points - <question>"/"Feedback - <question>" companion column pair
+# alongside every real question - quiz-scoring artifacts this (ungraded) survey never populates.
+# Confirmed empty in every companion column, every year, before this was written (46/44/46/46
+# columns across 2022-2025, 0 non-empty in any of them) - not assumed. Dropping them here, at the
+# source, rather than telling every downstream consumer to ignore them, removes the ambiguity of
+# three near-identical column names (real answer / Points- / Feedback-) instead of hoping a
+# generated script's column-matching always picks the right one (DIVERGER_PLAN.md Live Issue 25 -
+# two independent generated scripts hit exactly this).
+_FEEDBACK_COMPANION_PREFIXES = ("Points - ", "Feedback - ")
+
 # Abstract "Label: value" fields to drop entirely, including any continuation lines that wrap
 # without repeating the label (Authors wraps in 310/207 files in this dataset - checked, not
 # assumed - so a naive per-line filter would leave most author names in place).
@@ -123,11 +133,25 @@ def anonymize_attendees(src_dir: Path, dst_dir: Path) -> None:
         print(f"  Attendees/{f.name}: {len(df)} rows, {len(df.columns)} columns kept")
 
 
+def _drop_empty_companion_columns(df: pd.DataFrame, source: str) -> pd.DataFrame:
+    """Verify-then-drop, not blind-drop: if a future year's export ever actually populates a
+    "Points - "/"Feedback - " companion column, that would mean real data exists under a name no
+    downstream consumer expects, which needs a human decision, not silent removal alongside the
+    genuinely-empty ones. Warn loudly and keep it rather than dropping it unexamined."""
+    companion_cols = [c for c in df.columns if c.startswith(_FEEDBACK_COMPANION_PREFIXES)]
+    non_empty = [c for c in companion_cols if df[c].astype(str).str.strip().replace("nan", "").any()]
+    if non_empty:
+        print(f"  WARNING {source}: companion column(s) unexpectedly contain data, NOT dropped: {non_empty}")
+        companion_cols = [c for c in companion_cols if c not in non_empty]
+    return df.drop(columns=companion_cols)
+
+
 def anonymize_feedback(src_dir: Path, dst_dir: Path, flagged: list[str], manual_redactions: list[str]) -> None:
     dst_dir.mkdir(parents=True, exist_ok=True)
     for f in sorted(src_dir.glob("*.xlsx")):
         df = pd.read_excel(f)
         df = df.drop(columns=FEEDBACK_DROP_COLUMNS, errors="ignore")
+        df = _drop_empty_companion_columns(df, f"Feedback/{f.name}")
         free_text_cols = [c for c in df.columns if "anything else" in c.lower()]
         for col in free_text_cols:
             df[col] = df[col].apply(
