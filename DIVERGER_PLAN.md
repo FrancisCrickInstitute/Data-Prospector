@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 25)
+# Converger → Diverger conversion plan (rev. 26)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -6,7 +6,13 @@ Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
 **Live Issue 21 — CONFIRMED WORKING (Run 23).** The widened fix (raised `max_tokens` default, worker-gather resilience, whole-function try/except with per-stage tracking) fired exactly as designed on the first run after landing: worker resilience logged `Workers: 5/7 succeeded - failed: main, recode_items`, the resulting failure was labelled `realization_error` with `stage='compile'`, the fifth gallery tier rendered with a Note and no phantom `requires`, and the `[realize]` line counted it correctly. **Closed.** Live Issue 22 (silent metric drop, NLTK resource) also held with no recurrence. See §3 for the Run 23 evidence.
 
+**Live Issue 23 — FIXED AND CONFIRMED IN SITU (Run 24). Closed.** Run 24 completed with no `('Streaming is required...')` error at any call site — including the DeepSeek-routed compiler, which is where Run 23 actually failed and which the original smoke test (against `claude-opus-4-8`) had not exercised. Original entry follows.
+
 **Live Issue 23 — FIXED, confirmed via a direct live smoke test; not yet confirmed on a full pipeline run.** Run 23 also surfaced a new failure: the Issue 21 fix's own raised default (8192 → 16384) doubles to 32768 on retry, which crosses the Anthropic SDK's client-side guard against non-streaming requests that might exceed ~10 minutes — `('Streaming is required for operations that may take longer than 10 minutes...')`. `llm_call` now calls `client.messages.stream(...)` + `get_final_message()` instead of `client.messages.create(...)`, which removes the ceiling rather than moving it again; the return contract (a plain string) is unchanged, so no caller needed editing. Verified with a live call to `claude-opus-4-8` at `max_tokens=40000` (so a retry would reach 80000, well past the ceiling that failed at 32768) — confirmed no client-side error and a normal response. See §3 for detail.
+
+**Rev. 27: Run 24 is the first fully clean run — no infrastructure failure at any stage.** 3 realised, 1 realised_null, 0 not realisable, 0 unsupportable, 0 judge errors. **Live Issue 23 is confirmed in situ** (no streaming error anywhere, including the DeepSeek-routed compiler that failed in Run 23), and Issue 21's machinery had nothing to catch. The functional programme and the reliability work are both finished. Two things changed as a result, neither of them code: **Live Issue 24's proposed guard is dead** — Run 24's two dedup false positives were *within* a guiding question, which the guard would not have caught — and **§8 loses a second "replicated" finding** to the same trap that caught readability.
+
+**Rev. 26 added §13 and a deferred backlog step, D-simplify**, from re-reading the design against Anthropic's [*Building effective agents*](https://www.anthropic.com/engineering/building-effective-agents). It holds up better than §12's line-counting suggested — five of that post's named patterns composed, with no framework, which is the post's central recommendation. **Nothing implemented and working changed on account of it.** What changed is the standard applied to *outstanding* items.
 
 **Rev. 19 added a structural review of the whole repository (§12) and a new step — D-consolidate — that acts on it.** The finding, in one line: *the architecture is not over-complex, but the repository around it has drifted badly out of step with what the code now does.* `README.md` and `CLAUDE.md` describe the converger and contain zero occurrences of the words "angle" or "gallery"; the documented default entrypoint is broken; `pipeline.py` has grown to 1681 lines of which roughly a third is run archaeology that duplicates this document. **D-consolidate runs before D8**, because `CLAUDE.md` is what briefs the coding agent making every future change, and a wrong brief is a cause of drift rather than a symptom of it. With D7 confirmed, D-consolidate and Issue 21 are the whole of the remaining near-term work.
 
@@ -472,7 +478,28 @@ The second is defensible (both read order-level attendee data) and the third is 
 
 This is cheap, domain-independent (any report with more than one guiding question benefits), and preserves what dedup is actually good at — collapsing two near-identical attacks on the *same* question — while removing its ability to silently narrow the run's coverage.
 
-**This also settles D-consolidate item 7, in the opposite direction to the rev. 22 lean.** Run 22's zero merges suggested dedup might be inert and deletable. Run 23 shows it is not inert: it is load-bearing and occasionally wrong. Keep it; add the guard; drop the "should we delete it" question.
+**REFRAMED (rev. 26, §13): delete or demonstrate — do not simply add the guard.** Rev. 24 concluded "keep it; add the guard." Read against the post's rule that complexity is added only where it demonstrably improves outcomes, that was too generous. Dedup's *original* justification was saving downstream judging cost; D6-fix removed that saving by moving judging before it, and no replacement justification was ever established. A component whose stated reason no longer applies, and which has since been shown to *remove* an outcome, does not get repaired by default.
+
+Two honest options — a decision, not a recommendation:
+- **(a) Delete it.** ~115 lines and a hand-calibrated constant go. Near-duplicates then appear in a gallery a human skims in a minute and dismisses in a second, and §3's lexical ceiling stops being a problem to solve later.
+- **(b) Implement the guard, then measure.** If it is worth having, that is a claim to demonstrate on a full-width run — does the archive cover more guiding questions, and is the gallery better? — not to assume because it fixes the bug.
+
+**RUN 24 KILLS OPTION (b). The guard would not have worked.** Two more false positives, and both are *within* a single guiding question:
+
+```
+merged [abstract-readability-complexity-trend] -> [semantic-convergence-trend] (0.234)   both Q2
+merged [feedback-latent-theme-structure]       -> [open-comment-triggers]      (0.285)   both Q3
+```
+
+Neither is a near-duplicate by any reading. Readability metrics (sentence length, Flesch) and sentence-transformer embeddings are different kinds of measurement that happen to share the words *abstract*, *language*, *year* and *trend*. Likert-covariance clustering and commenter-vs-non-commenter effect sizes are different analyses of the same survey — and the second angle's own `why_non_obvious` field says so explicitly: *"It is also distinct from the previous commenter-vs-non-commenter trigger analysis because it uses the full pattern of structured responses rather than comment presence."* **The ideation model flagged the distinction in writing and dedup merged them anyway.**
+
+That is now **three false positives across Runs 23–24, all in the 0.23–0.29 band** (0.234, 0.242, 0.285), and the guiding-question guard catches exactly one of them. The proposal is dead.
+
+**Recommendation, no longer a toss-up: delete dedup (option (a)).** Its original justification is gone (D6-fix moved judging first), no replacement was ever established, it has removed useful coverage in two consecutive runs, and the one repair on offer does not work. ~115 lines and a hand-calibrated constant go with it; near-duplicates appear in a gallery a human skims in a minute and dismisses in a second; §3's lexical ceiling stops being a problem to solve later.
+
+**If you would rather not delete it outright**, the honest interim is to *keep the code but stop acting on it* — log what it would have merged and merge nothing — which preserves the measurement (how often would it fire, and would the merges have been right?) at zero cost to coverage. That is a better bet than either deleting blind or repairing on faith.
+
+**What is no longer on the table is "add the guard because Run 23 broke."** Repairing a component that has not earned its place is the pattern the post warns against. This also answers D-consolidate item 7: dedup does not earn its lines.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -559,20 +586,21 @@ Issues 17 and 18 are resolved and confirmed. Runs 19 and 20 both achieved 100% r
 
 **D7 itself is now implemented** (see §3) — all four ordering items above were resolved before or alongside it: Issue 8 resolved by omitting `delivered_score` from the gallery outright rather than trusting the scope-only fix as sufficient; Issue 19 bundled directly into the same pass; §10 and Issue 20 remain not-urgent, unchanged. **Needs a live run** to confirm the gallery reads as intended against a real archive covering all four tiers plus the "also generated" section.
 
-**Ordering from here (rev. 25).** The D7 confirmation run is **done** (Run 21) and the functional programme with it. What is left:
+**Ordering from here (rev. 26).** The D7 confirmation run is **done** (Run 21) and the functional programme with it. What is left:
 
 1. **Live Issue 21, widened — CONFIRMED WORKING (Run 23). Closed.** Every part fired as designed: `Workers: 5/7 succeeded - failed: main, recode_items` (resilience), `Pipeline failed at stage 'compile'` (stage tracking), the angle landed in the fifth tier with a Note line and no phantom `requires` (correct categorisation), and `[realize] ... 0 not realisable, 1 realization judge error(s)` (correct counting). The infrastructure-failure class is now visible and correctly labelled wherever it occurs.
 1a. **Live Issue 22 — FIXED (rev. 23), no recurrence in Run 23.** `averaged_perceptron_tagger_eng` baked; no-silent-failure instruction extended in both prompt suffixes.
 1b. **Live Issue 23 — FIXED (rev. 25), confirmed via a direct live smoke test.** `llm_call` now streams (`client.messages.stream(...)` + `get_final_message()`) instead of `client.messages.create(...)`, removing the SDK's non-streaming 10-minute guard rather than moving it. Verified against the live API at `max_tokens=40000`. **Needs a full live run** to confirm no recurrence in situ, since the smoke test exercised the mechanism directly rather than reproducing Run 23's organic failure.
-1c. **Live Issue 24 — the guiding-question guard on dedup. Not yet implemented.** Small and structural; closes D-consolidate item 7 as a side effect.
+1c. **Live Issue 24 — dedup: delete or demonstrate. Not yet implemented, and reframed in rev. 26.** Not "add the guard"; decide whether dedup earns its place at all, then act. See the Issue 24 entry.
 2. **D-consolidate.** Docs, entrypoint, module split, dead weight. No behaviour change. Items 1–3 (the docs and the entrypoint) go first regardless, because every subsequent change is made by an agent reading `CLAUDE.md` — and item 4's module split is much easier to review if it lands after Issue 21 is confirmed rather than tangled with it.
 3. **Report edit — guiding question 5.** Cheap, and overdue: retire it as *two* findings, not one (§8). Costs a question slot every iteration until done. Note Run 23's dedup false positive (Issue 24) removed this run's only question-5 angle, so the evidence base here is thinner than the run count suggests.
+4. **D8** (saturation stopping, economy instrumentation). Its docs item moved into D-consolidate; rev. 26 adds a precondition — see D-simplify item 3, since D8 item 1 is where this pipeline stops being a pure workflow.
+5. **D-simplify** — backlog only, nothing scheduled. The agent-patterns observations, chiefly the XML/ACI question. Explicitly after D-consolidate.
+
+**Both of D-consolidate's measurement items are now answered** — iteration 2 earns its keep (Run 22, item 8) and dedup does not currently earn its lines (Run 23, item 7 / Issue 24). No further log archaeology is needed before acting on either.
+
 
 **Deliberately NOT on this list, and the reasoning is worth keeping.** Run 23 also showed an angle declaring `requires: sentence-transformers` — a library not in the image — compiling and passing anyway, presumably by substituting something already available, and being marked `realised`. A review pass proposed making the framework detect this. **Rejected, correctly.** `requires` is instrumentation only, by explicit design (see the comment above `ANGLE_FIELDS` and the `<requires>` tag's own wording: *"this is for tracking only - propose the analysis that's genuinely best, don't limit yourself to what's already available"*). Having the realisation judge check method fidelity against `rough_method` would be a **gate**, which §2 and §7 both rule out, and it would bake one report's anti-target list into general pipeline code — exactly the CBIAS-specific-machinery-in-shared-code drift §12 exists to reverse. Whether a substituted method invalidates a finding is domain-dependent and interpretive: it belongs to the human reading the gallery, which is where this pipeline has always put questions of that kind. The script is linked from every gallery entry precisely so that call can be made.
-4. **D8** (saturation stopping, economy instrumentation). Unchanged, except that its docs item has moved into D-consolidate.
-
-Two of D-consolidate's items are *measurements*, not changes — whether dedup still earns its ~115 lines now that it runs after judging, and whether iteration 2 has ever contributed a realised angle. Both are answerable from the existing run logs and both could remove code rather than add it. Take them before deciding anything.
-
 **Scope check before starting D7.** The pipeline's job is to surface *leads worth a second look*, not results that survive rigorous scrutiny — that judgement is the human's at D7 (§11). Rev 16 of this plan briefly drifted the other way (a retraction, and a proposal to gate `realised` on significance testing); both are corrected in Issue 19. When a future issue proposes adding a judge, raising a bar, or suppressing an output, check it against this paragraph first. **On this dataset the achievable frontier is "interesting but caveated" — a stricter bar does not raise quality, it selects for boring.**
 
 Issues 13, 14, 15 and 16 are resolved. Issues 15 and 16 were confirmed by Run 18 (no nltk corpus failures, no `UnicodeDecodeError`). Run 17 produced no `not_realisable` angles at all, but Run 18 produced three, so that was not a stable improvement — Issue 17 is why.
@@ -660,7 +688,7 @@ Behind that is the identity question this fork has been deferring. Two honest op
 
 Both configs currently *import* cleanly against `PipelineConfig` — that is real and worth keeping — but importing is not running. Recommendation is (a), on the evidence: the report format, the anti-target loop, `DOMAIN_NOTES`, the guiding-question parser and every calibrated threshold in this document are CBIAS-shaped.
 
-**4. Split `pipeline.py`.** 1681 lines in one module, with a 349-line `generate_and_optimize` and a 166-line `_run_one_design`. Mechanical, no behaviour change; the seams already exist:
+**4. Split `pipeline.py`. Lower priority than rev. 19 implied (§13).** The post's concern is whether prompts and responses are visible and debuggable, not file length — and on that measure diverger already scores about as well as a system can. This is a readability nicety, not a correctness issue; keep it behind items 1–3 and do not let it block anything. 1681 lines in one module, with a 349-line `generate_and_optimize` and a 166-line `_run_one_design`. Mechanical, no behaviour change; the seams already exist:
 
 | Module | Contents |
 |---|---|
@@ -675,7 +703,7 @@ Both configs currently *import* cleanly against `PipelineConfig` — that is rea
 
 While doing it: **replace `from prompts import *`.** The star import makes 24 prompt constants unresolvable to any static check, so nothing will ever tell you when a prompt goes unused or a name is misspelled until it fails at runtime.
 
-**5. Move run archaeology out of the code comments and into this document.**
+**5. Move run archaeology out of the code comments and into this document. Apply more conservatively than rev. 19 proposed (§13).** Some of what §12 counted as prose weight is the transparency record the post treats as a feature — the *reason* a status exists, or why a threshold is what it is, is load-bearing for anyone debugging a run. Cut citations, not reasoning, and when in doubt keep it. The 250–350 line estimate below is now an upper bound, not a target.
 
 `pipeline.py` is ~34% comment and docstring, with **103 references** to Live Issue numbers, run numbers, or D-phase labels. `generate_and_optimize`'s docstring alone is 27 lines and names seven phases.
 
@@ -733,6 +761,62 @@ This interacted with D8 item 1, which wants the across-iteration merge fraction 
 
 ---
 
+---
+
+### D-simplify — Deferred: re-examine the design against Anthropic's agent-patterns guidance
+
+**Status: BACKLOG. Nothing here is scheduled, and nothing already implemented and working should be touched on account of it.** This step exists so that a set of observations made against [*Building effective agents*](https://www.anthropic.com/engineering/building-effective-agents) (§13) is recorded rather than lost, and re-read at the point where the pipeline is next opened up anyway.
+
+**Run it after D-consolidate, and not before.** D-consolidate is documentation and dead weight — no behaviour change. Everything below changes behaviour, and none of it is fixing something that is currently broken.
+
+#### The standing rule that comes out of §13, and applies to every other step
+
+**Transparency machinery is not complexity, and must not be stripped as though it were.** The post's second principle is to show the planning steps explicitly. A large part of the growth from 811 to 1681 lines is exactly that: the five-status vocabulary, `pattern_reasoning` on the console, per-attempt FAIL logging, `stage` tracking, the tiered gallery. §12 counted those lines as weight without asking what they bought, and that was a misreading. **Any future cleanup that would make the pipeline less legible from the outside is a regression, whatever it does to the line count.**
+
+#### Items
+
+**1. The agent–computer interface — the biggest unexamined surface, and the reason this step exists.**
+
+Appendix 2 of the post reports that building the SWE-bench agent involved more time optimising tools than the overall prompt, and advises keeping formats close to what the model has seen naturally, with no formatting overhead.
+
+Diverger's ACI is its XML schemas — `<task>` blocks nested inside `<tasks>`, alongside `<analysis>`, all carrying free prose. Three symptoms of one under-examined interface:
+- Run 22: `Failed to parse <task> XML: mismatched tag: line 10, column 419` (recovered).
+- Run 24: `Failed to parse <task> XML: mismatched tag: line 10, column 527` (recovered). Both failures land in the free-prose `<description>` field at a high column offset — consistent with the model's own prose containing characters the parser cannot take, which is exactly the "formatting overhead" the post warns about.
+- Live Issue 18: tolerate formatting drift in the angle schema.
+- Live Issue 20: `<pattern_outcome>` parse fallback to the conservative default.
+
+None of these is currently hurting a run badly enough to act on — the recovery paths work, which is why this is deferred. But they are the same problem seen three times, and the post says this is the surface that repays attention most. **When it is next worth opening: consider whether nested XML with prose inside is the right format at all**, versus something flatter with less escaping burden. Do not start by tuning the parser again.
+
+**2. Dedup: delete or demonstrate — see Live Issue 24.** The post's rule is to add complexity only where it demonstrably improves outcomes. Dedup's original justification (saving judging cost) was removed when D6-fix moved judging before it, and no replacement justification was ever established. Issue 24 carries the reframed decision; this item exists only to record why the standard changed.
+
+**3. D8 is where this pipeline stops being a workflow.** The post's architectural line is between *workflows* — LLMs orchestrated through predefined code paths — and *agents*, which direct their own processes. Diverger is unambiguously a workflow today, and that is a deliberate strength, not an accident.
+
+**Saturation stopping is the first item on the plan that crosses the line**: it hands the system the decision about how many iterations to run. The post notes agents bring higher cost and the potential for compounding errors. So D8 item 1 gains a precondition: **the fixed `max_iterations=2` is the baseline any dynamic criterion must beat**, measured on realised-angle yield, not on merge fractions. If a saturation rule cannot be shown to beat "just run two", the honest answer is to keep the constant. Run 22 already established that iteration 2 earns its keep, which is the number to beat.
+
+**4. Frameworks (LangGraph and similar) — revisit at D8, not before.**
+
+The question was raised directly: would a graph runtime simplify this code? **Assessed and deferred, with a specific trigger condition rather than a flat no.** LangGraph's principles — explicit state, no hidden control flow, low abstraction — are good ones, and largely ones this pipeline already follows.
+
+*Why not now.* Four reasons, in order of weight:
+
+- **It would relocate code, not reduce it.** Measured at `d0cd5d3`: orchestration is ~364 of `pipeline.py`'s 1803 lines, and not all of that is sequencing (`generate_and_optimize` also does result assembly, tier bucketing, logging, file writing). A graph runtime would own perhaps 150–200 lines, replaced by state schema, node definitions and edge wiring of comparable size. The other ~1900 lines across `pipeline.py` and `prompts.py` are domain logic — prompts (466), the realization chain (396), gallery writers (240), ideation (184), Docker (134), parsing (76), judging (76) — none of which a framework touches.
+- **`llm_call` does four custom things that do not map onto a framework's LLM node.** §4's `cache_prefix` breakpoint convention; the retry-at-double ladder for thinking-budget exhaustion; streaming (Issue 23); and two-client routing for DeepSeek, which is what makes §5's model tiering possible. You would wrap the existing `llm_call` in a custom node and keep all 118 lines — the framework *and* the code.
+- **Debuggability, and this is not hypothetical here.** Issues 21 and 23 were diagnosed by reading `asyncio.gather`'s exception semantics directly and by reasoning about where a `max_tokens * 2` retry sits relative to an SDK guard. Issue 21 took two rounds *with* full visibility of the transport. A runtime layer puts "which of four call sites raised" one step further away.
+- **It cuts against D-consolidate.** A migration executed by an agent reading a `CLAUDE.md` that describes the converger would be strictly worse than no migration.
+
+*The trigger condition.* Graph runtimes earn their keep on **cycles and dynamic routing**. Diverger has neither: a straight line with one fan-out. If D8's saturation stopping grows into genuine dynamic control — choosing which guiding questions to pursue, re-ideating against what has been learned, routing between realise-now and refine-first — the topology acquires cycles and the case becomes strong rather than weak. **Revisit at D8 and let the answer be determined by whether cycles actually exist, not by preference.** This is the same crossing point as item 3.
+
+*Two ideas worth stealing now, without the dependency:*
+- **Explicit typed run state.** State is currently dicts threaded through `generate_and_optimize` — `angle_records`, `judgments`, `realizations` — assembled ad hoc. A single `@dataclass RunState` (~40 lines) would make the pipeline's shape legible in one place. Arguably a better version of D-consolidate item 4 than the module split, since it clarifies the data flow rather than relocating functions.
+- **Checkpointing.** A run is ~110 calls. Persisting the judged archive to JSON with a `--resume` flag (~50 lines) captures most of what a framework's durable execution would give, and the angles are already independent so a failure costs one angle rather than the run.
+
+**5. Explicitly NOT in scope, now or later.** The following were checked against the post and are correct as they stand — do not revisit them as "simplification":
+- **No framework.** Direct SDK calls, prompts as visible string constants. This is the post's central recommendation and diverger already follows it.
+- **The two-judge split.** The post names "each LLM call evaluates a different aspect" as a canonical sectioning use.
+- **Orchestrator-workers in `_run_one_design`.** Recommended precisely where subtask count is unpredictable; Run 23's architectures were 2, 3, 4 and 7 functions.
+- **The compile→execute→feedback loop.** Textbook evaluator-optimizer with a genuine oracle.
+- **Streaming, worker resilience, `realization_error`, the tiered gallery.** Implemented, working, confirmed on live runs.
+
 ## 8. Tuning notes
 
 **Divergence is solved; the judges are validated; realisation is the live frontier.** Eight consecutive runs at 0.09–0.14 within-iteration with healthy cross-iteration behaviour, and Runs 9–11 confirmed the insight judge discriminates and the soundness judge reasons from actual data. Effort now belongs in D6-fix and D7, not in stances, thresholds, or judge prompts.
@@ -769,7 +853,15 @@ Both results are true. A monotonic four-point decline is real in the data; it is
 
 **So the retirement note for guiding question 5 needs to be more precise than "settled".** Write both halves into Already Explored: *the community is hybrid (established, four angles, one confirming state and three disconfirming trend); it is not becoming more hybrid over 2022–2025 (established, three independent definitions).* Retiring the question wholesale would discard the positive finding along with the dead premise; retiring it as "no trend" alone would leave the state claim open and it will keep being re-proposed. **This is the clearest demonstration yet that the anti-target list needs to name claims, not topics** — four angles on one topic produced two genuinely different, both-useful answers.
 
-**A new finding worth acting on (Run 19), now replicated and quantified (Run 22).** Run 19's `industry-speaker-attendee-alignment` came back `realised_null` with ρ=−0.40: industry *speaker* share rising steadily while industry *attendee* share falls. Run 22's `speaker-attendee-sector-alignment` (insight 0.72, `realised`) found the same divergence as an explicit ratio — academic speaker:attendee ratio declining **1.49 → 1.15** while industry/vendor rises **0.87 → 3.00**, with academic speaker share exceeding academic attendee share every year (0.895 vs 0.601 in 2022). The programme is moving toward industry as the audience moves away from it. **Two independent angles, two runs, same direction — this is the second finding, after readability, that has cleared replication.** Concrete and actionable for the organising committee. Note the caveat the judge attached: industry attendee counts are tiny in later years, so the ratio's denominator is fragile.
+**A new finding worth acting on (Run 19), now replicated and quantified (Run 22).** Run 19's `industry-speaker-attendee-alignment` came back `realised_null` with ρ=−0.40: industry *speaker* share rising steadily while industry *attendee* share falls. Run 22's `speaker-attendee-sector-alignment` (insight 0.72, `realised`) found the same divergence as an explicit ratio — academic speaker:attendee ratio declining **1.49 → 1.15** while industry/vendor rises **0.87 → 3.00**, with academic speaker share exceeding academic attendee share every year (0.895 vs 0.601 in 2022). The programme is moving toward industry as the audience moves away from it.
+
+**CORRECTION (Run 24): this has NOT cleared replication either, and the rev. 22 claim that it had is withdrawn.** Run 24's `speaker-submitter-attendee-sector-alignment` (insight 0.72, `realised`) measured Jensen–Shannon divergence between speaker, submitter and attendee sector distributions and found the gap **falling to near-zero by 2024** with a modest uptick in 2025 — i.e. the programme becoming *more* sector-representative. Runs 19 and 22 said divergence; Run 24 says convergence.
+
+The measures differ (a ratio between two populations versus a distance across three, one of which — abstract submitting institutions — is new in Run 24), so this is not a flat contradiction. But **the narrative flips**, and that is what matters for anyone about to act on it. The judge's caveat is the likely reason on both sides: industry-identifiable populations run to roughly one to ten people per year, so any sector share built on them is dominated by single-person changes.
+
+**Do not take this to the organising committee.** Like readability, it is a recurring signal that has not survived a change of implementation.
+
+**This is the second time the same mistake has been made in this document, so state the rule plainly:** two angles agreeing on *direction* is not replication when they do not share a definition. Before recording any future repeat as corroboration, check that the underlying quantity is the same quantity — same populations, same preprocessing, compatible absolute values — and not merely the same topic pointing the same way. Applied retrospectively, **this project currently has no finding that has cleared replication**, which is a fair result for four years of data at n≈40–60 per year and should be stated as such rather than papered over.
 
 **The judge catches partial execution, not just wrong results.** Run 19's `angle-1` was marked `realised_null` on the theme that *did* have a clean surveyed→removed transition (mentions declining 0.033 → 0.019 → 0 → 0, opposite the claim) — and the reasoning separately notes the script "never identifies or tests 'added' topics... so that part is simply absent rather than supported." Half-answered claims are being flagged as half-answered rather than silently passing.
 
@@ -781,7 +873,6 @@ Both results are true. A monotonic four-point decline is real in the data; it is
 
 **Judge prompts are the product.** The machinery around them is trivial; the wording is the whole game. They are human-owned for that reason.
 
----
 
 ## 9. Deferred: external retrieval
 
@@ -797,6 +888,24 @@ This is also the capability the horizon-scanning fork depends on, so getting the
 ---
 
 ## 10. Deferred: library provisioning
+
+**RUN 24 — the `sentence-transformers` substitution is now visible end to end, and it is Tier 2 evidence, not a bug.** The full sequence appears in the console:
+
+```
+[semantic-convergence-trend] Compile attempt 1/3...
+[semantic-convergence-trend] Execution: FAIL
+  Attempt 1 FAIL reason: ModuleNotFoundError: No module named 'sentence_transformers'
+[semantic-convergence-trend] Compile attempt 2/3...
+[semantic-convergence-trend] Execution: PASS
+```
+
+The compiler wrote the declared import, Docker rejected it, the evaluator-optimizer loop fed the error back, and attempt 2 substituted something already in the image. **The reported "cosine similarities" are 0.0145–0.0179** — one to two orders of magnitude below what sentence-transformer embeddings give for same-domain abstracts, and characteristic of sparse high-dimensional vectors. Whatever attempt 2 used, it was almost certainly TF-IDF, which the anti-target list names as exhausted.
+
+**Three things follow, and none of them is a code change.**
+1. **The pipeline behaved correctly.** The FAIL reason is logged, the retry is logged, the numbers are in the gallery, the script is linked. Everything a human needs to notice this is already on screen — which is precisely why rev. 24 rejected adding a fidelity gate (see §7's "Deliberately NOT on this list").
+2. **This is the strongest evidence yet for Tier 2.** `sentence-transformers` has been requested across many runs, and the substitution silently converts a genuinely novel angle into an anti-target one. Baking it removes the whole failure mode. Note the size: model weights are not pip installs (see below).
+3. **Until it is baked, treat any embedding-angle result as suspect** unless the script's imports have been checked. The Run 23 `semantic-homogeneity-via-embeddings` result rests on the same substitution.
+
 
 **Library availability is a realisation constraint, not an ideation constraint.** Putting `AVAILABLE_LIBRARIES` into the ideation prefix would re-couple exactly what D2 decoupled. Do not narrow ideation to fit the image.
 
@@ -905,4 +1014,53 @@ Both flagged during the D7 review and both resolve correctly on inspection, reco
 
 - **`_script_rel_path` does not double the `scripts/` prefix.** It returns `<run_ts>/<angle_id>.py` from an absolute path; the caller prepends `scripts/`. The resulting link is `scripts/<run_ts>/<angle_id>.py`, correct.
 - **`considered_ids` does not over-exclude.** An angle with a failed soundness judge (`None`) and no realisation falls into "also generated", which is the correct catch-all for it.
+
+
+---
+
+## 13. Design review against *Building effective agents* (rev. 26)
+
+Read against Anthropic's [*Building effective agents*](https://www.anthropic.com/engineering/building-effective-agents). Recorded here as the evidence base for D-simplify. **No implemented, working behaviour changes as a result of this section** — its effect is limited to the standard applied to outstanding items.
+
+### 13.1 What the post measures, and what §12 measured instead
+
+§12 assessed complexity by line count, function length, comment density and run-reference count. Those are code-hygiene metrics. The post's criteria are different: framework or direct API calls; does each added pattern demonstrably improve outcomes; is the system transparent; is the agent–computer interface any good. **Judged on the post's criteria, diverger comes out considerably better than §12's reading suggested.**
+
+### 13.2 Diverger is a composition of the post's own patterns, with no framework
+
+The post's central finding is that the most successful implementations avoid complex frameworks and specialised libraries in favour of simple, composable patterns, and it recommends calling the LLM APIs directly. Diverger uses no framework: raw `AsyncAnthropic` calls, prompts as visible string constants in one file, every response parsed in readable code. The specific harm the post attributes to frameworks — abstraction layers that obscure prompts and responses and make debugging harder — is the opposite of this repo's problem.
+
+| Post's pattern | Where it appears in diverger |
+|---|---|
+| Prompt chaining | criteria → ideate → judge → dedup → realise → gallery |
+| Parallelization (sectioning) | angle fan-out across stances/questions; the **two-judge split** |
+| Orchestrator-workers | `_run_one_design`: orchestrator → workers → compiler |
+| Evaluator-optimizer | compile → Docker → error feedback → recompile (×3) |
+| Agents (autonomous loop) | **none** — deliberately |
+
+Two of these are worth recording precisely. The post gives "each LLM call evaluates a different aspect of the model's performance" as a canonical sectioning example, which is exactly the insight/soundness split arrived at independently in D5. And it recommends orchestrator-workers specifically where subtask count is *unpredictable*, in contrast to parallelization's pre-defined subtasks — Run 23's architectures were 2, 3, 4 and 7 functions, so that flexibility is being used rather than decorative.
+
+### 13.3 The correction to §12: transparency was miscounted as weight
+
+The post's second principle is to prioritise transparency by explicitly showing the planning steps.
+
+A substantial share of the growth §12 flagged is that: the five-status vocabulary, `pattern_reasoning` on the console, per-attempt FAIL logging, `stage` tracking, the tiered gallery. Live Issues 9, 12 and 21 were all transparency fixes. §12 counted the lines without asking what they bought. **On the post's second principle these are the system's strongest feature, not its weight problem** — see D-simplify's standing rule, and the revised wording of D-consolidate items 4 and 5.
+
+### 13.4 Where the post is harsher than this plan has been
+
+*"Consider adding complexity only when it demonstrably improves outcomes."*
+
+**Dedup fails this test.** Added to save downstream judging cost; D6-fix removed that saving by moving judging first; never re-justified; and Run 23 showed it removing a guiding question's only representative. Rev. 24's "keep it, add the guard" was too generous — Live Issue 24 now carries the delete-or-demonstrate framing.
+
+Note what *passes* the same test, so the standard does not get applied selectively: `max_iterations=2` (Run 22 — iteration 2 produced two of four realised angles), selective realisation of top-k, graded-not-gated soundness, and the deletions this plan has already made (`pick_best_seed`, `req_score`, best-of-N).
+
+### 13.5 The gap nobody has looked at
+
+Appendix 2 reports that building the SWE-bench agent took more time optimising tools than the overall prompt, and advises formats close to what the model has seen naturally, without formatting overhead.
+
+Diverger's equivalent is its XML schemas, and there are three symptoms of one under-examined interface: Run 22's `<task>` mismatched-tag failure, Live Issue 18 (formatting drift in the angle schema), Live Issue 20 (`<pattern_outcome>` parse fallback). Each has a working recovery path, which is why nothing is being changed now — but it is the same problem three times, on the surface the post says repays attention most. D-simplify item 1.
+
+### 13.6 What does not change
+
+The documentation drift (§12.3) is orthogonal to this post and remains the highest-leverage defect in the repository. `CLAUDE.md` describing the converger is a problem for reasons that have nothing to do with agent design.
 
