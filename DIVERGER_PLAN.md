@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 29)
+# Converger → Diverger conversion plan (rev. 30)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -150,6 +150,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 25 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. **Issue 24's measurement produces its first live data point** (see the Issue 24 entry): 2 would-merges, both across-iteration (0.225, 0.280), both within a single guiding question again, **neither pair consumed two realisation slots — but pair 1 missed by 0.02 insight**. 2 realised, 1 realised_null, **1 genuinely not-realisable** (first legitimate use of that tier: `satisfaction-driver-shift` exhausted 3/3 attempts, each one *raising* rather than faking — Issue 11's fail-fast working), **2 unsupportable — the highest yet, both well-argued**. Judge independently enforced §8's state-vs-trend distinction on stakeholder hybridity. Readability disconfirmed a 5th time; sector question produced a **third mutually inconsistent answer** (see §8) |
 | 23 | 0.11 / 0.12 | working | `--angles-per-iteration 4`. **Dedup 8→5, three across-iteration merges (0.225, 0.242, 0.309)** — one of them a false positive that removed the run's only guiding-question-5 angle (see Issue 24). 0 solid / 5 caveat / 0 unsupportable. **Issue 21's widened fix fired correctly and completely**: worker resilience logged `Workers: 5/7 succeeded - failed: main, recode_items`, the failure was labelled `realization_error` with `stage='compile'`, the fifth gallery tier rendered with a Note line and no phantom `requires`. New failure though — Issue 23 (SDK streaming ceiling). Readability **disconfirmed** this run, correcting §8 |
 | 22 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. Dedup **8→8, 0 merges**. 0 solid / 7 caveat / 1 unsupportable. Realisation: **2 realised, 1 realised_null, 0 pattern-not-shown, 1 not realisable** — the last is Issue 21 recurring at the *worker* call site, so the Issue 21 fix did not fire (`0 realization judge error(s)`). **Iteration 2 contributed 2 of the 4 realised angles** — settles D-consolidate item 8. Readability decline replicates a fourth time; speaker/attendee sector divergence replicates Run 19. New: Issue 22 (silent metric drop) |
 | 21 | — | — | **D7 CONFIRMED — the gallery is real.** Archive 6 post-dedup; realize-top-k 4. **1 realised, 1 realised_null, 0 pattern-not-shown, 2 not realisable — but both "not realisable" are Live Issue 21, not provisioning.** 0 unsupportable, a first. Issue 19's testing-status note present in both Findings. Stakeholder-blurring *confirmed* as a state claim after three disconfirmations of the trend claim (see §8) |
@@ -503,7 +504,51 @@ That is now **three false positives across Runs 23–24, all in the 0.23–0.29 
 
 **What is no longer on the table is "add the guard because Run 23 broke."** Repairing a component that has not earned its place is the pattern the post warns against. This also answers D-consolidate item 7: dedup does not earn its lines.
 
-**IMPLEMENTED (rev. 29) — option (b), the interim, not option (a).** `_dedup_angles` is reverted to its pre-guard form (the guiding-question guard is removed entirely, not merely unused - it answers a question, "same guiding question or not", that Run 24 showed is the wrong question for two of three false positives). `generate_and_optimize` still calls it every run, over the full judged archive, so the "would this fire, and would it be right" measurement keeps running - but no longer treats the result as authoritative: `all_angles` is built from the full archive, not `kept_records`, so nothing a merge would have hidden is actually hidden. The console line is reworded to say so plainly (`MEASUREMENT ONLY, not acted on`, `would merge` / `would keep`). Verified offline (mocked) only. Needs a live run both to confirm no regression and to produce the first real data point for the measurement this interim exists to collect.
+**IMPLEMENTED (rev. 29) — option (b), the interim, not option (a).** `_dedup_angles` is reverted to its pre-guard form (the guiding-question guard is removed entirely, not merely unused - it answers a question, "same guiding question or not", that Run 24 showed is the wrong question for two of three false positives). `generate_and_optimize` still calls it every run, over the full judged archive, so the "would this fire, and would it be right" measurement keeps running - but no longer treats the result as authoritative: `all_angles` is built from the full archive, not `kept_records`, so nothing a merge would have hidden is actually hidden. The console line is reworded to say so plainly (`MEASUREMENT ONLY, not acted on`, `would merge` / `would keep`). Verified offline (mocked) only.
+
+**RUN 25 — first live data point, and the interim is already earning its keep.** No regression: 8 angles generated, 8 ranked, 8 in the gallery. The `[dedup]` line reported two would-merges:
+
+```
+would merge [transactional-behaviour-segment-shifts] -> [registration-lead-time-by-ticket-category]
+            (similarity=0.225, across_iteration) would keep [registration-lead-time-by-ticket-category]
+would merge [feedback-item-stakeholder-divergence]   -> [satisfaction-driver-shift]
+            (similarity=0.280, across_iteration) would keep [satisfaction-driver-shift]
+```
+
+**The decisive question — would suppressing these have cost a realisation? — answers "no, but pair 1 missed by 0.02".**
+
+| Pair | Would-keep | Would-merge-away | Outcome |
+|---|---|---|---|
+| 1 | `registration-lead-time-by-ticket-category` — **realised**, insight 0.72 | `transactional-behaviour-segment-shifts` — also-generated, insight **0.70** | 5th of 6 eligible; **one place outside top-k** |
+| 2 | `satisfaction-driver-shift` — **not_realisable** | `feedback-item-stakeholder-divergence` — **unsupportable** | neither realised; merge would have cost nothing |
+
+So dedup would not have hidden anything from the gallery's top tier this run. But pair 1 is a near miss on a 0.02 margin, which is well inside judge noise — on a different day that angle ranks 4th, both members of a would-merge pair get realised, and dedup's protective value becomes visible. **One run is not enough. Keep the measurement running.**
+
+**Both would-merges are also false positives, and both are within-question again.** `transactional-behaviour-segment-shifts` clusters order-level features to *discover* segments; `registration-lead-time-by-ticket-category` computes lead-time medians *within pre-existing ticket labels*. The contrarian angle's whole premise is rejecting ticket type as ground truth — the two are closer to opposites than duplicates. Pair 2 is nearer but still distinct (who differs, versus what predicts satisfaction).
+
+**Running total: 5 false positives across Runs 23–25** (0.225, 0.242, 0.280, 0.285, 0.309), of which the reverted guiding-question guard would have caught exactly one. Every one sits in the 0.22–0.31 band, immediately above the threshold — consistent with §3's "Known ceiling" rather than with a mis-set constant.
+
+**What would settle it, in order of what the next runs should show:**
+- **Delete** if two or three more runs pass with no would-merge pair reaching the top tier together.
+- **Keep and fix** the first time a pair does — at which point the fix is a semantic signature, not a threshold and not a question guard, since all five false positives share topic vocabulary while differing in method.
+
+**25. The pipeline has independently found a real data defect, twice — `overall satisfaction` is unusable (Runs 24, 25).** Not a pipeline bug; recording it here because it is the first time the diverger has surfaced a *data-quality* finding rather than an analytical one, and because it needs to reach the report.
+
+- **Run 24**: `open-comment-triggers` realised, and its judge noted `overall_satisfaction` is *entirely NaN across all four years* — nine other items carried the finding.
+- **Run 25**: `satisfaction-driver-shift` exhausted all three compile attempts, each failing on the same wall:
+
+```
+Attempt 1: ValueError('No satisfaction-driver correlations could be computed from the feedback data')
+Attempt 2: ValueError('Year 2022: overall satisfaction column not found or too few mappable responses')
+Attempt 3: ValueError('Year 2022: overall satisfaction column has too few mappable responses')
+```
+
+**Two things worth separating.**
+
+1. **This is Issue 11's fail-fast instruction working, and it is the first legitimate `not_realisable` in the log.** Every attempt *raised* rather than emitting an empty plot and exiting 0 — the compiler tried three different framings, correctly diagnosed the wall each time, and refused to fake a result. The tier has previously been a dumping ground for infrastructure errors (Issue 21); this is what it was designed for.
+2. **Any future angle whose primary outcome variable is overall satisfaction will fail the same way.** That is a standing cost until the data is fixed or the constraint is written into `DOMAIN_NOTES` so ideation stops proposing it. The cheaper of the two is the note.
+
+**Action: add `overall satisfaction is unusable across all four years` to the report's data-gaps section**, and consider naming it in `cbias_config`'s data constraints so the soundness judge can rule such angles unsupportable at judging time rather than paying three compile attempts to discover it.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -595,7 +640,8 @@ Issues 17 and 18 are resolved and confirmed. Runs 19 and 20 both achieved 100% r
 1. **Live Issue 21, widened — CONFIRMED WORKING (Run 23). Closed.** Every part fired as designed: `Workers: 5/7 succeeded - failed: main, recode_items` (resilience), `Pipeline failed at stage 'compile'` (stage tracking), the angle landed in the fifth tier with a Note line and no phantom `requires` (correct categorisation), and `[realize] ... 0 not realisable, 1 realization judge error(s)` (correct counting). The infrastructure-failure class is now visible and correctly labelled wherever it occurs.
 1a. **Live Issue 22 — FIXED (rev. 23), no recurrence in Run 23.** `averaged_perceptron_tagger_eng` baked; no-silent-failure instruction extended in both prompt suffixes.
 1b. **Live Issue 23 — FIXED (rev. 25), confirmed via a direct live smoke test.** `llm_call` now streams (`client.messages.stream(...)` + `get_final_message()`) instead of `client.messages.create(...)`, removing the SDK's non-streaming 10-minute guard rather than moving it. Verified against the live API at `max_tokens=40000`. **Needs a full live run** to confirm no recurrence in situ, since the smoke test exercised the mechanism directly rather than reproducing Run 23's organic failure.
-1c. **Live Issue 24 — IMPLEMENTED (rev. 29) as the interim, option (b).** `_dedup_angles` still runs every run over the full archive, but `generate_and_optimize` no longer acts on its output - only logs what it would have merged. The guiding-question guard is reverted (Run 24 showed it doesn't answer the right question). Needs a live run to start the measurement and confirm no regression. See the Issue 24 entry.
+1d. **Live Issue 25** — one line into the report's data gaps, optionally one into `cbias_config`'s constraints. Not pipeline work.
+1c. **Live Issue 24 — IMPLEMENTED (rev. 29) as the interim, option (b). First data point collected (Run 25).** `_dedup_angles` still runs every run over the full archive, but `generate_and_optimize` no longer acts on its output - only logs what it would have merged. The guiding-question guard is reverted (Run 24 showed it doesn't answer the right question). **Run 25: no regression, and the first measurement is in — neither would-merge pair cost a realisation, but one missed by 0.02 insight.** Keep the measurement running for two or three more runs before deciding; the decision rule is in the Issue 24 entry.
 2. **D-consolidate.** Docs, entrypoint, module split, dead weight. No behaviour change. Items 1–3 (the docs and the entrypoint) go first regardless, because every subsequent change is made by an agent reading `CLAUDE.md` — and item 4's module split is much easier to review if it lands after Issue 21 is confirmed rather than tangled with it.
 3. **Report edit — guiding question 5.** Cheap, and overdue: retire it as *two* findings, not one (§8). Costs a question slot every iteration until done. Note Run 23's dedup false positive (Issue 24) removed this run's only question-5 angle, so the evidence base here is thinner than the run count suggests.
 4. **D8** (saturation stopping, economy instrumentation). Its docs item moved into D-consolidate; rev. 26 adds a precondition — see D-simplify item 3, since D8 item 1 is where this pipeline stops being a pure workflow.
@@ -871,6 +917,10 @@ Both results are true. A monotonic four-point decline is real in the data; it is
 
 **Bold angles disconfirm; safe angles confirm (Run 20).** The run's three highest-insight angles (0.78, 0.75, 0.75) all came back `realised_null`, while the single `realised` angle scored **0.55** — second-lowest in the run. This is not a defect: an angle is interesting *because* it hypothesises something non-obvious, and non-obvious hypotheses are more often wrong. But it means a gallery that leads with `realised` leads with its least interesting result. Reinforces ranking the top tier on **insight**, with `realised` and `realised_null` interleaved rather than separated.
 
+**RUN 25: the judge enforced this distinction on its own, unprompted.** `stakeholder-hybridity-from-feedback-training-overlap` was ruled **unsupportable** — because it framed hybridity as a *temporal* claim (breadth rising 2024→2025), and the field exists in only two years. The soundness judge's reasoning: a 2-point trend cannot support a directional assertion, and pairwise co-occurrence testing on 37–53 respondents is too sparse; it added that *a descriptive single-year snapshot would be salvageable, but the hypothesis as stated is not*.
+
+That is exactly the trend/state split recorded below, applied correctly to a new angle without anything in the prompts naming it. **The judges are doing the work this section documents**, which is the strongest evidence yet that the D5 pair is calibrated. It also means Already Explored can afford to be precise rather than blunt: retiring "hybridity" wholesale would suppress the answerable half.
+
 **Stakeholder blurring: the trend is dead, the state is confirmed — and the distinction matters (Runs 15, 16, 19, 21).** Three independent disconfirmations of the *trend* claim: Run 15's `stakeholder-hybridity-depth` found dual-discipline training falling 22.6% → 16.2%; Run 16's `hybrid-background-blurring` found multi-domain proportion falling 86.8% → 81.1%; Run 19's `stakeholder-hybridity-analysis` found an essentially flat ~70% rate. Three angles, three hybridity definitions, no support for "increasingly blurred" in any of them.
 
 **Run 21 then `realised` a fourth angle on the same territory — and it is not a contradiction.** `stakeholder-hybridity-index` (insight 0.78) tested whether boundaries *are* blurred rather than whether they are *becoming* blurred, and found extensive off-diagonal role×training-domain overlap: facility staff, PhD students, postdocs and research scientists all reporting meaningful counts across image analysis, machine learning, computer vision and cell/molecular biology alike, with non-trivial hybridity scores across virtually every role in both years. Cross-sectional, 2024/25 only (n=53, n=37), descriptive rather than tested — and the judge said all of that unprompted.
@@ -880,6 +930,14 @@ Both results are true. A monotonic four-point decline is real in the data; it is
 **A new finding worth acting on (Run 19), now replicated and quantified (Run 22).** Run 19's `industry-speaker-attendee-alignment` came back `realised_null` with ρ=−0.40: industry *speaker* share rising steadily while industry *attendee* share falls. Run 22's `speaker-attendee-sector-alignment` (insight 0.72, `realised`) found the same divergence as an explicit ratio — academic speaker:attendee ratio declining **1.49 → 1.15** while industry/vendor rises **0.87 → 3.00**, with academic speaker share exceeding academic attendee share every year (0.895 vs 0.601 in 2022). The programme is moving toward industry as the audience moves away from it.
 
 **CORRECTION (Run 24): this has NOT cleared replication either, and the rev. 22 claim that it had is withdrawn.** Run 24's `speaker-submitter-attendee-sector-alignment` (insight 0.72, `realised`) measured Jensen–Shannon divergence between speaker, submitter and attendee sector distributions and found the gap **falling to near-zero by 2024** with a modest uptick in 2025 — i.e. the programme becoming *more* sector-representative. Runs 19 and 22 said divergence; Run 24 says convergence.
+
+**RUN 25 GIVES A THIRD ANSWER, AND THAT IS THE ACTUAL FINDING.** `sector-alignment-gap` (insight 0.72, `realised`) computed a signed academic-share gap between programme speakers and both abstract authors and in-person attendees, and found it **widening sharply** — roughly −0.02/−0.07 in 2022 to −0.26/−0.39 across 2023–25.
+
+Four runs, four operationalisations, three mutually inconsistent conclusions: diverge (19, 22), converge (24), diverge in the opposite sense (25 — the programme *under*-represents the academic majority, where Run 22 said it *over*-represented it).
+
+**The honest reading is not "which run is right".** When one question yields contradictory answers under different but individually reasonable operationalisations of the same data, the data does not identify the quantity. The judges have been saying so in the caveats the whole time: industry-identifiable populations run to **1–10 people per year** (Run 25 notes a single Industry ticket in 2025), and sector must be inferred by keyword rules over free-text affiliations. A share built on n=1 is not a share.
+
+**Record it that way in Already Explored: the sector-representativeness question is not answerable from this data, and four independent attempts establish that.** That is a genuine and useful result — it belongs in the report's data-gaps section as a request for an explicit sector field — but it is not a finding about the symposium.
 
 The measures differ (a ratio between two populations versus a distance across three, one of which — abstract submitting institutions — is new in Run 24), so this is not a flat contradiction. But **the narrative flips**, and that is what matters for anyone about to act on it. The judge's caveat is the likely reason on both sides: industry-identifiable populations run to roughly one to ten people per year, so any sector share built on them is dominated by single-person changes.
 
