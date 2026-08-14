@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 26)
+# Converger → Diverger conversion plan (rev. 28)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -763,9 +763,9 @@ This interacted with D8 item 1, which wants the across-iteration merge fraction 
 
 ---
 
-### D-simplify — Deferred: re-examine the design against Anthropic's agent-patterns guidance
+### D-simplify — Deferred: re-examine the design against external practice
 
-**Status: BACKLOG. Nothing here is scheduled, and nothing already implemented and working should be touched on account of it.** This step exists so that a set of observations made against [*Building effective agents*](https://www.anthropic.com/engineering/building-effective-agents) (§13) is recorded rather than lost, and re-read at the point where the pipeline is next opened up anyway.
+**Status: BACKLOG. Nothing here is scheduled, and nothing already implemented and working should be touched on account of it.** This step exists so that observations from outside the project are recorded rather than lost, and re-read at the point where the pipeline is next opened up anyway. Two sources so far: Anthropic's [*Building effective agents*](https://www.anthropic.com/engineering/building-effective-agents) (§13) and the Crick's own [`lyra`](https://github.com/FrancisCrickInstitute/lyra) agentic-primitives repo (§14).
 
 **Run it after D-consolidate, and not before.** D-consolidate is documentation and dead weight — no behaviour change. Everything below changes behaviour, and none of it is fixing something that is currently broken.
 
@@ -810,7 +810,25 @@ The question was raised directly: would a graph runtime simplify this code? **As
 - **Explicit typed run state.** State is currently dicts threaded through `generate_and_optimize` — `angle_records`, `judgments`, `realizations` — assembled ad hoc. A single `@dataclass RunState` (~40 lines) would make the pipeline's shape legible in one place. Arguably a better version of D-consolidate item 4 than the module split, since it clarifies the data flow rather than relocating functions.
 - **Checkpointing.** A run is ~110 calls. Persisting the judged archive to JSON with a `--resume` flag (~50 lines) captures most of what a framework's durable execution would give, and the angles are already independent so a failure costs one angle rather than the run.
 
-**5. Explicitly NOT in scope, now or later.** The following were checked against the post and are correct as they stand — do not revisit them as "simplification":
+**5. Adopt an explicit run-state contract (from `lyra`, §14).**
+
+`lyra`'s Python conductor carries an *Information Passing Contracts* table naming exactly what each stage hands the next, under the instruction to assemble the packet explicitly rather than let the receiving agent infer it. Diverger threads bare dicts — `angle_records`, `judgments`, `realizations` — through `generate_and_optimize` and assembles them ad hoc.
+
+This is the same idea as the typed `RunState` under item 4, arrived at independently and by a different route, which is the main reason to take it seriously. **Note it is achievable in two ways and they are not equivalent:** a `@dataclass RunState` makes the contract executable and impossible to drift from; a table in `CLAUDE.md` makes it readable and free. Given D-consolidate item 1 is rewriting `CLAUDE.md` anyway, the table is close to zero marginal cost and should probably come first, with the dataclass as the follow-up if the table proves it earns its place.
+
+**6. Automate the template-sanity check instead of fixing leakage once (from `lyra`, §14). The highest-value item in this step.**
+
+`lyra`'s hooks roadmap records an audit finding that a repo positioned as reusable bundles had hardcoded specific project names (`polaris`, `sequencing-demux`) throughout its agents and instructions, and concludes that the most valuable hook is not a workflow-enforcement one but a **template-sanity checker** that blocks commits reintroducing project-specific references.
+
+**That is §12.3, discovered independently by another team at the same institute, with a better answer than this plan currently has.** D-consolidate item 3 fixes diverger's leakage *once, by hand*: the vestigial `bioimage`/`trello` configs, the broken default entrypoint, the README's domain-agnostic claim. Nothing stops it recurring — and the history says it will, because 24 runs of CBIAS-driven tuning is exactly the pressure that put `DOMAIN_NOTES`, the anti-target loop, the 0.22 dedup threshold and now `_GUIDING_QUESTION_MATCH_THRESHOLD` where they are.
+
+**Sequence matters here.** Decide D-consolidate item 3's template-versus-instrument question *first*, because the check is only meaningful once there is an answer to encode:
+- If diverger becomes an explicit **CBIAS instrument**, no check is needed — leakage stops being leakage.
+- If it stays a **template**, a grep-level pre-commit check over `pipeline.py`/`prompts.py` for `cbias`, `symposium`, `abstract`, `attendee`, `bioimage` and similar is cheap and settles the question permanently. Configs are exempt by construction; that is what they are for.
+
+Worth borrowing the framing as well as the mechanism: the check's value is *preventive*, so it is worth more than its size suggests and should not be judged on line count.
+
+**7. Explicitly NOT in scope, now or later.** The following were checked against the post and are correct as they stand — do not revisit them as "simplification":
 - **No framework.** Direct SDK calls, prompts as visible string constants. This is the post's central recommendation and diverger already follows it.
 - **The two-judge split.** The post names "each LLM call evaluates a different aspect" as a canonical sectioning use.
 - **Orchestrator-workers in `_run_one_design`.** Recommended precisely where subtask count is unpredictable; Run 23's architectures were 2, 3, 4 and 7 functions.
@@ -1063,4 +1081,48 @@ Diverger's equivalent is its XML schemas, and there are three symptoms of one un
 ### 13.6 What does not change
 
 The documentation drift (§12.3) is orthogonal to this post and remains the highest-leverage defect in the repository. `CLAUDE.md` describing the converger is a problem for reasons that have nothing to do with agent design.
+
+
+---
+
+## 14. Cross-project notes: `lyra` (rev. 28)
+
+[`FrancisCrickInstitute/lyra`](https://github.com/FrancisCrickInstitute/lyra) is an agentic-primitives repository from elsewhere in the Crick — reusable agents, skills and instruction files for GitHub Copilot, distributed via Microsoft's [APM](https://github.com/microsoft/apm) package manager. Read at commit `27d22fb` (70 commits). Recorded here as the evidence base for D-simplify items 5 and 6.
+
+**Why it is relevant despite solving a different problem.** Lyra automates *coding*; diverger automates *ideation over a fixed dataset*. But both are LLM pipelines with staged handoffs and gate conditions, both were built by small teams against real use, and they have converged on several of the same answers independently. Independent convergence is stronger evidence than either project's own reasoning.
+
+### 14.1 Shape
+
+A **conductor** agent (243 lines of markdown for Python, 290 for Nextflow) sequences 7 **subagents** — plan reviewer, test writer, code writer, code reviewer, formatter, acceptance, docs updater — through a fixed six-stage workflow with gate conditions and defined loop-back points. Alongside: `skills/` (markdown capability definitions with frontmatter), `instructions/` (language guidelines auto-applied by file type), and a `postToolUse` **hook** that runs `ruff check` and `pytest` after Python edits.
+
+In the vocabulary of §13, lyra's conductor is the same orchestrator-workers pattern as `_run_one_design`, one level up.
+
+### 14.2 What diverger should take (→ D-simplify items 5 and 6)
+
+**The Information Passing Contracts table.** Lyra's conductor tabulates what each stage hands the next and instructs that the packet be assembled explicitly rather than inferred by the receiver. Diverger threads bare dicts. → item 5.
+
+**The template-sanity hook.** Lyra audited itself, found hardcoded project names throughout supposedly reusable bundles, and concluded the most valuable hook is a preventive check rather than a workflow enforcer. This is §12.3 with a better remedy. → item 6, and it upgrades D-consolidate item 3 from a one-off cleanup to a decision plus a guard.
+
+**Role purity in the conductor.** *"You do NOT write code, tests, or documentation yourself. Your only responsibilities are sequencing, gate enforcement, information passing, and issue progress reporting."* `generate_and_optimize` is 349 lines because it sequences *and* assembles results, buckets tiers, logs and writes files. Lyra states the separation as a rule; that is a cleaner target for D-consolidate item 4 than this plan's module table, which only moves functions between files.
+
+### 14.3 What diverger has that lyra's authors would want
+
+Offered as findings, not advice — and all of it is dearly bought, in the sense that this project paid for it over 24 runs.
+
+- **The oracle asymmetry (§1, §11).** Lyra runs both kinds of check: `ruff`/`pytest` in the hook (a real oracle) and code-reviewer/acceptance subagents (LLM judges). D1–D5 established here that `req_score` — an LLM rubric judge — carried no information and was deleted, while the Docker exit code did the work. **Where a real oracle exists, spend complexity there and keep the LLM judges cheap and advisory.** Lyra's reviewer half-embodies this already by fixing advisory issues in place and rejecting only on blockers.
+- **Numeric self-scores from LLM judges are unreliable.** `delivered_score` has been anti-correlated with worth across five runs (§8). Anything gated on a model's own quality number should be graded, not gated.
+- **Separate infrastructure failure from quality judgement.** Live Issue 21 took three revisions to get right and produced two misleading galleries on the way. Lyra's gates are approved/rejected; a subagent that fails because a tool timed out currently looks like a rejection.
+- **The replication trap (§8).** Two results agreeing in direction are not corroboration unless they share a definition. Applies directly to evaluating whether an agent workflow is improving.
+
+### 14.4 One structural observation, and an open question
+
+**Lyra puts its orchestration in the prompt; diverger puts it in code.** The conductor is an LLM instructed *"Execute all stages in this exact order. Do not skip, reorder, or merge stages"* and *"Never skip or reorder stages — the sequence is fixed."* Diverger's equivalent sequencing is Python.
+
+Neither is simply better, and the §13 workflow-versus-agent distinction says which fits when: **if the sequence should adapt, prompt-level orchestration is right; if it genuinely must never vary, a code path enforces what an instruction can only request.** Lyra's stated requirement is the second while its mechanism is the first. Worth raising with them rather than assuming it is an oversight — they may want the flexibility in practice.
+
+**The open question, which is §13's rule applied to someone else's project:** seven subagent invocations plus loop-backs for a one-line bugfix is substantial ceremony, and there is no escape hatch in the conductor. Is there evidence the full sequence beats a shorter path on small changes? That is the same question this plan asks of its own dedup step, and it is fairer asked than assumed.
+
+### 14.5 Worth connecting the projects
+
+Lyra has the packaging and reusability discipline diverger lacks — APM bundles, frontmatter'd skills, instruction files, a preventive check for exactly the leakage §12 documents. Diverger has 24 runs of evidence about what LLM evaluation actually buys you, which is the least-tested part of lyra's design. The exchange looks favourable in both directions.
 
