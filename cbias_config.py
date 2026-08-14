@@ -74,15 +74,18 @@ data directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt fi
 
 - Feedback/CBIAS <year>Attendee Survey(...).csv - one row per respondent, one file per year (converted
   from the original Microsoft Forms xlsx export to CSV during anonymisation - read with
-  pandas.read_csv, not read_excel). Each survey question appears as a real answer column plus two
-  auto-generated companion columns ("Points - <question>", "Feedback - <question>") that are
-  quiz-scoring artifacts and almost always empty - ignore columns starting with "Points - " or
-  "Feedback - " and read the plain question-text column for actual responses. Question wording drifts
-  slightly by year for the same underlying construct - e.g. "The ticket prices were appropriate"
-  (2022-2023) becomes "The ticket prices were too high" (2024-2025), an inverted phrasing of the same
-  question - match columns by keyword substring (e.g. "ticket price"), not exact text, and account for
-  the polarity flip when combining years into one trend. Likert-style answers are free-text strings
-  (e.g. "Strongly agree"), not numbers - map them to an ordinal scale before averaging.
+  pandas.read_csv, not read_excel; the raw export's always-empty "Points - <question>"/
+  "Feedback - <question>" companion columns are dropped during anonymisation, so every column
+  remaining is a real answer - no need to filter any out). Question wording drifts slightly by year
+  for the same underlying construct - e.g. "The ticket prices were appropriate" (2022-2023) becomes
+  "The ticket prices were too high" (2024-2025), an inverted phrasing of the same question - match
+  columns by keyword substring (e.g. "ticket price"), not exact text, and account for the polarity
+  flip when combining years into one trend. Most questions are Likert-style free-text strings (e.g.
+  "Strongly agree") needing a mapping to an ordinal scale before averaging - but not all of them
+  (e.g. the overall-satisfaction question is already numeric). INSPECT A COLUMN'S ACTUAL UNIQUE
+  VALUES before deciding it needs a text-to-ordinal mapping - running that mapping against values
+  that are already numeric finds no matching keys and silently produces all-NaN, which reads as
+  missing data but is not.
 
 - Abstracts/<year>_Abstracts/<n>_Abstract.txt - one plain-text file per submission, "Label: value"
   lines, where a field's value may wrap onto further lines before the next label. Author-identifying
