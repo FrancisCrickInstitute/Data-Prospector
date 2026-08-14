@@ -713,6 +713,38 @@ def _ensure_unique_id(angle: dict, seen_ids: set) -> None:
     seen_ids.add(candidate)
 
 
+# Live Issue 24: minimum token-set Jaccard between an angle's question_or_stakeholder_served text
+# and a guiding question's own text before treating that as a confident match. Below this, the
+# field is more likely naming a stakeholder ("the organising committee") than paraphrasing a
+# guiding question, or paraphrased too loosely to tell - _match_guiding_question returns None in
+# that case rather than a guess, since a wrong guess would block a legitimate merge instead of
+# merely missing one. Unvalidated against real run data - set from first principles pending a live
+# run's evidence, same status D4's own threshold started at before Run 8/9 (see DIVERGER_PLAN.md §3).
+_GUIDING_QUESTION_MATCH_THRESHOLD = 0.15
+
+
+def _match_guiding_question(text: str, guiding_questions: list[str]) -> int | None:
+    """Live Issue 24: map an angle's question_or_stakeholder_served free text to the index of the
+    guiding question (in report order, as returned by _parse_guiding_questions) it most overlaps
+    with, via token-set Jaccard - reusing _token_set/_jaccard rather than a new judge call, per the
+    fix's own framing ("a substring/index check, not a new model call"). Returns None - "unknown",
+    not "no guiding question" - when there is no guiding-question list, the field is empty, or the
+    best match falls below _GUIDING_QUESTION_MATCH_THRESHOLD; callers must never let an unmatched
+    angle block a merge (see _dedup_angles), only let a confident mismatch do so.
+    """
+    if not guiding_questions or not text:
+        return None
+    text_tokens = _token_set(text)
+    if not text_tokens:
+        return None
+    best_idx, best_sim = None, 0.0
+    for idx, question in enumerate(guiding_questions):
+        sim = _jaccard(text_tokens, _token_set(question))
+        if sim > best_sim:
+            best_idx, best_sim = idx, sim
+    return best_idx if best_sim >= _GUIDING_QUESTION_MATCH_THRESHOLD else None
+
+
 def _angle_signature(angle: dict) -> set:
     """Token set for D4 dedup similarity. hypothesis/variables_involved are counted TWICE - run 1
     showed near-duplicate angles that shared topic but differed in method wording, and
@@ -744,7 +776,7 @@ def _pick_representative(cluster: list[dict]) -> dict:
     return max(cluster, key=key)
 
 
-def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], dict]:
+def _dedup_angles(records: list[dict], threshold: float, guiding_questions: list[str] = None) -> tuple[list[dict], dict]:
     """D4: cluster archive records ({angle, iteration, stance}) by token-set Jaccard similarity
     over _angle_signature, dropping near-duplicates. Selection now optimises for distinct, not
     best - there is no score yet (that's D5).
@@ -754,13 +786,14 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     O(n^2) comparisons, fine at the angle counts this pipeline produces per run.
 
     Returns (kept_records, merge_stats) where merge_stats = {"within_iteration": int,
-    "across_iteration": int, "merges": list[dict]} - counts split so within-iteration
+    "across_iteration": int, "merges": list[dict], "guarded": int} - counts split so within-iteration
     duplication (stance/question differentiation too weak, see D3a) and across-iteration
     duplication ({existing_angles} pressure too weak, see D3) can be diagnosed separately.
     "merges" records each individual merge event (record id, the id of the most-similar
     existing record it matched, the similarity score, the type, and - Live Issue 6 fix - the id of
     the cluster's eventual survivor) so which specific pair merged, AND which one was kept, can be
-    read off the run log (see DIVERGER_PLAN.md §3/§4) without the two disagreeing.
+    read off the run log (see DIVERGER_PLAN.md §3/§4) without the two disagreeing. "guarded" counts
+    comparisons the Live Issue 24 guard below excluded.
 
     best_match is still the best-matching member AT MERGE TIME, not necessarily the survivor -
     _pick_representative runs after clustering completes and can pick a different cluster member on
@@ -768,17 +801,41 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     [cross-role-expertise-mapping]" while self-reported-role-trend was the one actually kept,
     reading backwards. survivor_id is resolved from the finished clusters below and attached to
     every merge in that cluster, so the log line can report both without contradicting itself.
+
+    Live Issue 24: two records are never compared for similarity at all if _match_guiding_question
+    maps their question_or_stakeholder_served fields to two DIFFERENT guiding questions - Run 23
+    merged an angle serving guiding question 5 into one serving question 3 purely on shared
+    Likert-item vocabulary, silently removing the run's only question-5 coverage. Angles that map to
+    the same question, or where either side's question can't be confidently identified, remain
+    eligible for merging exactly as before - this guard only ever REMOVES a comparison, never adds
+    a match lexical similarity wouldn't already have found, so it cannot itself cause an over-merge.
+    guiding_questions defaults to [] (no report parsed one), which makes every match unknown and the
+    guard a no-op - safe, since that's exactly the old ungated behaviour.
     """
+    guiding_questions = guiding_questions or []
+    question_index = {
+        id(record): _match_guiding_question(
+            record["angle"].get("question_or_stakeholder_served", ""), guiding_questions
+        )
+        for record in records
+    }
+
     clusters: list[list[dict]] = []
     within_iteration = 0
     across_iteration = 0
     merges: list[dict] = []
+    guarded = 0
 
     for record in records:
         record_tokens = _angle_signature(record["angle"])
+        record_q = question_index[id(record)]
         best_idx, best_sim, best_match = None, 0.0, None
         for idx, cluster in enumerate(clusters):
             for member in cluster:
+                member_q = question_index[id(member)]
+                if record_q is not None and member_q is not None and record_q != member_q:
+                    guarded += 1
+                    continue  # Live Issue 24: confidently different guiding questions, never merge
                 sim = _jaccard(record_tokens, _angle_signature(member["angle"]))
                 if sim > best_sim:
                     best_idx, best_sim, best_match = idx, sim, member
@@ -813,6 +870,7 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
         "within_iteration": within_iteration,
         "across_iteration": across_iteration,
         "merges": merges,
+        "guarded": guarded,
     }
 
 
@@ -1638,12 +1696,15 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     # 2) so _pick_representative keeps the highest-scoring cluster member, not a text-length proxy.
     # Does not feed back into {existing_angles} above - that cross-iteration pressure already works
     # on the raw archive (see DIVERGER_PLAN.md §3), so dedup stays a separate, final selection step.
-    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold)
+    # guiding_questions threaded through so the Live Issue 24 guard can refuse to merge angles
+    # whose question_or_stakeholder_served fields map to different guiding questions.
+    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold, guiding_questions)
     print(
         f"[dedup] {len(archive)} angle(s) -> {len(kept_records)} after dedup "
         f"(threshold={config.angle_similarity_threshold}); merged "
         f"{merge_stats['within_iteration']} within-iteration, "
-        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
+        f"{merge_stats['across_iteration']} across-iteration duplicate(s); "
+        f"guarded {merge_stats['guarded']} cross-guiding-question comparison(s)"
     )
     for merge in merge_stats["merges"]:
         # Live Issue 6 fix: "->" still points at the best match AT MERGE TIME, which is not
