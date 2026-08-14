@@ -713,38 +713,6 @@ def _ensure_unique_id(angle: dict, seen_ids: set) -> None:
     seen_ids.add(candidate)
 
 
-# Live Issue 24: minimum token-set Jaccard between an angle's question_or_stakeholder_served text
-# and a guiding question's own text before treating that as a confident match. Below this, the
-# field is more likely naming a stakeholder ("the organising committee") than paraphrasing a
-# guiding question, or paraphrased too loosely to tell - _match_guiding_question returns None in
-# that case rather than a guess, since a wrong guess would block a legitimate merge instead of
-# merely missing one. Unvalidated against real run data - set from first principles pending a live
-# run's evidence, same status D4's own threshold started at before Run 8/9 (see DIVERGER_PLAN.md §3).
-_GUIDING_QUESTION_MATCH_THRESHOLD = 0.15
-
-
-def _match_guiding_question(text: str, guiding_questions: list[str]) -> int | None:
-    """Live Issue 24: map an angle's question_or_stakeholder_served free text to the index of the
-    guiding question (in report order, as returned by _parse_guiding_questions) it most overlaps
-    with, via token-set Jaccard - reusing _token_set/_jaccard rather than a new judge call, per the
-    fix's own framing ("a substring/index check, not a new model call"). Returns None - "unknown",
-    not "no guiding question" - when there is no guiding-question list, the field is empty, or the
-    best match falls below _GUIDING_QUESTION_MATCH_THRESHOLD; callers must never let an unmatched
-    angle block a merge (see _dedup_angles), only let a confident mismatch do so.
-    """
-    if not guiding_questions or not text:
-        return None
-    text_tokens = _token_set(text)
-    if not text_tokens:
-        return None
-    best_idx, best_sim = None, 0.0
-    for idx, question in enumerate(guiding_questions):
-        sim = _jaccard(text_tokens, _token_set(question))
-        if sim > best_sim:
-            best_idx, best_sim = idx, sim
-    return best_idx if best_sim >= _GUIDING_QUESTION_MATCH_THRESHOLD else None
-
-
 def _angle_signature(angle: dict) -> set:
     """Token set for D4 dedup similarity. hypothesis/variables_involved are counted TWICE - run 1
     showed near-duplicate angles that shared topic but differed in method wording, and
@@ -776,24 +744,34 @@ def _pick_representative(cluster: list[dict]) -> dict:
     return max(cluster, key=key)
 
 
-def _dedup_angles(records: list[dict], threshold: float, guiding_questions: list[str] = None) -> tuple[list[dict], dict]:
+def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], dict]:
     """D4: cluster archive records ({angle, iteration, stance}) by token-set Jaccard similarity
-    over _angle_signature, dropping near-duplicates. Selection now optimises for distinct, not
-    best - there is no score yet (that's D5).
+    over _angle_signature, identifying near-duplicates.
+
+    Live Issue 24 (DIVERGER_PLAN.md rev. 26): a guiding-question guard was tried here and killed by
+    Run 24 - two more false-positive merges landed WITHIN a single guiding question, which such a
+    guard cannot see, taking the total to 3 false positives across Runs 23-24 that the guard would
+    have caught exactly one of. Dedup's original justification (saving downstream judging cost) was
+    also removed by D6-fix item 2, which moved judging before dedup. Per "add complexity only where
+    it demonstrably improves outcomes", the decision was NOT to delete this function outright but to
+    keep it as a measurement only: the caller (generate_and_optimize) logs what this function would
+    have merged and does not act on it - every judged angle proceeds to ranking regardless of what
+    is returned here. This preserves the "would it ever have fired correctly" measurement at zero
+    cost to run coverage, without committing to either "keep and enforce" or "delete" while the
+    question is still open.
 
     Greedy single-linkage clustering: each record joins the cluster containing its most similar
     previously-seen record if that similarity clears `threshold`, else it starts a new cluster.
     O(n^2) comparisons, fine at the angle counts this pipeline produces per run.
 
     Returns (kept_records, merge_stats) where merge_stats = {"within_iteration": int,
-    "across_iteration": int, "merges": list[dict], "guarded": int} - counts split so within-iteration
+    "across_iteration": int, "merges": list[dict]} - counts split so within-iteration
     duplication (stance/question differentiation too weak, see D3a) and across-iteration
     duplication ({existing_angles} pressure too weak, see D3) can be diagnosed separately.
     "merges" records each individual merge event (record id, the id of the most-similar
     existing record it matched, the similarity score, the type, and - Live Issue 6 fix - the id of
     the cluster's eventual survivor) so which specific pair merged, AND which one was kept, can be
-    read off the run log (see DIVERGER_PLAN.md §3/§4) without the two disagreeing. "guarded" counts
-    comparisons the Live Issue 24 guard below excluded.
+    read off the run log (see DIVERGER_PLAN.md §3/§4) without the two disagreeing.
 
     best_match is still the best-matching member AT MERGE TIME, not necessarily the survivor -
     _pick_representative runs after clustering completes and can pick a different cluster member on
@@ -801,41 +779,17 @@ def _dedup_angles(records: list[dict], threshold: float, guiding_questions: list
     [cross-role-expertise-mapping]" while self-reported-role-trend was the one actually kept,
     reading backwards. survivor_id is resolved from the finished clusters below and attached to
     every merge in that cluster, so the log line can report both without contradicting itself.
-
-    Live Issue 24: two records are never compared for similarity at all if _match_guiding_question
-    maps their question_or_stakeholder_served fields to two DIFFERENT guiding questions - Run 23
-    merged an angle serving guiding question 5 into one serving question 3 purely on shared
-    Likert-item vocabulary, silently removing the run's only question-5 coverage. Angles that map to
-    the same question, or where either side's question can't be confidently identified, remain
-    eligible for merging exactly as before - this guard only ever REMOVES a comparison, never adds
-    a match lexical similarity wouldn't already have found, so it cannot itself cause an over-merge.
-    guiding_questions defaults to [] (no report parsed one), which makes every match unknown and the
-    guard a no-op - safe, since that's exactly the old ungated behaviour.
     """
-    guiding_questions = guiding_questions or []
-    question_index = {
-        id(record): _match_guiding_question(
-            record["angle"].get("question_or_stakeholder_served", ""), guiding_questions
-        )
-        for record in records
-    }
-
     clusters: list[list[dict]] = []
     within_iteration = 0
     across_iteration = 0
     merges: list[dict] = []
-    guarded = 0
 
     for record in records:
         record_tokens = _angle_signature(record["angle"])
-        record_q = question_index[id(record)]
         best_idx, best_sim, best_match = None, 0.0, None
         for idx, cluster in enumerate(clusters):
             for member in cluster:
-                member_q = question_index[id(member)]
-                if record_q is not None and member_q is not None and record_q != member_q:
-                    guarded += 1
-                    continue  # Live Issue 24: confidently different guiding questions, never merge
                 sim = _jaccard(record_tokens, _angle_signature(member["angle"]))
                 if sim > best_sim:
                     best_idx, best_sim, best_match = idx, sim, member
@@ -870,7 +824,6 @@ def _dedup_angles(records: list[dict], threshold: float, guiding_questions: list
         "within_iteration": within_iteration,
         "across_iteration": across_iteration,
         "merges": merges,
-        "guarded": guarded,
     }
 
 
@@ -1506,17 +1459,18 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     are the only lever within an iteration. Cross-iteration diversity instead comes from
     {existing_angles}: the accumulated archive of every angle proposed so far, fed back into
     ANGLE_GENERATION_PROMPT_SUFFIX. Once ideation finishes, D5 scores every archived angle for
-    non-obviousness (judge_insight) and soundness (judge_soundness), THEN D4 dedups the whole
-    archive by token-set similarity (D6-fix item 2: judging first lets dedup keep the
-    highest-scoring member of each cluster instead of a text-length proxy) and the survivors are
-    ranked by both judgments. D6 then realizes only the top realize_top_k non-unsupportable angles
-    - code is written and run for that small selection only, never for the whole archive.
+    non-obviousness (judge_insight) and soundness (judge_soundness), and D4's dedup runs against
+    the judged archive but MEASUREMENT ONLY (Live Issue 24, DIVERGER_PLAN.md rev. 26) - it logs
+    what it would have merged and is not acted on, so every judged angle is ranked. D6 then
+    realizes only the top realize_top_k non-unsupportable angles - code is written and run for that
+    small selection only, never for the whole archive.
 
     Returns a dict, not a script or plain-text summary (D7 - the pre-D7 versions of this function
     returned a formatted string, which app.py wrote out under a misleading analysis_script_<ts>.py
     filename since D2 stopped this pipeline from producing a single script):
-    - "all_angles": every surviving (post-dedup) angle dict, ranked best-first by
-      _judgment_sort_key, each carrying its D5 judgment and (if realized) D6 result fields.
+    - "all_angles": every judged angle dict (dedup no longer removes any - see Live Issue 24 above),
+      ranked best-first by _judgment_sort_key, each carrying its D5 judgment and (if realized) D6
+      result fields.
     - "summary_text": the same plain-text ranked summary this function used to return outright -
       kept for console logging / non-visual consumers, not the deliverable itself anymore.
     - "gallery_path" / "dump_path": paths to the two files written to output_dir (_write_gallery,
@@ -1691,32 +1645,34 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             continue
         angle.update(result)
 
-    # D4: dedup - drop near-duplicate angles across the WHOLE run (all iterations), not per
-    # iteration, so across-iteration duplicates are caught too. Now runs AFTER judging (D6-fix item
-    # 2) so _pick_representative keeps the highest-scoring cluster member, not a text-length proxy.
-    # Does not feed back into {existing_angles} above - that cross-iteration pressure already works
-    # on the raw archive (see DIVERGER_PLAN.md §3), so dedup stays a separate, final selection step.
-    # guiding_questions threaded through so the Live Issue 24 guard can refuse to merge angles
-    # whose question_or_stakeholder_served fields map to different guiding questions.
-    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold, guiding_questions)
+    # D4/Live Issue 24 (DIVERGER_PLAN.md rev. 26): dedup is now MEASUREMENT ONLY, not acted on.
+    # _dedup_angles still clusters the whole run's archive (all iterations) exactly as before, but
+    # its result no longer filters all_angles - every judged angle proceeds to ranking regardless
+    # of what would have merged. Rationale: dedup's original justification (saving downstream
+    # judging cost) was removed by D6-fix item 2 moving judging before it, no replacement
+    # justification was ever established, and a proposed guiding-question guard was killed by Run
+    # 24 (2 more false positives, both WITHIN a single guiding question, that such a guard cannot
+    # see). Rather than delete the ~115 lines outright, the interim keeps the "would this have
+    # fired, and would it have been right" measurement running at zero cost to run coverage.
+    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold)
     print(
-        f"[dedup] {len(archive)} angle(s) -> {len(kept_records)} after dedup "
-        f"(threshold={config.angle_similarity_threshold}); merged "
-        f"{merge_stats['within_iteration']} within-iteration, "
-        f"{merge_stats['across_iteration']} across-iteration duplicate(s); "
-        f"guarded {merge_stats['guarded']} cross-guiding-question comparison(s)"
+        f"[dedup] MEASUREMENT ONLY, not acted on - {len(archive)} angle(s), "
+        f"{len(kept_records)} would remain after dedup (threshold={config.angle_similarity_threshold}); "
+        f"would merge {merge_stats['within_iteration']} within-iteration, "
+        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
     )
     for merge in merge_stats["merges"]:
         # Live Issue 6 fix: "->" still points at the best match AT MERGE TIME, which is not
-        # necessarily who survived - "kept" is the actual _pick_representative winner, so the line
-        # is self-consistent even when they differ (D6-fix item 2 means dedup runs after judging,
-        # so the winner is picked on soundness/insight, not on who matched whom first).
+        # necessarily who would have survived - "would keep" is the actual _pick_representative
+        # winner, so the line is self-consistent even when they differ (D6-fix item 2 means this
+        # measurement runs after judging, so the winner is picked on soundness/insight, not on who
+        # matched whom first). None of this is applied - see the comment above.
         print(
-            f"    merged [{merge['record_id']}] -> [{merge['matched_id']}] "
-            f"(similarity={merge['similarity']:.3f}, {merge['type']}) kept [{merge['survivor_id']}]"
+            f"    would merge [{merge['record_id']}] -> [{merge['matched_id']}] "
+            f"(similarity={merge['similarity']:.3f}, {merge['type']}) would keep [{merge['survivor_id']}]"
         )
     print()
-    all_angles = [rec["angle"] for rec in kept_records]
+    all_angles = [rec["angle"] for rec in archive]
 
     if not all_angles:
         return {"all_angles": [], "summary_text": "(No angles were generated.)", "gallery_path": "",
