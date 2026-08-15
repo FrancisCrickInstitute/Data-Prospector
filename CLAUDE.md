@@ -188,8 +188,12 @@ Then wire the new config into `app.py`'s `--config` choices.
 
 All system/message prompt templates (`ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*`, `SOUNDNESS_JUDGE_*`,
 `ORCHESTRATOR_*`, `WORKER_*`, `COMPILER_*`, `REALIZATION_VALIDATOR_*`, `CRITERIA_PROMPT`, and their
-`*_SYSTEM` counterparts) live in `prompts.py`, imported into `pipeline.py` via `from prompts import *`.
-`pipeline.py` itself holds no prompt text — only orchestration logic and parsing.
+`*_SYSTEM` counterparts) live in `prompts.py`, imported explicitly by name into whichever module calls
+them (`ideation.py`, `judging.py`, `realization.py`, `pipeline.py` itself for `CRITERIA_*`) — no
+`from prompts import *` anywhere. No module holds prompt text of its own; `pipeline.py` specifically
+holds only `generate_and_optimize`'s orchestration, not parsing (`parsing.py`) or any other stage's
+implementation — see `DIVERGER_PLAN.md`'s D-consolidate item 4 for the full module-by-module split
+(`llm.py`, `parsing.py`, `sandbox.py`, `ideation.py`, `judging.py`, `realization.py`, `output.py`).
 
 **`ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*`, and `SOUNDNESS_JUDGE_*` are human-owned.** Do not rewrite them
 directly — propose changes and let a human make them. Judge-prompt wording is the actual product here;
@@ -221,7 +225,7 @@ only from iteration 2 onward. Expect this in cost figures; it isn't a caching bu
 All LLM prompts/responses use XML tags (`<angle>`, `<analysis>`, `<tasks>`, `<task>`, `<criteria>`,
 `<ideation_criteria>`, `<deliverable_rubric>`, `<score>`, `<verdict>`, `<pattern_outcome>`,
 `<pattern_reasoning>`, `<criterion met="...">`) parsed via `extract_xml()` / `_parse_xml_items()` in
-`pipeline.py`, with regex/markdown-heading-based fallbacks if strict XML parsing fails (tolerating minor
+`parsing.py`, with regex/markdown-heading-based fallbacks if strict XML parsing fails (tolerating minor
 formatting drift from the model). When editing prompts, preserve these tags — downstream parsing depends
 on them.
 
