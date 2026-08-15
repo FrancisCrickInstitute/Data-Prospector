@@ -15,9 +15,9 @@ full rationale — this fork inverted a converger that hill-climbed toward one s
 **In practice this is a CBIAS research instrument, not a proven template.** `cbias_config.py` is the only
 domain config that has ever been run — every calibrated threshold, prompt, and piece of tuning in
 `DIVERGER_PLAN.md` is CBIAS-shaped. `bioimage_config.py` and `trello_config.py` still satisfy
-`PipelineConfig` and import cleanly, but neither has ever produced a real run, and `app.py`'s bare-default
-invocation (no `--config`) selects `bioimage_config`, whose default report/data paths do not exist in this
-repository — that default is currently broken. Pass `--config cbias` explicitly.
+`PipelineConfig` and import cleanly, but neither has ever produced a real run. `app.py`'s bare-default
+invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing `--config bioimage`
+selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
 
 ## Commands
 

@@ -76,7 +76,7 @@ Three domain configs currently exist, selected via `--config`:
 |---|---|
 | `cbias_config.py` | **The only one that has ever produced a real run.** Every calibrated threshold and tuned prompt in `DIVERGER_PLAN.md` is CBIAS-shaped. Sample input data ships in this repo (`inputs/cbias_report/`, `inputs/cbias_data_anon/`) and its Docker image target exists (`cbias-analysis`). |
 | `trello_config.py` | Sample input data ships in this repo (`inputs/trello_reports/`, `inputs/trello_data/`), but it references a `python-analysis:latest` Docker image that the `Dockerfile` does not build — execution-validation has never actually been exercised for this config. |
-| `bioimage_config.py` | The historical default (`app.py`'s bare `--config` choice), but its default report/data paths (`inputs/report/`, `inputs/images/`) don't exist in this repo — no sample data ships for it, and no run has ever been done. Pass `--config cbias` explicitly rather than relying on the bare default. |
+| `bioimage_config.py` | Its default report/data paths (`inputs/report/`, `inputs/images/`) don't exist in this repo — no sample data ships for it, and no run has ever been done. No longer `app.py`'s default (see Flags below); pass `--config bioimage` only if you're supplying your own report/data. |
 
 `PipelineConfig` (`config.py`) is the interface all three satisfy and the swap point for adding a fourth:
 
@@ -131,8 +131,9 @@ pixi run python app.py --config cbias
 ### Flags
 
 ```
---config {bioimage,trello,cbias}   Domain configuration to use (default: bioimage — currently broken,
-                                    pass --config cbias explicitly; see Adapting to a new domain above)
+--config {bioimage,trello,cbias}   Domain configuration to use (default: cbias — the only config with
+                                    sample data and a built Docker image in this repo; see Adapting to
+                                    a new domain above)
 --report PATH                      Path to task report file (defaults to the config's sample report)
 --data-dir PATH                    Path to input data directory (defaults to the config's sample data)
 --output-dir PATH                  Output directory for the gallery and its artifacts (default: ./outputs)
