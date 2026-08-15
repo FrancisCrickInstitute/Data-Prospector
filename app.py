@@ -50,9 +50,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--config",
-        default="bioimage",
+        default="cbias",
         choices=["bioimage", "trello", "cbias"],
-        help="Domain configuration to use (default: bioimage)"
+        # cbias is the only config with sample data in this repo and an existing Docker image
+        # target - bioimage_config's default paths don't exist here (DIVERGER_PLAN.md
+        # D-consolidate item 3). Was "bioimage" until that was flagged as a broken default.
+        help="Domain configuration to use (default: cbias)"
     )
     parser.add_argument(
         "--report",
