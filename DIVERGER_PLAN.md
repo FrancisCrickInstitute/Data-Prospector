@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 32)
+# Converger → Diverger conversion plan (rev. 33)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -154,6 +154,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 26 | 0.09 / 0.11 | working | `--angles-per-iteration 4`. **`pattern_not_shown` fires for the first time since D6** — the realisation judge caught a keyword-list bug in generated code from the plot alone (§15, A3). Dedup measurement, 2nd data point: 1 would-merge at **0.360, the highest similarity in the log, and still a false positive** (item-clustering vs respondent-clustering); both members judged unsupportable, so zero cost. 3 realised, 1 pattern_not_shown, 0 not realisable, 0 judge errors, 2 unsupportable. One generated-code `SyntaxError`, recovered attempt 2 |
 | 25 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. **Issue 24's measurement produces its first live data point** (see the Issue 24 entry): 2 would-merges, both across-iteration (0.225, 0.280), both within a single guiding question again, **neither pair consumed two realisation slots — but pair 1 missed by 0.02 insight**. 2 realised, 1 realised_null, **1 genuinely not-realisable** (first legitimate use of that tier: `satisfaction-driver-shift` exhausted 3/3 attempts, each one *raising* rather than faking — Issue 11's fail-fast working), **2 unsupportable — the highest yet, both well-argued**. Judge independently enforced §8's state-vs-trend distinction on stakeholder hybridity. Readability disconfirmed a 5th time; sector question produced a **third mutually inconsistent answer** (see §8) |
 | 23 | 0.11 / 0.12 | working | `--angles-per-iteration 4`. **Dedup 8→5, three across-iteration merges (0.225, 0.242, 0.309)** — one of them a false positive that removed the run's only guiding-question-5 angle (see Issue 24). 0 solid / 5 caveat / 0 unsupportable. **Issue 21's widened fix fired correctly and completely**: worker resilience logged `Workers: 5/7 succeeded - failed: main, recode_items`, the failure was labelled `realization_error` with `stage='compile'`, the fifth gallery tier rendered with a Note line and no phantom `requires`. New failure though — Issue 23 (SDK streaming ceiling). Readability **disconfirmed** this run, correcting §8 |
 | 22 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. Dedup **8→8, 0 merges**. 0 solid / 7 caveat / 1 unsupportable. Realisation: **2 realised, 1 realised_null, 0 pattern-not-shown, 1 not realisable** — the last is Issue 21 recurring at the *worker* call site, so the Issue 21 fix did not fire (`0 realization judge error(s)`). **Iteration 2 contributed 2 of the 4 realised angles** — settles D-consolidate item 8. Readability decline replicates a fourth time; speaker/attendee sector divergence replicates Run 19. New: Issue 22 (silent metric drop) |
@@ -532,6 +533,10 @@ So dedup would not have hidden anything from the gallery's top tier this run. Bu
 
 **Running total: 5 false positives across Runs 23–25** (0.225, 0.242, 0.280, 0.285, 0.309), of which the reverted guiding-question guard would have caught exactly one. Every one sits in the 0.22–0.31 band, immediately above the threshold — consistent with §3's "Known ceiling" rather than with a mis-set constant.
 
+**RUN 26 — second data point, and it removes the last cheap fix.** One would-merge: `feedback-respondent-archetype-trajectories` → `feedback-covariance-theme-network` at **0.360, the highest similarity anywhere in the log**. Both were judged unsupportable, so nothing was lost. But it is another false positive — the first clusters *survey items* by co-variation, the second clusters *respondents* by response profile, and the second angle's own `why_non_obvious` states the distinction explicitly.
+
+**Cumulative: 6 false positives across Runs 23–26, and the highest-scoring merge in the log is one of them.** That rules out raising the threshold as well as the guiding-question guard. Running cost of not deduping: 3 would-merge pairs across Runs 25–26, **zero realisation slots lost**, one near-miss at 0.02.
+
 **What would settle it, in order of what the next runs should show:**
 - **Delete** if two or three more runs pass with no would-merge pair reaching the top tier together.
 - **Keep and fix** the first time a pair does — at which point the fix is a semantic signature, not a threshold and not a question guard, since all five false positives share topic vocabulary while differing in method.
@@ -554,12 +559,25 @@ Attempt 3: ValueError('Year 2022: overall satisfaction column has too few mappab
 **First fix (superseded below) — `DOMAIN_NOTES` only.** Named the satisfaction question as an explicit exception to the general Likert-mapping instruction. Correct but flaky in two ways, both raised on review: a prompt note only works if the model reads and applies it every time, and naming one exception is brittle - it breaks again the next time a numeric-scale question appears. Superseded, not kept alongside.
 
 **Fix landed, two parts, both stronger than the first attempt.**
-1. **Structural: strip the ambiguity at the source, in `anonymize_cbias_data.py`.** The always-empty `"Points - <question>"`/`"Feedback - <question>"` companion columns (confirmed empty in every one, every year - 46/44/46/46 columns across 2022-2025, 0 non-empty) are now dropped during anonymisation itself, via `_drop_empty_companion_columns` - verify-then-drop, not blind-drop: it warns loudly and keeps a companion column rather than dropping it if a future year's export ever actually populates one. This removes the three-near-identical-column-names ambiguity from the data generated code ever sees, rather than hoping every generated script reads and obeys an instruction not to touch two of them. **Needs `anonymize_cbias_data.py` re-run against the local raw `inputs/cbias_data/` to regenerate `inputs/cbias_data_anon/Feedback/*.csv`** - same "rebuild before the next run" shape as a Dockerfile change; not done here, since the raw source isn't available in this environment.
+1. **Structural: strip the ambiguity at the source, in `anonymize_cbias_data.py`.** The always-empty `"Points - <question>"`/`"Feedback - <question>"` companion columns (confirmed empty in every one, every year - 46/44/46/46 columns across 2022-2025, 0 non-empty) are now dropped during anonymisation itself, via `_drop_empty_companion_columns` - verify-then-drop, not blind-drop: it warns loudly and keeps a companion column rather than dropping it if a future year's export ever actually populates one. This removes the three-near-identical-column-names ambiguity from the data generated code ever sees, rather than hoping every generated script reads and obeys an instruction not to touch two of them. ~~**Needs `anonymize_cbias_data.py` re-run** against the local raw `inputs/cbias_data/` to regenerate `inputs/cbias_data_anon/Feedback/*.csv`~~ — **DONE (`e31a8c3`), and verified against the committed data at `2ed4463`:**
+
+| File | Columns | `Points -`/`Feedback -` remaining | Satisfaction column |
+|---|---:|---:|---|
+| 2022 | 22 | **0** | 60/60 populated, `int64`, values {1,5,6,7} |
+| 2023 | 21 | **0** | 52/52 populated, `int64`, values {3,5,6,7} |
+| 2024 | 21 | **0** | 53/53 populated, `int64`, values {4,5,6,7} |
+| 2025 | 21 | **0** | 37/37 populated, `int64`, values {3,5,6,7} |
+
+Companion columns are gone from every file, and the satisfaction column is fully populated in all four years as an integer scale (apparently 1–7). This is the direct check the entry's own lesson asks for — read the CSVs, not the scripts' error messages. **No rebuild is outstanding; the next run can proceed.**
 2. **Behavioural: teach the check, don't list the exception.** `DOMAIN_NOTES` no longer names the satisfaction question specifically - it states most Feedback questions are Likert text needing an ordinal mapping *but not all of them*, gives satisfaction as one example, and instructs inspecting a column's actual unique values before assuming the mapping applies. Generalises to any future numeric-scale question without needing another edit, which a hardcoded exception never would.
 
 Needs a live run with a satisfaction-outcome angle, after the anonymisation re-run, to confirm no recurrence.
 
 **The general lesson, worth keeping alongside Issue 17's:** an all-NaN or `not_realisable` result from a generated script is not itself evidence the underlying data is bad — it is evidence the generated code's assumptions about the data were wrong, and the two look identical from the console. Issue 17 established this for path/glob assumptions; this is the same failure mode for column *content-type* assumptions. Check the raw data before writing a data-gaps note, not just before writing a fix.
+
+**How close this came to reaching the report, and why that matters.** Rev. 30 recorded this as a confirmed data defect and recommended adding *"overall satisfaction is unusable across all four years"* to the report's data-gaps section — a section that goes to the organising committee. It would have been a fabricated gap in a real deliverable, plus a `DOMAIN_NOTES` constraint telling ideation to stop proposing a perfectly good outcome variable. The inference was drawn from two scripts' error messages without opening a CSV. **The pipeline's outputs are evidence about the pipeline; only the data is evidence about the data.**
+
+**And the sharper point, which belongs to D-simplify item 1: one wrong line in `DOMAIN_NOTES` produced effectively identical failures in two independently generated scripts, across two runs.** §8 records that judge prompts are the product. `DOMAIN_NOTES` is equally load-bearing — it is the pipeline's description of the world to every worker and compiler call — and it has never had the same scrutiny. It is not a comment; it is an interface.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -848,6 +866,8 @@ Diverger's ACI is its XML schemas — `<task>` blocks nested inside `<tasks>`, a
 - Live Issue 18: tolerate formatting drift in the angle schema.
 - Live Issue 20: `<pattern_outcome>` parse fallback to the conservative default.
 
+**And the interface is wider than the XML.** Live Issue 25 established that `DOMAIN_NOTES` — the pipeline's description of the data to every worker and compiler call — is equally load-bearing and has never had comparable scrutiny: one wrong line in it produced effectively identical failures in two independently generated scripts across two runs. §15 classes A and B are almost entirely this. When this item is next opened, the data description belongs in scope alongside the schemas.
+
 None of these is currently hurting a run badly enough to act on — the recovery paths work, which is why this is deferred. But they are the same problem seen three times, and the post says this is the surface that repays attention most. **When it is next worth opening: consider whether nested XML with prose inside is the right format at all**, versus something flatter with less escaping burden. Do not start by tuning the parser again.
 
 **2. Dedup: delete or demonstrate — see Live Issue 24.** The post's rule is to add complexity only where it demonstrably improves outcomes. Dedup's original justification (saving judging cost) was removed when D6-fix moved judging before it, and no replacement justification was ever established. Issue 24 carries the reframed decision; this item exists only to record why the standard changed.
@@ -1101,6 +1121,10 @@ Two further observations rather than conclusions. Judging is 44% of the call cou
 
 Small individually; listed because they are the tail end of the converger and their presence is the clearest single sign that deletions have lagged behind additions.
 
+### 12.5b See also
+
+§15 catalogues the failures that came from models misreading the data rather than from the pipeline's own bugs. It is the counterpart to this section: §12 measures the code, §15 measures what the code could not prevent.
+
 ### 12.6 Two prior concerns, closed
 
 Both flagged during the D7 review and both resolve correctly on inspection, recorded here so they are not re-raised:
@@ -1200,4 +1224,91 @@ Neither is simply better, and the §13 workflow-versus-agent distinction says wh
 ### 14.5 Worth connecting the projects
 
 Lyra has the packaging and reusability discipline diverger lacks — APM bundles, frontmatter'd skills, instruction files, a preventive check for exactly the leakage §12 documents. Diverger has 24 runs of evidence about what LLM evaluation actually buys you, which is the least-tested part of lyra's design. The exchange looks favourable in both directions.
+
+
+---
+
+## 15. Retrospective: where the models got the data wrong
+
+A catalogue of every failure in this project's run history that came from a model **misreading the data, its environment, or its own output** — as distinct from the pipeline's own bugs, which are in §3's live-issue log. Compiled at rev. 33 across Runs 1–26.
+
+**Why this is worth keeping.** The pipeline's headline claim (§1) is that a diverger is safe *because it has a real oracle* — Docker either runs the script or it doesn't. The failures below are the ones that oracle cannot see: **almost none of them are crashes.** They produce a script that exits 0, writes labelled PNGs, and reports numbers that are wrong for reasons invisible from the console. Every entry is an instance of the same underlying limitation — **the model never sees the data, only a description of it** — and the ones that survived longest are those where the wrong answer looked exactly like a right one.
+
+### 15.1 Class A — the model cannot see the data, only `DOMAIN_NOTES`
+
+The largest and most damaging class. In each case the description was accurate but incomplete, and the model filled the gap with a reasonable-sounding assumption.
+
+| # | Failure | Runs | How it presented | How it was caught |
+|---|---|---|---|---|
+| A1 | **Decoy columns.** Microsoft Forms emits `Points - <question>` / `Feedback - <question>` companions beside every real question, always empty here. Substring column-matching selected them. | 24, 25 | "column not found or too few mappable responses" — looked like missing data | Human opened the CSVs (Issue 25) |
+| A2 | **Type assumed from category.** `DOMAIN_NOTES` said Likert answers are free text needing an ordinal map. True for every question *except* overall satisfaction, which is already numeric. The map found no matching keys and produced silent all-NaN. | 24, 25 | Judge reported the column "entirely NaN across all four years" | Human inspected `unique()` (Issue 25) |
+| A3 | **Category label absent from its own keyword list.** `classify_affiliation()` matched "university", "college", etc. but never the literal string `"academic"` — so every attendee whose ticket type is `Academic` was bucketed as "other". | 26 | A fully legible chart measuring the programme's own share minus zero | **Realisation judge**, from the plot: no attendee bar in the Academic panel |
+
+**A1 and A2 are the same root failure seen twice**, and it cost two runs plus a nearly-published fabricated data gap (§3, Issue 25). Note the asymmetry in how they were caught: A3 was caught automatically because the artifact *looked* wrong; A1 and A2 were not, because all-NaN and genuinely-missing are indistinguishable from the console.
+
+**What worked as a fix:** removing the ambiguity from the data at source (A1 — companion columns dropped during anonymisation) beat instructing the model to ignore it. For A2, replacing "here is the exception" with "inspect the values before assuming" generalises; naming the one exception would not have.
+
+### 15.2 Class B — the environment is not what the model assumed
+
+| # | Failure | Runs | Effect |
+|---|---|---|---|
+| B1 | **Silent method substitution.** `sentence-transformers` declared in `requires`, absent from the image. Attempt 1 failed on `ModuleNotFoundError`; attempt 2 substituted something available. Reported cosine similarities of 0.0145–0.0179 — one to two orders of magnitude below sentence-transformer values, the signature of sparse TF-IDF. | 23, 24 | An angle justified entirely by *"embeddings capture meaning where term counts can't"* silently became a term-count method — which the anti-target list names as exhausted |
+| B2 | **Missing NLTK resource, silently caught.** Passive-voice fraction unmeasurable, NA for all four years; script continued and was marked `realised` at 0.71. | 22 | One of five promised metrics vanished |
+| B3 | **Corpus name drift.** `averaged_perceptron_tagger` baked; modern NLTK resolves to `averaged_perceptron_tagger_eng`. | 22 | B2's proximate cause |
+| B4 | **API version drift.** `applymap` (removed in pandas 3.0); a deprecated `matplotlib` boxplot kwarg. | 22, and Issue 20 | Hard failures — the good case, caught by Docker |
+
+**B1 is the most instructive failure in this document.** The evaluator-optimizer loop worked *exactly as designed* — error fed back, script fixed, execution passed — and in doing so converted a novel angle into a forbidden one. **A recovery loop with no notion of method fidelity will repair a script into meaninglessness rather than fail.** The pipeline's own logs made it visible (FAIL reason, retry, numbers, linked script); nothing flagged it.
+
+### 15.3 Class C — silent degradation and the fail-fast rule
+
+| # | Failure | Runs | Caught by |
+|---|---|---|---|
+| C1 | **Clean exit on no data.** Script found nothing, printed 28 characters, exited 0. | 24 | `validate_execution`'s no-artifact backstop (Issue 11) |
+| C2 | **Partial metric loss** (= B2). Four of five metrics computed, fifth silently NA. | 22 | Realisation judge, reported honestly but still ranked top-tier |
+
+C1 is the class the pipeline defends against well and by design; C2 is the gap — the fail-fast instruction covers a *whole script* no-op, not the loss of one metric among several. **Counter-example worth recording:** Run 25's `satisfaction-driver-shift` raised on all three attempts rather than faking a result, and became the first legitimate `not_realisable` in the log. The instruction works when the failure is total.
+
+### 15.4 Class D — the model's own output
+
+| # | Failure | Runs | Note |
+|---|---|---|---|
+| D1 | **XML parse failures.** `<task>` mismatched tag at line 10, col 419 (Run 22) and col 527 (Run 24) — both deep inside the free-prose `<description>` field. | 22, 24 | Recovered both times. Evidence for D-simplify item 1: prose inside nested XML is a poor interface |
+| D2 | **Thinking-budget exhaustion.** Response consumed `max_tokens` in thinking, returned no text block. | 21, 22, 23 | Three revisions of Issue 21 to categorise correctly, then Issue 23 to fix the transport |
+| D3 | **Syntax error in generated code** — `SyntaxError: '(' was never closed`. | 26 | Recovered on attempt 2. Docker catches this class cleanly |
+
+### 15.5 Class E — model-as-judge, and model-derived heuristics
+
+| # | Failure | Evidence | Resolution |
+|---|---|---|---|
+| E1 | **`delivered_score` is anti-correlated with worth.** Scored 1.00 for a noisy disconfirmation and 0.71 for the run's best result. | 5 runs (12, 16, 17, 19, 22) | Omitted from the gallery (D7); never gated on |
+| E2 | **`req_score` carried no information.** An LLM rubric judge over a real oracle's output. | D1–D5 | Deleted |
+| E3 | **Lexical dedup conflates method with topic.** 6 false positives across Runs 23–26, all in the 0.22–0.36 band, all sharing topic vocabulary while differing in method. The highest-similarity merge in the whole log (0.360) is a false positive. | 23–26 | Reduced to measurement-only (Issue 24); fix, if any, must be semantic |
+
+**The pattern across E:** every model-produced *number* in this project has needed downgrading — from gate, to rank, to display, to nothing. The model-produced *prose* (`pattern_reasoning`, soundness caveats) has held up far better, including catching A3. **Trust the judges' reasoning; distrust their scores.**
+
+### 15.6 Class F — the analyst layer
+
+Failures in interpreting the pipeline's output, committed while maintaining this document. Included because they are the same limitation one level up, and because three of them were nearly written into deliverables.
+
+| # | Failure | Rev. | Nearly cost |
+|---|---|---|---|
+| F1 | **Concluded the data was defective from two scripts' error messages, without opening a CSV.** Recommended adding "overall satisfaction is unusable across all four years" to the report's data-gaps section. | 30 | A fabricated data gap in a document going to the organising committee, plus a `DOMAIN_NOTES` constraint suppressing a good variable |
+| F2 | **Asserted a paid-for Docker run had been written off**, inferred from error text with no evidence of which call raised it. Run 22 showed the failure occurs before any Docker run. | 20 | A mis-scoped fix |
+| F3 | **Reported "replicated four times"** for measurements that shared a name and nothing else — 2022 Flesch values of 12.35 / 19.62 / 18.70 on identical data. | 22 | Recommending an unreplicated result to the committee |
+| F4 | **Measured complexity by line count**, counting transparency machinery as bloat. | 19 | Stripping the pipeline's most valuable property |
+
+**The governing rule, and it generalises down to Class A:** *the pipeline's outputs are evidence about the pipeline; only the data is evidence about the data.* F1 and A1/A2 are the same error — inferring a property of the world from an artifact produced by a model that never saw the world.
+
+### 15.7 What this says about agentic data interpretation
+
+Six observations, each supported by at least two entries above.
+
+1. **Silence is the default failure mode.** Of the fourteen failures catalogued, three crashed (B4, D3, and C1's backstop). The rest produced plausible, well-labelled output. **A pipeline whose only oracle is "did it run" is blind to most of what goes wrong.**
+2. **The description of the data is a load-bearing interface, and it is not treated like one.** A1, A2 and A3 all trace to `DOMAIN_NOTES` or to a keyword list. §8 records that judge prompts are the product; the *data* description has never had comparable scrutiny, and one wrong line in it produced effectively identical failures in two independently generated scripts across two runs.
+3. **Fixing the data beats instructing the model.** A1's durable fix was structural (drop the decoys during anonymisation), after a prompt-level fix was tried and judged too flaky to keep. Instructions must be read and applied correctly every time; a removed column cannot be misread.
+4. **Repair loops optimise for passing, not for meaning.** B1 is the clearest case: three attempts of automated recovery turned a novel method into a forbidden one, and every step was locally correct.
+5. **Models are better critics than scorers.** E1/E2 versus A3: the same models that produce unreliable numbers caught a bug a human reviewer would plausibly have missed, by looking at a chart and noticing an implausible zero.
+6. **The human is the last line, and needs the raw data to be one.** A1, A2, F1 were all resolved by someone opening a file. The gallery's linked scripts and artifacts exist for exactly this; the failures that persisted longest are the ones where nobody did.
+
+**Scope note.** This section is about model limitations, not about what the CBIAS data says. Conclusions about the symposium belong in the report's Already Explored section, not here.
 
