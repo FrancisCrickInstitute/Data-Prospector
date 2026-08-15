@@ -2,19 +2,40 @@
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.14+](https://img.shields.io/badge/Python-3.14+-green.svg)](https://www.python.org/downloads/)
-[![Claude API](https://img.shields.io/badge/Claude-API-orange.svg)](https://www.anthropic.com)
+[![Anthropic API](https://img.shields.io/badge/Anthropic-API-orange.svg)](https://www.anthropic.com)
 [![Docker](https://img.shields.io/badge/Docker-containerized-blue.svg)](https://www.docker.com)
 
-A pipeline that uses Claude to generate a **spread of distinct, defensible analytical angles** on a
-dataset, rather than converging on one "best" script. Given a task report and input data, it fans out
-many independent hypotheses, judges each for non-obviousness and soundness, selectively realises the
-top-ranked few into Docker-verified Python scripts, and writes the whole run up as a tiered markdown
-**gallery** for a human to skim and evaluate. There is no pass/fail oracle for idea quality — that
-judgement belongs to the person reading the gallery, not the pipeline.
+A pipeline built around the Anthropic API to generate a **spread of distinct, defensible analytical
+angles** on a dataset, rather than converging on one "best" script. Every model role is swappable per
+domain config; this repo runs ideation/judging on Claude and routes two mechanical, high-volume roles to
+DeepSeek via its Anthropic-Messages-API-compatible endpoint (see `DIVERGER_PLAN.md` §5) — any model that
+speaks that API works. Given a task report and input data, it fans out many independent hypotheses,
+judges each for non-obviousness and soundness, selectively realises the top-ranked few into
+Docker-verified Python scripts, and writes the whole run up as a tiered markdown **gallery** for a human
+to skim and evaluate. There is no pass/fail oracle for idea quality — that judgement belongs to the
+person reading the gallery, not the pipeline.
 
 **This is currently a CBIAS research instrument, not a validated general-purpose template.** `cbias_config.py`
 is the only domain config that has ever produced a real run; see [Adapting to a new domain](#adapting-to-a-new-domain)
 for what that means for the other two configs shipped here.
+
+## Design influences
+
+The architecture started from two Anthropic sources: *Building effective agents* [1] (the
+orchestrator-worker and evaluator-optimizer patterns behind the realise step, D6) and the
+`claude-cookbooks` tutorials [2]. The fan-out → judge → selectively-realise shape was later informed by
+two published multi-agent science systems [3, 4]. See `DIVERGER_PLAN.md` §1 for how this fork inverted
+its parent repo's converge-to-one-winner design into the diverge-then-judge one described below.
+
+1. Schluntz, E., & Zhang, B. (2024, December 19). *Building effective agents*. Anthropic.
+   https://www.anthropic.com/engineering/building-effective-agents
+2. Anthropic. (n.d.). *claude-cookbooks* [Source code]. GitHub.
+   https://github.com/anthropics/claude-cookbooks
+3. Gottweis, J., Weng, W.-H., Daryin, A., et al. (2026). Accelerating scientific discovery with
+   Co-Scientist. *Nature*, *655*(8122), 487–496. https://doi.org/10.1038/s41586-026-10644-y
+4. Lu, C., Lu, C., Lange, R. T., Yamada, Y., Hu, S., Foerster, J., Ha, D., & Clune, J. (2026). Towards
+   end-to-end automation of AI research *(known informally as "The AI Scientist")*. *Nature*, *651*,
+   914–919. https://doi.org/10.1038/s41586-026-10265-5
 
 ## How it works
 
