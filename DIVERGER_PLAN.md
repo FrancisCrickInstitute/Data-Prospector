@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 39)
+# Converger → Diverger conversion plan (rev. 40)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -166,6 +166,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 28 | 0.09 / 0.09 | working | **Issue 26 provisionally confirmed: every compile succeeded on attempt 1/3 — no `Compile attempt 2/3` anywhere and zero syntax errors, the first such run since the pattern appeared.** 2 realised, 1 realised_null, 1 realization_error (DeepSeek 402, account balance — not a pipeline fault), 2 unsupportable. Issue 21's machinery caught and staged it correctly, but the fifth tier's boilerplate asserted a script and images that did not exist (Live Issue 28). Issue 27's branch not exercised. Third `<task>` XML parse failure (col 446). Dedup 4th data point: 1 would-merge at 0.265, within-question, false positive, zero cost. **§15 B1 partially self-corrected** — the TF-IDF fallback was declared in console and script, though not in the gallery |
 | 27 | 0.09 / 0.08 | working | **First live run on the eight-module split — completed end to end, so D-consolidate 4–6 are confirmed, not just verified offline.** 1 realised, 2 realised_null, 1 not realisable, 1 unsupportable, 0 judge errors. **Two truncation-shaped `SyntaxError`s** (Live Issue 26). Compile-cycling abort fired for the first time but saved nothing (Live Issue 27). Dedup measurement, 3rd data point: 1 would-merge at 0.251, within-question, false positive, zero cost. Judge caught a second unreachable-category classifier bug (§15 A4) |
 | 26 | 0.09 / 0.11 | working | `--angles-per-iteration 4`. **`pattern_not_shown` fires for the first time since D6** — the realisation judge caught a keyword-list bug in generated code from the plot alone (§15, A3). Dedup measurement, 2nd data point: 1 would-merge at **0.360, the highest similarity in the log, and still a false positive** (item-clustering vs respondent-clustering); both members judged unsupportable, so zero cost. 3 realised, 1 pattern_not_shown, 0 not realisable, 0 judge errors, 2 unsupportable. One generated-code `SyntaxError`, recovered attempt 2 |
 | 25 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. **Issue 24's measurement produces its first live data point** (see the Issue 24 entry): 2 would-merges, both across-iteration (0.225, 0.280), both within a single guiding question again, **neither pair consumed two realisation slots — but pair 1 missed by 0.02 insight**. 2 realised, 1 realised_null, **1 genuinely not-realisable** (first legitimate use of that tier: `satisfaction-driver-shift` exhausted 3/3 attempts, each one *raising* rather than faking — Issue 11's fail-fast working), **2 unsupportable — the highest yet, both well-argued**. Judge independently enforced §8's state-vs-trend distinction on stakeholder hybridity. Readability disconfirmed a 5th time; sector question produced a **third mutually inconsistent answer** (see §8) |
@@ -593,7 +594,21 @@ Needs a live run with a satisfaction-outcome angle, after the anonymisation re-r
 
 **And the sharper point, which belongs to D-simplify item 1: one wrong line in `DOMAIN_NOTES` produced effectively identical failures in two independently generated scripts, across two runs.** §8 records that judge prompts are the product. `DOMAIN_NOTES` is equally load-bearing — it is the pipeline's description of the world to every worker and compiler call — and it has never had the same scrutiny. It is not a comment; it is an interface.
 
-**26. FIXED, unconfirmed on a live run — `llm_call` returns truncated responses as if they were complete (Runs 26, 27).** The retry-at-double added for Issue 21 fires **only when the response contains no usable text**:
+**26. FIXED — PROVISIONALLY CONFIRMED (Run 28). `llm_call` returned truncated responses as if they were complete (Runs 26, 27).**
+
+**Run 28 evidence.** Every compile in the run succeeded on **attempt 1/3**: no `Compile attempt 2/3` appears anywhere in the log, and there were no syntax errors of any kind.
+
+| Run | Truncation-shaped `SyntaxError`s | Compiles needing a retry |
+|---|---|---|
+| 26 | 1 | 1 |
+| 27 | 2 | 2 |
+| 28 | **0** | **0** |
+
+Circumstantial rather than conclusive — a clean run can happen — but it is the first run since the pattern appeared in which *no* compile needed a second attempt, which is what a working `reject_truncated` should produce: the retry now happens inside `llm_call`, invisibly, instead of costing a compile attempt. **Leave open for two more runs**; close it if the pattern holds, and note that the new "Response truncated at max_tokens on both attempts" `ValueError` has still never been seen, so the double-truncation path remains untested.
+
+*Original entry follows.*
+
+**26 (original). `llm_call` returns truncated responses as if they were complete (Runs 26, 27).** The retry-at-double added for Issue 21 fires **only when the response contains no usable text**:
 
 ```python
 text = "".join(block.text for block in response.content if block.type == "text")
@@ -633,7 +648,9 @@ A truncated script is never usable, so returning it is strictly worse than retry
 
 **Verify:** a run in which a compile response truncates should retry rather than emit a mid-token `SyntaxError`, and no `realization_error` should carry thinking-budget wording when the real cause was truncation.
 
-**27. FIXED, unconfirmed on a live run — the compile-cycling abort cannot save an attempt at the current budget (Run 27).** `abstract-register-accessibility` logged:
+**27. FIXED, STILL UNCONFIRMED — not exercised by Run 28.** No repeat feedback occurred (every compile passed first time), so neither new branch ran. It needs a run in which a design actually cycles, which by its nature cannot be arranged on demand — leave open and check opportunistically rather than waiting on it.
+
+**27 (original). The compile-cycling abort cannot save an attempt at the current budget (Run 27).** `abstract-register-accessibility` logged:
 
 ```
 This error already occurred in an earlier attempt - aborting remaining compile attempts
@@ -648,6 +665,38 @@ Not urgent; the abort is still correct, it just did not help here. Two options, 
 2. **Soften the log wording.** "aborted early" and "aborting remaining compile attempts" both claim a saving that did not happen, and per §15's own lesson, a log overstating what occurred is how misdiagnosis starts.
 
 **FIXED (rev. 39), option 2 only.** `_run_one_design`'s repeat-detection branch now computes `remaining = max_compile_attempts - 1 - attempt` before logging: with attempts genuinely left to skip, it logs `aborting the N remaining compile attempt(s)` (unchanged claim, still true); when the repeat lands on the last attempt — the case that actually happened in Run 27 — it logs `it was the last attempt available, so nothing was saved by detecting it` instead, and `aborted_on_repeat` (which drives the `(aborted early - the same error recurred verbatim)` note on the final `not_realisable` feedback) is only set `True` in the real-saving case. No change to when the loop breaks or to `max_compile_attempts` itself — this is wording only, exactly as scoped. Verified offline with a mocked `_run_one_design` run for both cases (repeat with 2 attempts remaining; repeat only on the final attempt of 3) — deleted after passing.
+
+**28. The `realization_error` tier asserts a cause it cannot know (Run 28).** `output.py` prints this above the fifth tier, unconditionally:
+
+> _The script compiled, ran in the sandbox, and produced real output; only the final judging call failed. Not a provisioning gap - judge these yourself from the script/image(s) below._
+
+That is true only when the failure happened at the **validate** stage. Run 28's `speaker-attendee-sector-alignment` failed at `stage='compile'`, so no script was written, nothing ran in the sandbox, and the entry carries **no script or image links** — the reader is told to judge from artifacts that do not exist. The parenthetical inside the entry records the correct stage, so the entry contradicts itself.
+
+**This is Issue 21's original defect one level up.** Issue 21 was about a tier asserting the wrong *category* of failure; this is a tier asserting the wrong *stage* of it. The plan has now made the same mistake three times (Issue 21's `not_realisable` mislabelling, Issue 27's "aborted early" log, this) — **wording that describes the common case and is silently wrong in the others.**
+
+**Why it matters more than one entry suggests.** Run 28 was lucky: the balance ran out on the last compile, so one angle was affected. Had it run out earlier, all four realisations would have failed identically and the gallery would have carried four entries each confidently claiming a compiled, executed script. The console makes an account failure obvious; the gallery is what gets read afterwards.
+
+**Fix:** branch the wording on `stage`. For `stage='validate'`, the current text is correct. For earlier stages, say what is true — the pipeline failed before a script was produced — and suppress the "judge these yourself from the script/image(s) below" instruction when there are no artifacts to judge.
+
+**29. No preflight check that every configured model is reachable.** Run 28's `APIStatusError("Error code: 402 - Insufficient Balance")` was an account state, not a pipeline fault, and the pipeline handled it correctly. But it exposes that nothing verifies the configured models are usable before ~110 calls are committed.
+
+**Be honest about the scope: a preflight would NOT have caught Run 28.** DeepSeek worked for ideation and for three of four compiles, then ran out mid-run. Credit exhaustion partway through is out of scope for any startup check, and as noted when this was raised, it is obvious from the console anyway.
+
+**What it does catch is a bad key, a stale model string, or an empty account — and the value depends entirely on tier depth**, because §5 puts different models at different points in the pipeline:
+
+| Broken model | Fails after | Wasted before failure |
+|---|---|---|
+| criteria / `angle_model` | ~1 call | trivial |
+| `judge_model` | ideation complete | ~9 calls |
+| `orchestrator` / `worker` / `compiler` | ideation **and all judging** complete | ~25 calls, ~16 of them Opus |
+
+The deepseek tier (worker and compiler on `cbias`) is the deepest, so it is exactly where a preflight repays itself. Three distinct model strings after deduplication, one trivial call each, against ~110 for a full run.
+
+**Two implementation traps, both worth stating because each would make the check worse than nothing:**
+1. **Do not route it through `llm_call` with a tiny `max_tokens`.** A minimal call to an adaptive-thinking model returns a thinking block and no text — precisely the Issue 21 failure — so the preflight would raise `ValueError` and report every model as broken. It must test the **transport**, not the content: catch `APIStatusError` and treat any successful HTTP response as a pass regardless of what came back.
+2. **Distinguish the status codes in the message**, because they need different actions: 401/403 is a credential problem, 402 a balance problem, 404 usually a stale model string — and §5's tiering means model names here change more often than in most projects. A generic "model unavailable" sends someone to the wrong fix, which is the §15 F-class error in miniature.
+
+Low priority; a natural companion to D8's economy instrumentation, since both are about knowing what a run costs before paying for it.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -1333,6 +1382,7 @@ The largest and most damaging class. In each case the description was accurate b
 
 | # | Failure | Runs | Effect |
 |---|---|---|---|
+| B1a | **B1, partially self-corrected (Run 28).** `abstract-similarity-network-topology.py` declared its fallback rather than hiding it — printing `Scientific sentence-transformer unavailable (...); falling back to TF-IDF embeddings` and listing it under its own data-gaps output. Presumably an effect of Issue 22's no-silent-failure prompt extension. **Not closed:** it surfaces in the console and the script only. The judge's `pattern_reasoning` does not mention it and the gallery caveat does not either, so a reader of the gallery alone still sees "semantic similarity network" with no sign the embeddings were TF-IDF. | 28 | Better than Runs 23–24, where nothing was declared at all |
 | B1 | **Silent method substitution.** `sentence-transformers` declared in `requires`, absent from the image. Attempt 1 failed on `ModuleNotFoundError`; attempt 2 substituted something available. Reported cosine similarities of 0.0145–0.0179 — one to two orders of magnitude below sentence-transformer values, the signature of sparse TF-IDF. | 23, 24 | An angle justified entirely by *"embeddings capture meaning where term counts can't"* silently became a term-count method — which the anti-target list names as exhausted |
 | B2 | **Missing NLTK resource, silently caught.** Passive-voice fraction unmeasurable, NA for all four years; script continued and was marked `realised` at 0.71. | 22 | One of five promised metrics vanished |
 | B3 | **Corpus name drift.** `averaged_perceptron_tagger` baked; modern NLTK resolves to `averaged_perceptron_tagger_eng`. | 22 | B2's proximate cause |
