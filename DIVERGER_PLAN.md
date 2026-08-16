@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 43)
+# Converger → Diverger conversion plan (rev. 44)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -170,6 +170,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 30 | 0.08 / 0.10 | working | **The A2/A5 `DOMAIN_NOTES` fix worked on its first run** — the generated `satisfaction-driver-importance-trend` carries both scales separately, handles `"not applicable"` explicitly, and reports unknown values as a data gap (§15 A2/A5). 2 realised, 2 realised_null, 0 not-realisable, 0 unsupportable, 0 judge errors. **But two of four compiles failed attempt 1 on the identical matplotlib `labels=` deprecation** — §15 B4 recurring, now Live Issue 30. Both recovered attempt 2. **Truncation-shaped syntax errors remain at zero for a third run** (Issue 26 unaffected — see its entry). Highest statistical rigour in the log: 2 of 4 realisations reported real tests (two permutation tests with p-values; Spearman rho+p for all six features). Dedup 6th data point: 1 would-merge at 0.247, false positive, zero cost — and `_pick_representative` kept the better angle |
 | 29 | 0.11 / 0.07 | working | **Cleanest run in the log: 4/4 realised or disconfirmed — no not-realisable, no unsupportable, no pattern-not-shown, no judge errors.** Every compile passed on attempt 1/3 for the **second consecutive run** (8 straight first-attempt compiles, Runs 28–29 — Issue 26 further supported). Issues 27 and 28 both **unexercised** (no cycling, no realization errors), so both remain unconfirmed live. **Dedup produced zero would-merges for the first time since the measurement began.** New: an 11-function architecture compiled and passed first time, well above the previous max of 7. §15 A5 logged (`"Not applicable"` cost 2 of 4 years) |
 | 28 | 0.09 / 0.09 | working | **Issue 26 provisionally confirmed: every compile succeeded on attempt 1/3 — no `Compile attempt 2/3` anywhere and zero syntax errors, the first such run since the pattern appeared.** 2 realised, 1 realised_null, 1 realization_error (DeepSeek 402, account balance — not a pipeline fault), 2 unsupportable. Issue 21's machinery caught and staged it correctly, but the fifth tier's boilerplate asserted a script and images that did not exist (Live Issue 28). Issue 27's branch not exercised. Third `<task>` XML parse failure (col 446). Dedup 4th data point: 1 would-merge at 0.265, within-question, false positive, zero cost. **§15 B1 partially self-corrected** — the TF-IDF fallback was declared in console and script, though not in the gallery |
 | 27 | 0.09 / 0.08 | working | **First live run on the eight-module split — completed end to end, so D-consolidate 4–6 are confirmed, not just verified offline.** 1 realised, 2 realised_null, 1 not realisable, 1 unsupportable, 0 judge errors. **Two truncation-shaped `SyntaxError`s** (Live Issue 26). Compile-cycling abort fired for the first time but saved nothing (Live Issue 27). Dedup measurement, 3rd data point: 1 would-merge at 0.251, within-question, false positive, zero cost. Judge caught a second unreachable-category classifier bug (§15 A4) |
@@ -599,7 +600,10 @@ Needs a live run with a satisfaction-outcome angle, after the anonymisation re-r
 
 **And the sharper point, which belongs to D-simplify item 1: one wrong line in `DOMAIN_NOTES` produced effectively identical failures in two independently generated scripts, across two runs.** §8 records that judge prompts are the product. `DOMAIN_NOTES` is equally load-bearing — it is the pipeline's description of the world to every worker and compiler call — and it has never had the same scrutiny. It is not a comment; it is an interface.
 
-**26. FIXED — PROVISIONALLY CONFIRMED (Runs 28, 29). `llm_call` returned truncated responses as if they were complete (Runs 26, 27).**
+**26. FIXED — PROVISIONALLY CONFIRMED (Runs 28, 29, 30). `llm_call` returned truncated responses as if they were complete (Runs 26, 27).**
+
+**Run 30: the first-attempt-compile streak breaks, and it does NOT count against this issue.** Two compiles needed a retry, but both failed on a matplotlib deprecation with a complete traceback and complete syntax — a genuine runtime error, not a mid-token cutoff. **The measurement that bears on Issue 26 is truncation-shaped syntax errors, and that count is still zero across Runs 28–30.** The two are separate measurements and must not be conflated: a clean-compile streak is a proxy that also moves with unrelated causes (Live Issue 30), while the truncation count is the direct evidence. Recording this because reading the streak as the metric would have wrongly reopened a fixed issue.
+
 
 **Run 29 extends the evidence to a second consecutive clean run: 8 straight first-attempt compiles across Runs 28–29, no `Compile attempt 2/3` and no syntax error of any kind.** One more run of this and the entry can be closed. The double-truncation `ValueError` has still never fired, so that path stays untested — do not treat closure of this issue as covering it.
 
@@ -713,6 +717,28 @@ The deepseek tier (worker and compiler on `cbias`) is the deepest, so it is exac
 2. **Distinguish the status codes in the message**, because they need different actions: 401/403 is a credential problem, 402 a balance problem, 404 usually a stale model string — and §5's tiering means model names here change more often than in most projects. A generic "model unavailable" sends someone to the wrong fix, which is the §15 F-class error in miniature.
 
 Low priority; a natural companion to D8's economy instrumentation, since both are about knowing what a run costs before paying for it.
+
+**30. Library versions are neither pinned nor described, and the same API-drift failure keeps recurring (Runs 22, 30).** Two of four compiles in Run 30 failed attempt 1 on the identical error:
+
+```
+ax.boxplot(box_data, labels=[...])    -> matplotlib deprecation
+plt.boxplot(dist_data, labels=...)    -> matplotlib deprecation
+```
+
+matplotlib renamed `labels` to `tick_labels` in 3.9. Both recovered on attempt 2, so the cost is two wasted compile attempts rather than a lost angle — but it is repeated, predictable, and cheap to prevent. Run 22's boxplot deprecation was the same thing.
+
+**This is the third instance of one failure shape, and naming that is the point of the entry.** §15's A2 was the data's *value* vocabulary, A5 the *response* vocabulary, and this is the library's *API* vocabulary — in every case the model writes against an assumed vocabulary that the description it was given does not pin down. §15.7's rule applies unchanged: **fix the description, not the model.**
+
+Two contributing gaps:
+- **`AVAILABLE_LIBRARIES` states no versions.** It says only "Matplotlib: for plotting and visualization". The compiler has no way to know which API generation it is targeting.
+- **The Dockerfile pins nothing**, so the installed versions float with every rebuild — meaning even a correct note would go stale silently, and a rebuild can change behaviour without any commit recording it.
+
+**Fix, in order:**
+1. **Pin versions in the Dockerfile.** Without this the rest is unenforceable, and §10's "rebuild before the next run" instruction currently means "rebuild and get whatever is current".
+2. **State the pinned versions in `AVAILABLE_LIBRARIES`**, one line each.
+3. **Name the renames that have actually bitten** — `boxplot(labels=)` → `tick_labels`, and `DataFrame.applymap` → `DataFrame.map` (Live Issue 20, pandas 3.0). Do not attempt a general list of every deprecation; the value is in the two or three this project has actually hit, exactly as `DOMAIN_NOTES` enumerates only the response scales that actually occur.
+
+**Verify:** a run in which no compile fails on a deprecation warning it could have known about from the environment description.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -1413,10 +1439,12 @@ The largest and most damaging class. In each case the description was accurate b
 
 | # | Failure | Runs | Effect |
 |---|---|---|---|
+| B1b | **B1a recurred, and the gap it leaves is now confirmed as structural (Run 30).** `authorial-voice-and-passive-shift` declared its fallback — `Analyzer: regex heuristic fallback (spaCy model unavailable)` — under its own Data gaps output. spaCy is indeed absent from the Dockerfile, so the "authorial voice" result rests on a regex matching `\b(?:is\|are\|was\|were)\s+\w+ed\b`, not dependency parsing. **The declaration reached the console and the script; the gallery entry and the judge's finding mention neither.** Second instance, same boundary — declaring the substitution is now reliable, surfacing it to the gallery reader is not. | 30 | A reader of the gallery alone cannot tell which method produced the finding |
 | B1a | **B1, partially self-corrected (Run 28).** `abstract-similarity-network-topology.py` declared its fallback rather than hiding it — printing `Scientific sentence-transformer unavailable (...); falling back to TF-IDF embeddings` and listing it under its own data-gaps output. Presumably an effect of Issue 22's no-silent-failure prompt extension. **Not closed:** it surfaces in the console and the script only. The judge's `pattern_reasoning` does not mention it and the gallery caveat does not either, so a reader of the gallery alone still sees "semantic similarity network" with no sign the embeddings were TF-IDF. | 28 | Better than Runs 23–24, where nothing was declared at all |
 | B1 | **Silent method substitution.** `sentence-transformers` declared in `requires`, absent from the image. Attempt 1 failed on `ModuleNotFoundError`; attempt 2 substituted something available. Reported cosine similarities of 0.0145–0.0179 — one to two orders of magnitude below sentence-transformer values, the signature of sparse TF-IDF. | 23, 24 | An angle justified entirely by *"embeddings capture meaning where term counts can't"* silently became a term-count method — which the anti-target list names as exhausted |
 | B2 | **Missing NLTK resource, silently caught.** Passive-voice fraction unmeasurable, NA for all four years; script continued and was marked `realised` at 0.71. | 22 | One of five promised metrics vanished |
 | B3 | **Corpus name drift.** `averaged_perceptron_tagger` baked; modern NLTK resolves to `averaged_perceptron_tagger_eng`. | 22 | B2's proximate cause |
+| B4a | **B4 recurred, twice in one run (Run 30).** `ax.boxplot(..., labels=)` and `plt.boxplot(..., labels=)` — matplotlib renamed `labels` to `tick_labels` in 3.9. Both recovered on attempt 2. `AVAILABLE_LIBRARIES` names the library but not its version; the Dockerfile pins nothing, so the target API floats with every rebuild. **Same shape as A2/A5 one layer out: an assumed vocabulary the description does not pin down.** → Live Issue 30 | 30 | Two wasted compile attempts, no angle lost |
 | B4 | **API version drift.** `applymap` (removed in pandas 3.0); a deprecated `matplotlib` boxplot kwarg. | 22, and Issue 20 | Hard failures — the good case, caught by Docker |
 
 **B1 is the most instructive failure in this document.** The evaluator-optimizer loop worked *exactly as designed* — error fed back, script fixed, execution passed — and in doing so converted a novel angle into a forbidden one. **A recovery loop with no notion of method fidelity will repair a script into meaninglessness rather than fail.** The pipeline's own logs made it visible (FAIL reason, retry, numbers, linked script); nothing flagged it.
@@ -1466,7 +1494,9 @@ Failures in interpreting the pipeline's output, committed while maintaining this
 Seven observations, each supported by at least two entries above.
 
 1. **Silence is the default failure mode.** Of the fourteen failures catalogued, three crashed (B4, D3, and C1's backstop). The rest produced plausible, well-labelled output. **A pipeline whose only oracle is "did it run" is blind to most of what goes wrong.**
-2. **The description of the data is a load-bearing interface, and it is not treated like one.** A1, A2 and A3 all trace to `DOMAIN_NOTES` or to a keyword list. §8 records that judge prompts are the product; the *data* description has never had comparable scrutiny, and one wrong line in it produced effectively identical failures in two independently generated scripts across two runs.
+2. **The description of the *environment* is a load-bearing interface at every layer, and only one layer has been fixed.** Three instances of one shape are now recorded: A2 (the data's value types), A5 (its response vocabulary), B4/B4a (the libraries' API surface). In each, the model wrote against an assumed vocabulary that the description it was handed did not pin down. `DOMAIN_NOTES` was patched for A2 and A5 and **the fix worked on its first live run** (Run 30) — which is the strongest available evidence that the same treatment would work for `AVAILABLE_LIBRARIES`, where versions are still unstated and unpinned (Live Issue 30). The original wording of this observation follows.
+
+2a. **The description of the data is a load-bearing interface, and it is not treated like one.** A1, A2 and A3 all trace to `DOMAIN_NOTES` or to a keyword list. §8 records that judge prompts are the product; the *data* description has never had comparable scrutiny, and one wrong line in it produced effectively identical failures in two independently generated scripts across two runs.
 3. **Fixing the data beats instructing the model.** A1's durable fix was structural (drop the decoys during anonymisation), after a prompt-level fix was tried and judged too flaky to keep. Instructions must be read and applied correctly every time; a removed column cannot be misread.
 4. **Repair loops optimise for passing, not for meaning.** B1 is the clearest case: three attempts of automated recovery turned a novel method into a forbidden one, and every step was locally correct.
 5. **Models are better critics than scorers.** *(Now two instances: A3 and A4.)* E1/E2 versus A3: the same models that produce unreliable numbers caught a bug a human reviewer would plausibly have missed, by looking at a chart and noticing an implausible zero — A4 repeats this from a different rule-order bug, again caught only by reading the artifact, not by any deterministic check the pipeline has. Separately, Run 27's `feedback-aspect-rank-trend` reported that two named aspect columns were absent every year rather than inventing them — a positive counter-example to C2, but a *generation*-time honesty, not a critic catching a scorer's mistake, so it isn't tallied here.
