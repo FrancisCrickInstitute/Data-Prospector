@@ -295,6 +295,10 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         angle["delivered_score"] = result["delivered_score"]
         angle["artifacts"] = result["artifacts"]
         angle["artifacts_dir"] = result["artifacts_dir"]
+        # Live Issue 28: only meaningful (non-None) when realization_status is "realization_error" -
+        # tells output.py how far the pipeline actually got before breaking, so the gallery can stop
+        # asserting a verified execution that may never have happened.
+        angle["error_stage"] = result.get("error_stage")
         # Persist the compiled script itself, not just its judged output - written even for
         # not_realisable angles (the last compile attempt, however broken) since a human debugging
         # a provisioning gap wants to see what the compiler actually produced. Skipped only if

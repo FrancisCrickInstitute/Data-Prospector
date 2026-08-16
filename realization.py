@@ -434,4 +434,11 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             "realization_feedback": f"Pipeline failed at stage '{stage}' for this angle: {exc!r}",
             "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
             "artifacts_dir": artifacts_dir, "script": compiled_script,
+            # Live Issue 28: the gallery's realization_error tier asserted a verified execution
+            # unconditionally, which is only true when the break happened at "validate" - earlier
+            # stages (orchestrator/workers/compile) never reached a verified PASS, so there is no
+            # script or output to judge. Exposing the stage as its own field (rather than leaving
+            # it embedded only in the feedback string above) lets output.py branch the gallery
+            # wording on it instead of guessing from prose.
+            "error_stage": stage,
         }

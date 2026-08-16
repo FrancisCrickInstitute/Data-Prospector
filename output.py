@@ -122,14 +122,35 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
         lines.append(f"- **Finding:** {angle['pattern_reasoning']}")
     elif angle.get("realization_status") == "realization_error":
         # There is no pattern_reasoning here - the judge call that would have produced it is
-        # exactly what failed - but the script/images below are real, so say so rather than
-        # silently showing an entry with no Finding line and no explanation why.
+        # exactly what failed. Live Issue 28: this used to claim unconditionally that a script and
+        # images exist "below" - true only when the break happened at the "validate" stage, after a
+        # verified execution PASS. An earlier-stage break (orchestrator/workers/compile) never
+        # reached one, so there is nothing below to look at - say so instead of pointing the reader
+        # at artifacts that don't exist.
         feedback = (angle.get("realization_feedback") or "").strip()
-        lines.append(
-            f"- **Note:** the realisation judge failed after a verified execution, so there is no "
-            f"automated finding for this angle - the script and image(s) below are real; judge "
-            f"them yourself. ({feedback[:300]})"
-        )
+        has_artifacts = bool(_gallery_entry_images(angle)) or bool(angle.get("script_path"))
+        if angle.get("error_stage") == "validate":
+            lines.append(
+                f"- **Note:** the realisation judge failed after a verified execution, so there is "
+                f"no automated finding for this angle - the script and image(s) below are real; "
+                f"judge them yourself. ({feedback[:300]})"
+            )
+        elif has_artifacts:
+            # Edge case: a stage before "validate" broke, but a script/artifact from an earlier,
+            # unverified attempt still exists (e.g. a later compile attempt raised after an earlier
+            # one had already produced output). Real, but never confirmed to run - flag it as such
+            # rather than implying it's the same as a verified PASS.
+            lines.append(
+                f"- **Note:** the pipeline failed before completing a verified execution (at the "
+                f"'{angle.get('error_stage', '?')}' stage) - anything below is from an earlier, "
+                f"unverified attempt, not a confirmed run. ({feedback[:300]})"
+            )
+        else:
+            lines.append(
+                f"- **Note:** the pipeline failed before a script was produced (at the "
+                f"'{angle.get('error_stage', '?')}' stage) - there is no script or output to show "
+                f"or judge for this angle. ({feedback[:300]})"
+            )
     if angle.get("soundness_caveat"):
         lines.append(f"- **Caveat:** {angle['soundness_caveat']}")
     for img in _gallery_entry_images(angle):
@@ -206,11 +227,17 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
             lines.extend(_gallery_entry(angle, top_tier=False))
 
     if realization_errors:
-        lines.append("## Executed, but unscored — the judge call failed, not the analysis")
+        lines.append("## Executed, but unscored — an infrastructure failure, not a quality judgement")
         lines.append("")
-        lines.append("_The script compiled, ran in the sandbox, and produced real output; only the "
-                      "final judging call failed. Not a provisioning gap - judge these yourself "
-                      "from the script/image(s) below._")
+        # Live Issue 28: this used to assert unconditionally that every entry here compiled, ran,
+        # and produced real output - true only for a "validate"-stage break (a verified execution
+        # whose judge call then failed). Earlier-stage breaks (orchestrator/workers/compile) never
+        # reached a verified run at all, so a single blanket claim for the whole tier is wrong
+        # whenever it holds a mix of stages. Not a provisioning gap either way - each entry's own
+        # Note says exactly how far the pipeline got and whether there's anything to look at.
+        lines.append("_Not a provisioning gap - the pipeline broke on its own, for reasons unrelated "
+                      "to the angle or the data. How far it got before breaking varies per angle; "
+                      "see each entry's Note below._")
         lines.append("")
         for angle in realization_errors:
             lines.extend(_gallery_entry(angle, top_tier=False))
