@@ -11,16 +11,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-install Python packages (must match AVAILABLE_LIBRARIES in cbias_config.py)
+# Pre-install Python packages, versions PINNED (must match AVAILABLE_LIBRARIES in cbias_config.py,
+# both the package list and the exact versions below). Live Issue 30: an unpinned image floats to
+# whatever is current on every rebuild, so the generated script targets an API generation nobody
+# told it about - matplotlib's boxplot `labels=` -> `tick_labels` rename (3.9) bit this twice
+# (Runs 22, 30) and pandas' `DataFrame.applymap` removal (3.0, Live Issue 20) once, both recovered
+# on a wasted compile attempt rather than losing the angle outright, but both were entirely
+# predictable from the environment if the environment had said what it was. Pinning here is what
+# makes a concrete version note in AVAILABLE_LIBRARIES honest instead of a guess that goes stale on
+# the next `docker build`. Bump deliberately (update both this list and AVAILABLE_LIBRARIES in the
+# same change) rather than letting it drift - re-check DIVERGER_PLAN.md §15 class B for any renames
+# a bump might reintroduce.
 RUN pip install --no-cache-dir \
-    numpy \
-    pandas \
-    matplotlib \
-    scipy \
-    scikit-learn \
-    nltk \
-    seaborn \
-    textstat
+    numpy==2.5.2 \
+    pandas==3.0.5 \
+    matplotlib==3.11.1 \
+    scipy==1.18.0 \
+    scikit-learn==1.9.0 \
+    nltk==3.10.3 \
+    seaborn==0.13.2 \
+    textstat==0.7.13
 
 WORKDIR /work
 

@@ -27,17 +27,23 @@ import pandas as pd
 from config import PipelineConfig
 
 AVAILABLE_LIBRARIES = """
-Available libraries for imports:
+Available libraries for imports. VERSIONS ARE PINNED in the Docker image below - these are exactly
+what will be installed, not a floor or a guess, so target this API generation specifically rather
+than a version-agnostic "current" API (Live Issue 30 - two wasted compile attempts, Runs 22 and 30,
+from assuming an older matplotlib API than what was actually installed):
 - Standard library: os, sys, re, csv, json, pathlib, datetime, collections, string
-- NumPy: for numerical computing
-- Pandas: for data manipulation and analysis
-- Matplotlib: for plotting and visualization
-- SciPy: for statistical tests and scientific computing
-- scikit-learn: for clustering, dimensionality reduction, and other ML techniques
-- NLTK: for text tokenization/stopword removal on free-text feedback and abstract fields (punkt,
-  punkt_tab, and stopwords corpora are pre-downloaded; other corpora are not available)
-- Seaborn: for statistical plotting on top of Matplotlib
-- textstat: for readability metrics on free-text fields
+- NumPy 2.5.2: for numerical computing
+- Pandas 3.0.5: for data manipulation and analysis. DataFrame.applymap was REMOVED in pandas 3.0 -
+  use DataFrame.map instead.
+- Matplotlib 3.11.1: for plotting and visualization. boxplot()'s `labels=` keyword was renamed to
+  `tick_labels` in matplotlib 3.9 (applies to both pyplot.boxplot and Axes.boxplot) - using `labels=`
+  raises a deprecation warning at best and a TypeError in a future release; use `tick_labels=`.
+- SciPy 1.18.0: for statistical tests and scientific computing
+- scikit-learn 1.9.0: for clustering, dimensionality reduction, and other ML techniques
+- NLTK 3.10.3: for text tokenization/stopword removal on free-text feedback and abstract fields
+  (punkt, punkt_tab, and stopwords corpora are pre-downloaded; other corpora are not available)
+- Seaborn 0.13.2: for statistical plotting on top of Matplotlib
+- textstat 0.7.13: for readability metrics on free-text fields
 """
 
 DOMAIN_NOTES = """
