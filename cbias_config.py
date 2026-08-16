@@ -77,15 +77,32 @@ data directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt fi
   pandas.read_csv, not read_excel; the raw export's always-empty "Points - <question>"/
   "Feedback - <question>" companion columns are dropped during anonymisation, so every column
   remaining is a real answer - no need to filter any out). Question wording drifts slightly by year
-  for the same underlying construct - e.g. "The ticket prices were appropriate" (2022-2023) becomes
-  "The ticket prices were too high" (2024-2025), an inverted phrasing of the same question - match
-  columns by keyword substring (e.g. "ticket price"), not exact text, and account for the polarity
-  flip when combining years into one trend. Most questions are Likert-style free-text strings (e.g.
-  "Strongly agree") needing a mapping to an ordinal scale before averaging - but not all of them
-  (e.g. the overall-satisfaction question is already numeric). INSPECT A COLUMN'S ACTUAL UNIQUE
-  VALUES before deciding it needs a text-to-ordinal mapping - running that mapping against values
-  that are already numeric finds no matching keys and silently produces all-NaN, which reads as
-  missing data but is not.
+  for the same underlying construct, and sometimes the RESPONSE SCALE changes along with it, not just
+  the phrasing - e.g. "The ticket prices were appropriate" (2022-2023) becomes "The ticket prices were
+  too high" (2024-2025), an inverted phrasing of the same Agree/Disagree question; separately, the
+  session/poster-session duration questions are phrased "...was an appropriate length" (2022-2023,
+  Agree/Disagree scale) but "The average duration of ... was..." (2024-2025, a DIFFERENT scale - see
+  below). Match columns by keyword substring (e.g. "ticket price", "session"), not exact text, and
+  account for both the polarity flip and the scale change when combining years into one trend - do
+  not assume every year's version of a question shares the same response options.
+
+  Most questions are Likert-style free-text strings needing a mapping to an ordinal scale before
+  averaging - but not all of them (e.g. the overall-satisfaction question is already numeric), and the
+  ones that are text do not all share ONE scale. INSPECT A COLUMN'S ACTUAL UNIQUE VALUES before
+  deciding it needs a text-to-ordinal mapping (running that mapping against values that are already
+  numeric finds no matching keys and silently produces all-NaN, which reads as missing data but is
+  not), and build the mapping from those actual values, not from an assumed/textbook Likert vocabulary
+  - a hand-written map that omits a real response value silently drops every respondent who chose it,
+  which reads as a smaller sample, not as a bug. Two response scales are actually used across this
+  survey (verified against all four years' data, not just described here - re-verify if a new year's
+  export is added):
+    - Agreement scale (most questions): Strongly Disagree, Disagree, Neither Agree nor Disagree,
+      Agree, Strongly Agree, Not Applicable. "Not Applicable" is a real, frequently-chosen response
+      (not a rare edge case) - treat it as its own category to exclude or report separately, not as
+      an extra ordinal rung, and do not build a map that silently drops every row containing it.
+    - Duration scale (session/poster-session duration questions, 2024-2025 wording only): Far Too
+      Short, Too Short, About Right, Too Long, Far Too Long. Distinct from the agreement scale above -
+      a map built for one will not match the other.
 
 - Abstracts/<year>_Abstracts/<n>_Abstract.txt - one plain-text file per submission, "Label: value"
   lines, where a field's value may wrap onto further lines before the next label. Author-identifying
