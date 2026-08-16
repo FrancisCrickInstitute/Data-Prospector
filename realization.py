@@ -350,9 +350,19 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             attempt_feedbacks.append(exec_feedback)
             normalized_feedback = exec_feedback.strip()
             if normalized_feedback in seen_feedbacks:
-                log("  This error already occurred in an earlier attempt - aborting remaining compile "
-                    "attempts (the compiler is cycling, not repairing).")
-                aborted_on_repeat = True
+                # Only an actual saving if attempts remain to skip - with max_compile_attempts=3,
+                # the earliest a two-cycle (A, B, A) repeats is attempt 3, where the loop was
+                # about to end anyway and there is nothing left to abort into (Live Issue 27).
+                # Log accordingly rather than always claiming a saving that may not have happened.
+                remaining = max_compile_attempts - 1 - attempt
+                if remaining > 0:
+                    log(f"  This error already occurred in an earlier attempt - aborting the "
+                        f"{remaining} remaining compile attempt(s) (the compiler is cycling, "
+                        f"not repairing).")
+                else:
+                    log("  This error already occurred in an earlier attempt - it was the "
+                        "last attempt available, so nothing was saved by detecting it.")
+                aborted_on_repeat = remaining > 0
                 break
             seen_feedbacks.add(normalized_feedback)
             if attempt < max_compile_attempts - 1:
