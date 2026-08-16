@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 38)
+# Converger → Diverger conversion plan (rev. 39)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -9,6 +9,8 @@ Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 **Live Issue 23 — FIXED AND CONFIRMED IN SITU (Run 24). Closed.** Run 24 completed with no `('Streaming is required...')` error at any call site — including the DeepSeek-routed compiler, which is where Run 23 actually failed and which the original smoke test (against `claude-opus-4-8`) had not exercised. Original entry follows.
 
 **Live Issue 23 — FIXED, confirmed via a direct live smoke test; not yet confirmed on a full pipeline run.** Run 23 also surfaced a new failure: the Issue 21 fix's own raised default (8192 → 16384) doubles to 32768 on retry, which crosses the Anthropic SDK's client-side guard against non-streaming requests that might exceed ~10 minutes — `('Streaming is required for operations that may take longer than 10 minutes...')`. `llm_call` now calls `client.messages.stream(...)` + `get_final_message()` instead of `client.messages.create(...)`, which removes the ceiling rather than moving it again; the return contract (a plain string) is unchanged, so no caller needed editing. Verified with a live call to `claude-opus-4-8` at `max_tokens=40000` (so a retry would reach 80000, well past the ceiling that failed at 32768) — confirmed no client-side error and a normal response. See §3 for detail.
+
+**Rev. 39: Live Issue 27 fixed — the compile-cycling abort's log/feedback wording no longer claims a saving on the one-cycle it can't actually catch.** With `max_compile_attempts=3`, a two-cycle repeat can only be detected on the final attempt, where nothing is left to skip; `_run_one_design` now checks whether attempts genuinely remained before logging "aborting the N remaining..." versus "nothing was saved by detecting it", and the `not_realisable` feedback's "(aborted early...)" note follows the same distinction. Wording only — `max_compile_attempts` unchanged, the loop's break behaviour unchanged. Verified offline with a mocked run of both cases, deleted after passing. **Needs a live run** to confirm the two log paths read correctly against a real Docker/compiler cycle. See the Live Issue 27 entry.
 
 **Rev. 38: Live Issue 26 fixed — `llm_call` no longer returns a truncated response as if it were complete.** New `reject_truncated` parameter on `llm_call` (default `False`, so every existing call site is unaffected); `compile_script`'s call is the one site that opts in, since a compiled script is the case the entry established as never usable when cut mid-generation. A double-truncation now raises its own error message instead of the misleading generic "No text content" one. Verified offline only (a mocked test of all four `llm_call` paths, deleted after passing) — **needs a live run** to confirm a truncating compile response actually retries instead of producing the mid-token `SyntaxError`s seen in Runs 26–27. See the Live Issue 26 entry for detail.
 
@@ -631,7 +633,7 @@ A truncated script is never usable, so returning it is strictly worse than retry
 
 **Verify:** a run in which a compile response truncates should retry rather than emit a mid-token `SyntaxError`, and no `realization_error` should carry thinking-budget wording when the real cause was truncation.
 
-**27. The compile-cycling abort cannot save an attempt at the current budget (Run 27).** `abstract-register-accessibility` logged:
+**27. FIXED, unconfirmed on a live run — the compile-cycling abort cannot save an attempt at the current budget (Run 27).** `abstract-register-accessibility` logged:
 
 ```
 This error already occurred in an earlier attempt - aborting remaining compile attempts
@@ -642,8 +644,10 @@ This error already occurred in an earlier attempt - aborting remaining compile a
 It had already used all three: attempt 1 `textstat`, attempt 2 nltk `sent_tokenize`, attempt 3 `textstat` again. The detector compares against **all** earlier attempts, which is right, but with `max_compile_attempts=3` the earliest a two-cycle can be caught is attempt 3 — where there is nothing left to abort. **It only saves work on a one-cycle**, where attempt 2 repeats attempt 1 verbatim.
 
 Not urgent; the abort is still correct, it just did not help here. Two options, the second nearly free:
-1. Raise `max_compile_attempts` so the detector has room to pay off. Costs tokens on genuinely-repairing designs — measure before doing it.
+1. Raise `max_compile_attempts` so the detector has room to pay off. Costs tokens on genuinely-repairing designs — measure before doing it. **Not done** — deliberately left for a separate decision, since it trades tokens for a benefit that is still unmeasured.
 2. **Soften the log wording.** "aborted early" and "aborting remaining compile attempts" both claim a saving that did not happen, and per §15's own lesson, a log overstating what occurred is how misdiagnosis starts.
+
+**FIXED (rev. 39), option 2 only.** `_run_one_design`'s repeat-detection branch now computes `remaining = max_compile_attempts - 1 - attempt` before logging: with attempts genuinely left to skip, it logs `aborting the N remaining compile attempt(s)` (unchanged claim, still true); when the repeat lands on the last attempt — the case that actually happened in Run 27 — it logs `it was the last attempt available, so nothing was saved by detecting it` instead, and `aborted_on_repeat` (which drives the `(aborted early - the same error recurred verbatim)` note on the final `not_realisable` feedback) is only set `True` in the real-saving case. No change to when the loop breaks or to `max_compile_attempts` itself — this is wording only, exactly as scoped. Verified offline with a mocked `_run_one_design` run for both cases (repeat with 2 attempts remaining; repeat only on the final attempt of 3) — deleted after passing.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
