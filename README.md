@@ -180,7 +180,9 @@ from its gallery entry.
 
 - Generated scripts are restricted to each config's pre-installed libraries — see `AVAILABLE_LIBRARIES`
   in the relevant `*_config.py` (for `cbias`: numpy, pandas, matplotlib, scipy, scikit-learn, nltk,
-  seaborn, textstat, plus the standard library).
+  seaborn, textstat, plus the standard library). Versions are pinned in both the `Dockerfile` and
+  `AVAILABLE_LIBRARIES` (not just the library names) so a rebuild can't silently change the API a
+  generated script is targeting — see `DIVERGER_PLAN.md` Live Issue 30.
 - Execution timeout: 300s per attempt, with up to 3 compile/execute retries per angle (both configurable
   in code), aborting early if an error repeats verbatim across attempts.
 - Docker is required to validate execution — without it, every angle that would have been realised comes
