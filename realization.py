@@ -64,8 +64,12 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
     )
     compiler_suffix = COMPILER_PROMPT_SUFFIX.format(error_feedback=error_section)
 
+    # reject_truncated=True: a compiled script must parse as a whole file, so a response cut off
+    # mid-generation is never usable - retry rather than let a truncation-shaped SyntaxError reach
+    # the compile/execute loop as if it were a genuine mistake (Live Issue 26).
     compiled_response = await llm_call(compiler_suffix, system_prompt=COMPILER_SYSTEM, model=config.compiler_model,
-                                       cache_prompt=True, max_tokens=16384, cache_prefix=compiler_prefix)
+                                       cache_prompt=True, max_tokens=16384, cache_prefix=compiler_prefix,
+                                       reject_truncated=True)
     compiled_script = extract_xml(compiled_response, "response")
 
     if not compiled_script.strip():

@@ -63,7 +63,7 @@ def _image_blocks(images: list[tuple[str, bytes]]) -> list[dict]:
 # Core LLM interface
 async def llm_call(prompt: str, system_prompt: str = None, model: str = None, cache_prompt: bool = False,
                    max_tokens: int = 16384, images: list[tuple[str, bytes]] = None,
-                   cache_prefix: str = None) -> str:
+                   cache_prefix: str = None, reject_truncated: bool = False) -> str:
     """
     Calls the model with the given prompt and returns the response.
 
@@ -88,6 +88,14 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
             feedback). Put content that's IDENTICAL across those calls here, and whatever varies
             in `prompt`. No effect (but harmless) if the combined prefix is under the provider's
             minimum cacheable size.
+        reject_truncated (bool): If True, a response cut off mid-generation (stop_reason ==
+            "max_tokens" but with non-empty text) is treated the same as no text at all - retried
+            at double the budget rather than returned. Off by default: most callers extract a
+            handful of tags with a parser that can recover from a partial response, and doubling
+            their retry rate for that would be pure cost. Set True for callers where a truncated
+            response is never usable, e.g. a script that must parse as a whole file (Live Issue
+            26 - a mid-token cut compiler response reached the compiler as if it were complete
+            and produced a truncation-shaped SyntaxError).
 
     Returns:
         str: The response from the language model.
@@ -141,12 +149,22 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
             ) as stream:
                 response = await stream.get_final_message()
             text = "".join(block.text for block in response.content if block.type == "text")
-            if text.strip():
+            truncated = response.stop_reason == "max_tokens"
+            if text.strip() and not (reject_truncated and truncated):
                 return text
 
-            # No text produced. If we ran out of tokens (likely during thinking), retry bigger.
-            if response.stop_reason != "max_tokens":
+            # Either no text at all, or (reject_truncated only) text that was cut off mid-
+            # generation rather than finished - both mean the budget ran out. Retry bigger,
+            # unless the stop reason rules out a budget problem entirely.
+            if not truncated:
                 break
+
+    if reject_truncated and text.strip():
+        raise ValueError(
+            f"Response truncated at max_tokens on both attempts (final budget={tokens}) - the "
+            f"model was still mid-generation when the token budget ran out, twice in a row. "
+            f"Not a content problem; the caller needs a larger max_tokens or a smaller task."
+        )
 
     content_types = [block.type for block in response.content]
     raise ValueError(
