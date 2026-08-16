@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 45)
+# Converger → Diverger conversion plan (rev. 46)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -172,6 +172,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 31 | 0.10 / 0.10 | working | **Issue 30's version pinning confirmed on its first run** — the generated script uses `tick_labels=`, and zero matplotlib deprecations after two in Run 30. 2 realised, 1 realised_null, 1 not-realisable, 1 unsupportable, 0 judge errors. **Two more `DOMAIN_NOTES` gaps of the same class** (`Not Applicable` on the duration scale; two incompatible `Keywords` formats) → Live Issue 31. **Issue 27's cycling detector failed to fire on a genuine 2-cycle** (line numbers shift between regenerated scripts) → Live Issue 32. Dedup: zero would-merges, second time |
 | 30 | 0.08 / 0.10 | working | **The A2/A5 `DOMAIN_NOTES` fix worked on its first run** — the generated `satisfaction-driver-importance-trend` carries both scales separately, handles `"not applicable"` explicitly, and reports unknown values as a data gap (§15 A2/A5). 2 realised, 2 realised_null, 0 not-realisable, 0 unsupportable, 0 judge errors. **But two of four compiles failed attempt 1 on the identical matplotlib `labels=` deprecation** — §15 B4 recurring, now Live Issue 30. Both recovered attempt 2. **Truncation-shaped syntax errors remain at zero for a third run** (Issue 26 unaffected — see its entry). Highest statistical rigour in the log: 2 of 4 realisations reported real tests (two permutation tests with p-values; Spearman rho+p for all six features). Dedup 6th data point: 1 would-merge at 0.247, false positive, zero cost — and `_pick_representative` kept the better angle |
 | 29 | 0.11 / 0.07 | working | **Cleanest run in the log: 4/4 realised or disconfirmed — no not-realisable, no unsupportable, no pattern-not-shown, no judge errors.** Every compile passed on attempt 1/3 for the **second consecutive run** (8 straight first-attempt compiles, Runs 28–29 — Issue 26 further supported). Issues 27 and 28 both **unexercised** (no cycling, no realization errors), so both remain unconfirmed live. **Dedup produced zero would-merges for the first time since the measurement began.** New: an 11-function architecture compiled and passed first time, well above the previous max of 7. §15 A5 logged (`"Not applicable"` cost 2 of 4 years) |
 | 28 | 0.09 / 0.09 | working | **Issue 26 provisionally confirmed: every compile succeeded on attempt 1/3 — no `Compile attempt 2/3` anywhere and zero syntax errors, the first such run since the pattern appeared.** 2 realised, 1 realised_null, 1 realization_error (DeepSeek 402, account balance — not a pipeline fault), 2 unsupportable. Issue 21's machinery caught and staged it correctly, but the fifth tier's boilerplate asserted a script and images that did not exist (Live Issue 28). Issue 27's branch not exercised. Third `<task>` XML parse failure (col 446). Dedup 4th data point: 1 would-merge at 0.265, within-question, false positive, zero cost. **§15 B1 partially self-corrected** — the TF-IDF fallback was declared in console and script, though not in the gallery |
@@ -729,7 +730,7 @@ plt.boxplot(dist_data, labels=...)    -> matplotlib deprecation
 
 matplotlib renamed `labels` to `tick_labels` in 3.9. Both recovered on attempt 2, so the cost is two wasted compile attempts rather than a lost angle — but it is repeated, predictable, and cheap to prevent. Run 22's boxplot deprecation was the same thing.
 
-**This is the third instance of one failure shape, and naming that is the point of the entry.** §15's A2 was the data's *value* vocabulary, A5 the *response* vocabulary, and this is the library's *API* vocabulary — in every case the model writes against an assumed vocabulary that the description it was given does not pin down. §15.7's rule applies unchanged: **fix the description, not the model.**
+**This is the third instance of one failure shape, and naming that is the point of the entry.** §15's A2 was the data's *value* vocabulary, A5 the *response* vocabulary, and this is the library's *API* vocabulary — in every case the model writes against an assumed vocabulary that the description it was given does not pin down. §15.7's rule applies unchanged: **fix the description, not the model** — sharpened in rev. 46 to *derive* the description where it can be derived (Live Issue 31). Note this issue is the exception that proves the boundary: library versions are **not** derivable from the data, so a hand-written note pinned to a pinned Dockerfile is the correct instrument here.
 
 Two contributing gaps:
 - **`AVAILABLE_LIBRARIES` states no versions.** It says only "Matplotlib: for plotting and visualization". The compiler has no way to know which API generation it is targeting.
@@ -745,6 +746,69 @@ Two contributing gaps:
 **FIXED (rev. 45), all three parts, in order.** `Dockerfile`'s `cbias-analysis` target now pins every package with an exact version (`numpy==2.5.2`, `pandas==3.0.5`, `matplotlib==3.11.1`, `scipy==1.18.0`, `scikit-learn==1.9.0`, `nltk==3.10.3`, `seaborn==0.13.2`, `textstat==0.7.13` — current stable releases at the time of pinning, checked against PyPI directly rather than assumed) instead of floating to whatever `pip install <name>` resolves on the day of a rebuild. `cbias_config.AVAILABLE_LIBRARIES` now states the same versions inline, one per library, and names the two renames that have actually bitten this project: `DataFrame.applymap` removed in pandas 3.0 (Live Issue 20) → use `.map`; `boxplot()`'s `labels=` renamed to `tick_labels=` in matplotlib 3.9 (this issue) → use `tick_labels=`. Deliberately not a general changelog of every deprecation either package has ever had — same "name what's actually been hit" scope as `DOMAIN_NOTES`'s response-scale fix. Both files edited together, per the Dockerfile's own new comment instructing future version bumps to update `AVAILABLE_LIBRARIES` in the same change rather than letting the two drift apart again.
 
 **Needs a Dockerfile rebuild before it takes effect** (`docker build --target cbias-analysis -t cbias-analysis:latest .` — not done here; per this project's standing division of labour the user rebuilds Docker images), **then a live run to confirm**: no compile should fail attempt 1 on either named rename again, and any future rename this project hits should get added to this same two-line list rather than prompting a broader rewrite.
+
+**31. `DOMAIN_NOTES` is being hand-maintained to describe facts a script could derive — and it keeps falling one gap behind (Runs 24–31).** Two more instances in Run 31, both of the §15 class-A shape, both found by the model failing rather than by anyone noticing in advance:
+
+- **`"Not Applicable"` also appears on the duration scale.** `DOMAIN_NOTES` lists it under the agreement scale only, so `satisfaction-driver-shift` raised on attempt 1: `Cannot determine response scale for column 'The duration of the poster sessions was...': ['about right', 'not app...']`. Verified: **7 of 8 duration columns across 2024/25 carry it** (all four in 2025; all but "average duration of the sessions" in 2024).
+- **The abstract `Keywords` field has two incompatible formats.** `stakeholder-training-hybridity` used `ast.literal_eval` and died on it three times. Both formats are real:
+  ```
+  2022:  Keywords: ["Segmentation","Object Tracking","3D/4D/ ... nD Data\n"]
+  2024:  Keywords: image quality, fluorescence microscopy, Analysis
+  ```
+  A JSON-style list in some years, plain comma-separated text in others. `DOMAIN_NOTES` describes the abstract files as `Label: value` lines and says nothing about this.
+
+**The pattern is now unmistakable and the remedy needs to change shape.** Rev. 43 patched A2/A5, rev. 45 patched the library versions, and each fix worked *on its first run* — the approach is sound. But every one was a human transcribing, by hand, a fact a `df.unique()` call would have returned, and the list has never once been complete. **§15.7's rule should be sharpened from "fix the description" to "derive the description".**
+
+**Root cause, stated plainly: the model never sees the data.** `compile_script` writes blind, Docker runs the result, and only the outcome returns. There is no inspect-then-write loop anywhere in the pipeline. `DOMAIN_NOTES` is not compensating for a model limitation — it is a hand-written substitute for an inspection the architecture never offers.
+
+**Proposed fix: a mechanical data profile, generated per run and prepended to the compiler's cached prefix.** Pandas plus a file walker, no model in the loop, so it cannot hallucinate; regenerated from the data each run, so it cannot go stale — which is precisely the failure mode the hand-written notes keep hitting. Per CSV: column names verbatim, dtype, null count, and the full value set for columns under a cardinality cutoff. Per abstract folder: the label inventory with one sample value each.
+
+**Measured on the current dataset: ~7,400 tokens for all four years and all four data types** at a cutoff of 25 distinct values. It belongs in the §4 cached prefix, so it is paid once per stage rather than per call.
+
+**What it would have caught — the entire recurring category:**
+
+| §15 entry | What the profile shows |
+|---|---|
+| A1 decoy columns | `Points - <q>` listed at 100% null |
+| A2 numeric satisfaction | `[int64]` dtype |
+| A3 `"academic"` absent from its own keyword list | ticket-type values listed verbatim, including `Academic` |
+| A4 unreachable role category | `best describes you` values listed — *Facility staff*, *PhD student*, … |
+| A5 `"Not applicable"` | present in the value set |
+| Duration NA (this issue) | present in the value set |
+| `Keywords` format (this issue) | both formats visible side by side |
+
+**The boundary this implies, and it is the useful part of the proposal.** A profile answers *what is in the data*. `DOMAIN_NOTES` should then answer only *what it means and what has already been tried*:
+- **Semantics no profile can derive** — that `"The ticket prices were appropriate"` and `"...were too high"` are one construct with inverted polarity. The profile lists both column names; it cannot tell you they are the same question.
+- **Provenance** — "Eventbrite may split orders into one row per ticket" is about what a row *represents*.
+- **Absence** — which fields anonymisation removed. A profile of what is present says nothing about what is gone.
+- **The anti-target list** — pure judgement.
+
+Everything the last five live issues bolted on was the first kind, which is why the file has felt increasingly like the wrong shape.
+
+**Keep the fail-loud instruction alongside it.** Run 31 is the evidence: `satisfaction-driver-shift` *raised* on an unrecognised scale rather than silently dropping it — the A5 patch's instruction inducing correct behaviour on incomplete information. A profile stops the model guessing; fail-loud keeps the script honest when the profile is incomplete anyway. Complements, not alternatives.
+
+**Do NOT reach for the two-phase version yet.** The maximal answer is a throwaway inspection script compiled and run in Docker, whose output feeds the real compile — a genuine read-eval loop, strictly more faithful, and it doubles the Docker round-trips and adds a stage. §13's rule applies: a static profile gets most of the value at a fraction of the cost. Revisit only if profiled runs still hit this class.
+
+**Two honest risks:**
+1. **The cheapness claim rests on caching that has never been measured** (Live Issue 5). 7.4k tokens per stage is fine if the prefix is hitting cache and material if it is not. **This change is the one that makes §4's outstanding measurement worth taking first.**
+2. **The profile puts real data values into the prompt.** Fine for anonymised CBIAS; a config with sensitive data would need a redaction pass or a cardinality-only mode.
+
+**Verify:** a run against a *deliberately* undocumented quirk — the `Keywords` format split is a ready-made test, since it is currently in neither `DOMAIN_NOTES` nor any patch — in which the compiler handles it correctly with no prior note.
+
+**32. The compile-cycling detector cannot fire on a regenerated script (Run 31).** `stakeholder-training-hybridity` failed on `ast.literal_eval` at attempt 1 and again at attempt 3 — the same bug — and the log recorded plainly `Did not execute after 3 attempt(s)` with no abort message at all. The comparison is exact:
+
+```python
+normalized_feedback = exec_feedback.strip()
+if normalized_feedback in seen_feedbacks:
+```
+
+`exec_feedback` is the full traceback, and **the compiler regenerates the entire script every attempt**, so line numbers move: attempt 1 raised at `line 85`, attempt 3 at `line 87`. Byte-different strings, no match, no detection.
+
+**This makes Issue 27's detector close to inert in practice.** It fires only when two attempts produce byte-identical tracebacks, which requires the regenerated script to place the failing call on exactly the same line. Run 27's `abstract-register-accessibility` happened to satisfy that; Run 31 did not, and the Run 31 case is likely the common one.
+
+**Fix:** normalise before comparing — strip `File "...", line N`, memory addresses and any temp paths, or key on exception type plus message only. Cheap, and it makes an existing feature do what its log message already claims.
+
+**Note the ordering with Issue 27:** rev. 43's fix corrected the *log wording* so it stops claiming a saving it did not make. That was right, and this is the other half — the detection itself. Neither is urgent; both are small.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -1425,6 +1489,8 @@ The largest and most damaging class. In each case the description was accurate b
 
 **A2 and A5 are the same recurring pattern too, and worth naming separately: the assumed vocabulary.** The model writes a value map from `DOMAIN_NOTES`' *description* of the data rather than from the values, and anything the description omits is handled wrongly — A2 mapped an already-numeric column as Likert text and got all-NaN; A5 omitted one response option and lost half the corpus. **Both failed silently at the point of loss** (A5's `< 2` guard did raise, but only after the columns had already been discarded, so the error names the symptom rather than the cause).
 
+**Superseded in part by Live Issue 31 (rev. 46): the right fix is to *derive* this, not write it — a mechanical profile lists these values without anyone having to notice them.** The hand-written patch below is correct and worked on its first run; it simply cannot be relied on to be complete, and Run 31 proved that twice over. Original note follows.
+
 **The fix §15.7 already prescribes applies directly, and is nearly free: fix the description, not the model.** `DOMAIN_NOTES` describes the feedback CSVs in prose but never enumerates the response vocabulary. One line listing the distinct Likert values actually present — `Not applicable` included — would have prevented both A2 and A5, costs nothing at runtime, and is verifiable by a two-line script against the CSVs. **Verified for this dataset:** the only unmapped value across all four years' Likert columns is `"Not applicable"`.
 
 *Verification note, and a §15 F-class near-miss worth recording:* a first pass at this attributed the loss to the venue question's wording change (`"The Francis Crick Institute was an appropriate venue"` → `"The venue was appropriate"`), reasoning from the criteria text. Checking the CSVs showed `venue` appears in both wordings and matched all four years — the hypothesis was wrong and the real cause was one absent response value. **Reasoning from the data description is exactly the error this whole class consists of; it applies to whoever is diagnosing it as much as to the model.**
@@ -1503,7 +1569,11 @@ Seven observations, each supported by at least two entries above.
 2. **The description of the *environment* is a load-bearing interface at every layer, and now all three recorded layers have been fixed the same way.** Three instances of one shape are now recorded: A2 (the data's value types), A5 (its response vocabulary), B4/B4a (the libraries' API surface). In each, the model wrote against an assumed vocabulary that the description it was handed did not pin down. `DOMAIN_NOTES` was patched for A2 and A5 and **the fix worked on its first live run** (Run 30) — which was the evidence for pinning `AVAILABLE_LIBRARIES`'s versions too (Live Issue 30, **fixed rev. 45**, pending a Dockerfile rebuild and its own live confirmation). The original wording of this observation follows.
 
 2a. **The description of the data is a load-bearing interface, and it is not treated like one.** A1, A2 and A3 all trace to `DOMAIN_NOTES` or to a keyword list. §8 records that judge prompts are the product; the *data* description has never had comparable scrutiny, and one wrong line in it produced effectively identical failures in two independently generated scripts across two runs.
-3. **Fixing the data beats instructing the model.** A1's durable fix was structural (drop the decoys during anonymisation), after a prompt-level fix was tried and judged too flaky to keep. Instructions must be read and applied correctly every time; a removed column cannot be misread.
+3. **Deriving the description beats writing it, which beats instructing the model. (Revised, rev. 46.)** The original form of this observation — *fix the data description, not the model* — has been validated four times: the A1 structural fix, the A2/A5 vocabulary patch, and the Live Issue 30 version pinning each worked **on their first live run**. But every one of those was a human transcribing by hand a fact a script could have computed, and **the list has never once been complete** — Run 31 found two more gaps of the identical shape (Live Issue 31).
+
+**The root cause is architectural, not editorial: the model never sees the data.** `compile_script` writes blind, Docker runs the result, only the outcome returns; there is no inspect-then-write loop anywhere in the pipeline. `DOMAIN_NOTES` is a hand-written stand-in for an inspection the architecture does not offer. A mechanical per-run data profile (Live Issue 31) would have caught **all five class-A failures plus both of Run 31's**, cannot go stale, and cannot hallucinate. **The hand-written note is the right instrument only for what a profile cannot derive: semantics, provenance, absence, and the anti-target list.**
+
+3a. **Fixing the data beats instructing the model.** A1's durable fix was structural (drop the decoys during anonymisation), after a prompt-level fix was tried and judged too flaky to keep. Instructions must be read and applied correctly every time; a removed column cannot be misread.
 4. **Repair loops optimise for passing, not for meaning.** B1 is the clearest case: three attempts of automated recovery turned a novel method into a forbidden one, and every step was locally correct.
 5. **Models are better critics than scorers.** *(Now two instances: A3 and A4.)* E1/E2 versus A3: the same models that produce unreliable numbers caught a bug a human reviewer would plausibly have missed, by looking at a chart and noticing an implausible zero — A4 repeats this from a different rule-order bug, again caught only by reading the artifact, not by any deterministic check the pipeline has. Separately, Run 27's `feedback-aspect-rank-trend` reported that two named aspect columns were absent every year rather than inventing them — a positive counter-example to C2, but a *generation*-time honesty, not a critic catching a scorer's mistake, so it isn't tallied here.
 6. **The human is the last line, and needs the raw data to be one.** A1, A2, F1 were all resolved by someone opening a file. The gallery's linked scripts and artifacts exist for exactly this; the failures that persisted longest are the ones where nobody did.
