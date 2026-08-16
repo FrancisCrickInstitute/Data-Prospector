@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 36)
+# Converger → Diverger conversion plan (rev. 37)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -160,6 +160,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 27 | 0.09 / 0.08 | working | **First live run on the eight-module split — completed end to end, so D-consolidate 4–6 are confirmed, not just verified offline.** 1 realised, 2 realised_null, 1 not realisable, 1 unsupportable, 0 judge errors. **Two truncation-shaped `SyntaxError`s** (Live Issue 26). Compile-cycling abort fired for the first time but saved nothing (Live Issue 27). Dedup measurement, 3rd data point: 1 would-merge at 0.251, within-question, false positive, zero cost. Judge caught a second unreachable-category classifier bug (§15 A4) |
 | 26 | 0.09 / 0.11 | working | `--angles-per-iteration 4`. **`pattern_not_shown` fires for the first time since D6** — the realisation judge caught a keyword-list bug in generated code from the plot alone (§15, A3). Dedup measurement, 2nd data point: 1 would-merge at **0.360, the highest similarity in the log, and still a false positive** (item-clustering vs respondent-clustering); both members judged unsupportable, so zero cost. 3 realised, 1 pattern_not_shown, 0 not realisable, 0 judge errors, 2 unsupportable. One generated-code `SyntaxError`, recovered attempt 2 |
 | 25 | 0.10 / 0.10 | working | `--angles-per-iteration 4`. **Issue 24's measurement produces its first live data point** (see the Issue 24 entry): 2 would-merges, both across-iteration (0.225, 0.280), both within a single guiding question again, **neither pair consumed two realisation slots — but pair 1 missed by 0.02 insight**. 2 realised, 1 realised_null, **1 genuinely not-realisable** (first legitimate use of that tier: `satisfaction-driver-shift` exhausted 3/3 attempts, each one *raising* rather than faking — Issue 11's fail-fast working), **2 unsupportable — the highest yet, both well-argued**. Judge independently enforced §8's state-vs-trend distinction on stakeholder hybridity. Readability disconfirmed a 5th time; sector question produced a **third mutually inconsistent answer** (see §8) |
 | 24 | 0.11 / 0.08 | working | `--angles-per-iteration 4`. **First fully clean run: 3 realised, 1 realised_null, 0 not realisable, 0 unsupportable, 0 judge errors — no infrastructure failure at any stage.** Issue 23 confirmed **in situ**, including on the DeepSeek-routed compiler that failed in Run 23 (the smoke test had only covered the Anthropic client). `max_compile_attempts=3` visibly earned its keep for the first time: `open-comment-triggers` recovered on attempt 3 after a silent-no-op catch then a pandas indexing error. **Dedup false-positived twice, both *within* a guiding question** — the evidence that killed the Issue 24 guard. `sentence_transformers` substitution visible end-to-end in the log (§15 B1). Second `<task>` XML parse failure (col 527) |
@@ -585,6 +586,58 @@ Needs a live run with a satisfaction-outcome angle, after the anonymisation re-r
 **How close this came to reaching the report, and why that matters.** Rev. 30 recorded this as a confirmed data defect and recommended adding *"overall satisfaction is unusable across all four years"* to the report's data-gaps section — a section that goes to the organising committee. It would have been a fabricated gap in a real deliverable, plus a `DOMAIN_NOTES` constraint telling ideation to stop proposing a perfectly good outcome variable. The inference was drawn from two scripts' error messages without opening a CSV. **The pipeline's outputs are evidence about the pipeline; only the data is evidence about the data.**
 
 **And the sharper point, which belongs to D-simplify item 1: one wrong line in `DOMAIN_NOTES` produced effectively identical failures in two independently generated scripts, across two runs.** §8 records that judge prompts are the product. `DOMAIN_NOTES` is equally load-bearing — it is the pipeline's description of the world to every worker and compiler call — and it has never had the same scrutiny. It is not a comment; it is an interface.
+
+**26. `llm_call` returns truncated responses as if they were complete (Runs 26, 27).** The retry-at-double added for Issue 21 fires **only when the response contains no usable text**:
+
+```python
+text = "".join(block.text for block in response.content if block.type == "text")
+if text.strip():
+    return text                    # returns even when stop_reason == "max_tokens"
+
+if response.stop_reason != "max_tokens":
+    break                          # only reached when there is NO text at all
+```
+
+That is correct for the failure Issue 21 was written for — thinking consuming the whole budget, leaving a `thinking` block and nothing else. It is wrong for the other `max_tokens` case: a response that produces text and is then **cut off mid-generation**. The truncated text passes the `text.strip()` check, is returned, and reaches the compiler as though it were a finished script.
+
+**The evidence is the shape of the errors, which is truncation-shaped rather than mistake-shaped:**
+
+| Run | Angle | Attempt | Error |
+|---|---|---|---|
+| 26 | `program-abstract-attendee-sector-alignment` | 1 | `raise FileNotFoundError(` — `SyntaxError: '(' was never closed` |
+| 27 | `feedback-aspect-rank-trend` | 1 | `fig, ax = plt.subplots(fig` — `SyntaxError: '(' was never closed` |
+| 27 | `primary-role-vs-training-hybridity` | 2 | `"""Map a raw text fragment` — unterminated triple-quoted string |
+
+All three stop **mid-token**. A model making a genuine mistake does not usually emit `plt.subplots(fig` and stop; a stream cut at its budget does exactly that. Three occurrences in two runs, each costing one of three compile attempts.
+
+Corroborating: the delivered `primary-role-vs-training-hybridity.py` carries `# Map a raw text fragment to a canonical domain.` as a **comment** where the truncated attempt had a docstring — the repair worked around the symptom, which is what you would expect when the compiler is never told the response was cut off.
+
+**Fix.** Check `stop_reason` before returning, not only when the text is empty:
+
+```python
+if text.strip() and response.stop_reason != "max_tokens":
+    return text
+```
+
+A truncated script is never usable, so returning it is strictly worse than retrying at double. Two points of care:
+- **Do not apply this blindly to every caller.** A judge or criteria response that hits `max_tokens` may still be usable if the parser recovers the fields it needs; a *script* never is. Either gate on the caller, or accept the extra retry cost globally and measure it — `compile_script` is the one that certainly needs it.
+- **If both attempts truncate**, the code falls through to the "No text content" `ValueError`, whose message would then be misleading. Give truncation its own message, so a future §15-class diagnosis does not start from the wrong hypothesis.
+
+**Verify:** a run in which a compile response truncates should retry rather than emit a mid-token `SyntaxError`, and no `realization_error` should carry thinking-budget wording when the real cause was truncation.
+
+**27. The compile-cycling abort cannot save an attempt at the current budget (Run 27).** `abstract-register-accessibility` logged:
+
+```
+This error already occurred in an earlier attempt - aborting remaining compile attempts
+  (the compiler is cycling, not repairing).
+[not_realisable] Did not execute after 3 attempt(s) (aborted early - the same error recurred verbatim).
+```
+
+It had already used all three: attempt 1 `textstat`, attempt 2 nltk `sent_tokenize`, attempt 3 `textstat` again. The detector compares against **all** earlier attempts, which is right, but with `max_compile_attempts=3` the earliest a two-cycle can be caught is attempt 3 — where there is nothing left to abort. **It only saves work on a one-cycle**, where attempt 2 repeats attempt 1 verbatim.
+
+Not urgent; the abort is still correct, it just did not help here. Two options, the second nearly free:
+1. Raise `max_compile_attempts` so the detector has room to pay off. Costs tokens on genuinely-repairing designs — measure before doing it.
+2. **Soften the log wording.** "aborted early" and "aborting remaining compile attempts" both claim a saving that did not happen, and per §15's own lesson, a log overstating what occurred is how misdiagnosis starts.
 
 **5. Caching is unverified.** §4 asks for a single `cache_read_input_tokens` measurement. It has not been taken, so the entire §4 investment is unmeasured. Still an explicit D8 task.
 
@@ -1258,6 +1311,9 @@ The largest and most damaging class. In each case the description was accurate b
 | A1 | **Decoy columns.** Microsoft Forms emits `Points - <question>` / `Feedback - <question>` companions beside every real question, always empty here. Substring column-matching selected them. | 24, 25 | "column not found or too few mappable responses" — looked like missing data | Human opened the CSVs (Issue 25) |
 | A2 | **Type assumed from category.** `DOMAIN_NOTES` said Likert answers are free text needing an ordinal map. True for every question *except* overall satisfaction, which is already numeric. The map found no matching keys and produced silent all-NaN. | 24, 25 | Judge reported the column "entirely NaN across all four years" | Human inspected `unique()` (Issue 25) |
 | A3 | **Category label absent from its own keyword list.** `classify_affiliation()` matched "university", "college", etc. but never the literal string `"academic"` — so every attendee whose ticket type is `Academic` was bucketed as "other". | 26 | A fully legible chart measuring the programme's own share minus zero | **Realisation judge**, from the plot: no attendee bar in the Academic panel |
+| A4 | **Category unreachable by rule order and assumed vocabulary.** `canonical_domain()` tests `microscop`/`imaging`/`image analysis` before the life-science patterns, and the survey's actual role values are *Facility staff*, *PhD student*, *Postdoctoral fellow* — which route to `funder/manager` via `"facility"` or fall through to `other`. The `life scientist` row was therefore absent from both years' matrices. | 27 | Heatmaps rendered fine; the row the hypothesis was *about* simply was not there | **Realisation judge**, and the script's own warning — it reported the gap rather than fabricating a row |
+
+**A3 and A4 are the same recurring pattern, and it now has a name: the unreachable category.** A keyword classifier is written from the model's idea of what the values look like, not from the values; the category the hypothesis is *about* can then never be assigned. A3 omits the label outright; A4 shadows it by rule order plus a wrong guess at the vocabulary. Both produced well-formed, well-labelled charts. **Both were caught by the realisation judge reading the artifact — neither is detectable by any deterministic check the pipeline currently has**, because the script runs, exits 0, and writes valid PNGs. Expect more of these: every angle that bins free text into named categories is a candidate, and several per run do.
 
 **A1 and A2 are the same root failure seen twice**, and it cost two runs plus a nearly-published fabricated data gap (§3, Issue 25). Note the asymmetry in how they were caught: A3 was caught automatically because the artifact *looked* wrong; A1 and A2 were not, because all-NaN and genuinely-missing are indistinguishable from the console.
 
@@ -1322,7 +1378,7 @@ Six observations, each supported by at least two entries above.
 2. **The description of the data is a load-bearing interface, and it is not treated like one.** A1, A2 and A3 all trace to `DOMAIN_NOTES` or to a keyword list. §8 records that judge prompts are the product; the *data* description has never had comparable scrutiny, and one wrong line in it produced effectively identical failures in two independently generated scripts across two runs.
 3. **Fixing the data beats instructing the model.** A1's durable fix was structural (drop the decoys during anonymisation), after a prompt-level fix was tried and judged too flaky to keep. Instructions must be read and applied correctly every time; a removed column cannot be misread.
 4. **Repair loops optimise for passing, not for meaning.** B1 is the clearest case: three attempts of automated recovery turned a novel method into a forbidden one, and every step was locally correct.
-5. **Models are better critics than scorers.** E1/E2 versus A3: the same models that produce unreliable numbers caught a bug a human reviewer would plausibly have missed, by looking at a chart and noticing an implausible zero.
+5. **Models are better critics than scorers.** *(Now three instances: A3, A4, and the honest gap-reporting in Run 27's `feedback-aspect-rank-trend`, where the script reported that two named aspect columns were absent every year rather than inventing them — the positive counter-example to C2.)* E1/E2 versus A3: the same models that produce unreliable numbers caught a bug a human reviewer would plausibly have missed, by looking at a chart and noticing an implausible zero.
 6. **The human is the last line, and needs the raw data to be one.** A1, A2, F1 were all resolved by someone opening a file. The gallery's linked scripts and artifacts exist for exactly this; the failures that persisted longest are the ones where nobody did.
 
 **Scope note.** This section is about model limitations, not about what the CBIAS data says. Conclusions about the symposium belong in the report's Already Explored section, not here.
