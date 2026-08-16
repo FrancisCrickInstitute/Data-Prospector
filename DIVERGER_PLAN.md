@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 37)
+# Converger → Diverger conversion plan (rev. 38)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -9,6 +9,8 @@ Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 **Live Issue 23 — FIXED AND CONFIRMED IN SITU (Run 24). Closed.** Run 24 completed with no `('Streaming is required...')` error at any call site — including the DeepSeek-routed compiler, which is where Run 23 actually failed and which the original smoke test (against `claude-opus-4-8`) had not exercised. Original entry follows.
 
 **Live Issue 23 — FIXED, confirmed via a direct live smoke test; not yet confirmed on a full pipeline run.** Run 23 also surfaced a new failure: the Issue 21 fix's own raised default (8192 → 16384) doubles to 32768 on retry, which crosses the Anthropic SDK's client-side guard against non-streaming requests that might exceed ~10 minutes — `('Streaming is required for operations that may take longer than 10 minutes...')`. `llm_call` now calls `client.messages.stream(...)` + `get_final_message()` instead of `client.messages.create(...)`, which removes the ceiling rather than moving it again; the return contract (a plain string) is unchanged, so no caller needed editing. Verified with a live call to `claude-opus-4-8` at `max_tokens=40000` (so a retry would reach 80000, well past the ceiling that failed at 32768) — confirmed no client-side error and a normal response. See §3 for detail.
+
+**Rev. 38: Live Issue 26 fixed — `llm_call` no longer returns a truncated response as if it were complete.** New `reject_truncated` parameter on `llm_call` (default `False`, so every existing call site is unaffected); `compile_script`'s call is the one site that opts in, since a compiled script is the case the entry established as never usable when cut mid-generation. A double-truncation now raises its own error message instead of the misleading generic "No text content" one. Verified offline only (a mocked test of all four `llm_call` paths, deleted after passing) — **needs a live run** to confirm a truncating compile response actually retries instead of producing the mid-token `SyntaxError`s seen in Runs 26–27. See the Live Issue 26 entry for detail.
 
 **Rev. 37: Run 27 — first live run on the eight-module split, confirming D-consolidate items 4–6 end to end, plus two new Live Issues.** 1 realised, 2 realised_null, 1 not realisable, 1 unsupportable, 0 judge errors. **Live Issue 26 (diagnosed, not yet fixed)**: `llm_call`'s retry-at-double only fires when a response has no text at all, so a response that produces text and is then truncated mid-token passes through as if complete — two truncation-shaped `SyntaxError`s across Runs 26–27. **Live Issue 27**: the compile-cycling abort's log line claims a saving that `max_compile_attempts=3` cannot actually deliver — a two-cycle can only be detected on the attempt that exhausts the budget, so there is nothing left to abort into. Not urgent, wording only. §15 gains **A4**, a second instance of the *unreachable category* pattern (A3's sibling): a keyword classifier whose rule order and assumed vocabulary silently drop the very category an angle's hypothesis is about, caught only by the realisation judge reading the artifact. See the Live Issue 26/27 entries and §15 for detail.
 
@@ -589,7 +591,7 @@ Needs a live run with a satisfaction-outcome angle, after the anonymisation re-r
 
 **And the sharper point, which belongs to D-simplify item 1: one wrong line in `DOMAIN_NOTES` produced effectively identical failures in two independently generated scripts, across two runs.** §8 records that judge prompts are the product. `DOMAIN_NOTES` is equally load-bearing — it is the pipeline's description of the world to every worker and compiler call — and it has never had the same scrutiny. It is not a comment; it is an interface.
 
-**26. `llm_call` returns truncated responses as if they were complete (Runs 26, 27).** The retry-at-double added for Issue 21 fires **only when the response contains no usable text**:
+**26. FIXED, unconfirmed on a live run — `llm_call` returns truncated responses as if they were complete (Runs 26, 27).** The retry-at-double added for Issue 21 fires **only when the response contains no usable text**:
 
 ```python
 text = "".join(block.text for block in response.content if block.type == "text")
@@ -624,6 +626,8 @@ if text.strip() and response.stop_reason != "max_tokens":
 A truncated script is never usable, so returning it is strictly worse than retrying at double. Two points of care:
 - **Do not apply this blindly to every caller.** A judge or criteria response that hits `max_tokens` may still be usable if the parser recovers the fields it needs; a *script* never is. Either gate on the caller, or accept the extra retry cost globally and measure it — `compile_script` is the one that certainly needs it.
 - **If both attempts truncate**, the code falls through to the "No text content" `ValueError`, whose message would then be misleading. Give truncation its own message, so a future §15-class diagnosis does not start from the wrong hypothesis.
+
+**FIXED (rev. 38), gated on the caller rather than applied globally.** `llm_call` gained a `reject_truncated` parameter (default `False`, preserving the exact old behaviour for every existing call site) — when `True`, a `stop_reason == "max_tokens"` response is treated the same as an empty one and retried at double, rather than returned. `compile_script`'s `llm_call` (`realization.py`) is the only call site passing `reject_truncated=True`, per the fix's own "gate on the caller" option — judge/criteria/worker calls are unaffected, so this costs nothing beyond the compiler's own retry ladder. A response still truncated on both attempts now raises a truncation-specific `ValueError` instead of falling through to the generic "No text content" message, so a future diagnosis starting from that error won't chase the wrong hypothesis (thinking-budget exhaustion) the way this one almost did. Verified offline via a mocked test exercising all four paths (truncated-but-accepted under the old default, truncated-then-clean retry, truncated-twice raising the new message, and the pre-existing no-text/non-`max_tokens` path unchanged) — deleted after passing, per this project's convention.
 
 **Verify:** a run in which a compile response truncates should retry rather than emit a mid-token `SyntaxError`, and no `realization_error` should carry thinking-budget wording when the real cause was truncation.
 
