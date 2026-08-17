@@ -105,6 +105,23 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
 
 _CRITERION_PATTERN = re.compile(r'<criterion\s+met="(true|false)"\s*/?>', re.IGNORECASE)
 
+# Live Issue 32: the compile-cycling detector compares exec_feedback strings verbatim, but the
+# compiler regenerates the WHOLE script every attempt (never a diff/patch), so an identical bug at
+# an identical call site still lands on a different source line the moment anything earlier in the
+# file changes - which is the common case, not an edge case. Strip what varies between two
+# otherwise-identical tracebacks (source line numbers, object memory addresses) before comparing,
+# so the detector matches on "same file, same exception" rather than "byte-identical traceback".
+_TRACEBACK_LINE_NUMBER = re.compile(r'(File "[^"]*", line )\d+')
+_MEMORY_ADDRESS = re.compile(r'0x[0-9a-fA-F]{4,}')
+
+
+def _normalize_exec_feedback(feedback: str) -> str:
+    """Key for the repeat-detection comparison in _run_one_design's compile loop - NOT what's
+    shown to the compiler or the reader, which always get the real feedback verbatim."""
+    normalized = _TRACEBACK_LINE_NUMBER.sub(r'\1<N>', feedback)
+    normalized = _MEMORY_ADDRESS.sub('<ADDR>', normalized)
+    return normalized.strip()
+
 # A boolean pattern_shown would conflate a clean disconfirmation (script ran fine, data just
 # don't support the hypothesis - a real finding) with a broken/illegible run (blank plot, wrong
 # measurement) - both would read as "false" and land in the same realization_status bucket.
@@ -358,7 +375,12 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
                 break
             log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[:500]}")
             attempt_feedbacks.append(exec_feedback)
-            normalized_feedback = exec_feedback.strip()
+            # Live Issue 32: normalize before comparing - the compiler regenerates the WHOLE
+            # script every attempt, so an identical bug at an identical call site still lands on
+            # a different source line the moment anything earlier in the file changes (the common
+            # case, not an edge case). A verbatim .strip() comparison only ever matched when the
+            # regenerated script happened to place the failing line at the same line number.
+            normalized_feedback = _normalize_exec_feedback(exec_feedback)
             if normalized_feedback in seen_feedbacks:
                 # Only an actual saving if attempts remain to skip - with max_compile_attempts=3,
                 # the earliest a two-cycle (A, B, A) repeats is attempt 3, where the loop was
