@@ -1,0 +1,18 @@
+
+
+Institution: DFG cluster of excellence 'Physics of Life', TU Dresden, Dresden, germany
+
+Title: Measurement of tissue-mechanical properties with napari-stress
+
+
+
+
+Abstract: In recent years, the measurement of biomechanical tissue properties has continued to experience high relevance and demand for multiple fields of research, such as the understanding of tissue formation during embryogenesis. While it is well-possible to process data of such experiments in image processing workflows, it remains a challenge to obtain mechanical tissue properties from acquired image data. Latest developments in the field brought forth the usage of oil droplets, the shape of which can be used as a proxy for various information about local mechanical properties.
+We present napari-stress, a toolbox for the measurement and analysis of local tissue mechanical stresses based on injected oil droplets. Time-lapse image data of injected droplets is typically acquired by confocal microscopy, whereas the scanned volume depends strongly on the model of interest. In practical scenarios, the image data volume ranges between 10-1000 MB per frame and features voxel sizes of approximately 0.6 x 0.6 1.2 µm³. The droplet data is first segmented and converted into a mesh structure. Afterwards, the vertices are post-processed using a raytracing scheme which allows to refine the outline of the droplet with quantifiable error and accuracy. Spherical harmonics expansion is then applied to the reconstructed surface, which allows deriving geometrical properties of the object. These can in turn be related to mechanical stresses on tissue and cell-scale as well as to stresses along relevant spatial axes of the tissue of interest. Finally, napari-stress provides measurements for the auto-correlation of features on reconstructed surfaces.
+Besides measuring tissue-mechanical properties, napari-stress can be used to determine spherical harmonics expansions for arbitrary compact objects with spherical topology and thus opens a door towards the extraction of geometrically interesting quantitative descriptors of shape, such as for instance the power spectrum of the expansion - This yields the contribution of the individual orders of the expansion to the shape of the object and thus allows for a quantitative description and comparison of shape. 
+To summarize, napari-stress provides quantitative measurements for local tissue mechanical stresses with quantifiable error. While the obtained descriptors for shape are uncommon, they pose promising quantitative features for other biological model tissues. 
+
+
+Keywords: ["New Tools\n","Segmentation","Open Science","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: bio-physics

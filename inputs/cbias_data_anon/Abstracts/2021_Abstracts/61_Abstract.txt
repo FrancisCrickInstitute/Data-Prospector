@@ -1,0 +1,19 @@
+
+
+Institution: Francis Crick + Imperial College
+
+Title: Studying heterogeneity of single-cell-resolved signalling responses to cancer drugs using semi-quantitative phase contrast microscopy for segmentation and tracking of cells
+
+
+
+
+
+Abstract: Single cell resolved time-lapse microscopy of cells expressing fluorescence biosensors can be used to study heterogeneity in cell responses to cancer drugs. Analysis of such data typically involves segmenting the image to bin fluorescence readouts on a per cell basis and then follow the dynamics of each cell over time. Further information can be gained from quantifying changes in cell morphology.
+Conventionally, fluorescent markers for cell nuclei, cytoplasm and/or plasma membrane are widely used for single-cell segmentation in time-lapse imaging data. Unfortunately, the high temporal sampling of fluorescence imaging required to track individual cells can lead to photobleaching and phototoxicity, and the use of an additional fluorescence marker for segmentation can lead to spectral overlap with fluorescence biosensors. Label-free microscopy techniques are attractive for live cell imaging due to their low phototoxicity, and they don’t interfere with fluorescent assays thus allowing fluorescence channels to be available solely to acquire biological information. 
+Here, we use a novel technique for single-shot, semi-quantitative phase microscopy, described as polarisation differential phase contrast (pDPC) microscopy, that can be implemented in an existing fluorescence microscope. We demonstrate this in a commercial fluorescence microscope (Olympus IX83) applied to explore therapy response in EGFR-mutant non-small cell lung cancer cell lines expressing ratiometric FRET and nuclear-cytoplasmic translocation based fluorescent biosensors as markers for cellular signalling. 
+Our results demonstrate that using pDPC is comparable to using fluorescent labels for single-cell segmentation and subsequent cell tracking and can be combined with fluorescence to study biosensor activity in a single cell. 
+
+
+Keywords: ["Segmentation","New Tools\n"]
+
+Additional Keywords: Phase contrast microscopy

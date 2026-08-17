@@ -1,0 +1,12 @@
+
+
+Institution: University of Birmingham and AstraZeneca
+
+Title: Topological biomarkers for colorectal and kidney cancers
+
+
+Abstract: Evidence shows that, throughout their life, a person will develop tumours which are identified and eradicated by normal immunological mechanisms, without notice or consequence by the individual. However, in many cases, when ‘normal’ immunological responses fail, we observe the detrimental results as cancer. Multiplex immuno-fluorescence imaging identifies the proximity of many different immune cell types within the tumour microenvironment. Designing mathematical and computational methods to interpret the spatially-resoled ex-vivo dataset, specifically in colorectal and kidney cancers, can lead to crucial ways in understanding and predicting disease progression. We introduce topological techniques, such as persistent homology and winding numbers, to interpret the communities within these multi-layered networks. Combining these techniques with prior knowledge of immunological mechanisms, we present intuitive and predictive biomarkers which go beyond previous prognostic tools such as grading, multi-satellite stability/instability, and Immunoscore®.
+
+Keywords: ["AI & Machine/Deep Learning","New Tools\n"]
+
+Additional Keywords: Topological Data Analysis

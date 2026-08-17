@@ -1,0 +1,13 @@
+
+
+Institution: UCL
+
+Title: Deep learning for semantic segmentation of 3D vasculature in diabetic retinopathy and healthy control participants enabling evaluation of vessel metrics
+
+
+
+Abstract: Optical coherence tomography angiography (OCT-A) is an imaging modality of the human retinal vasculature in vivo. Accurate automated semantic segmentation of the vasculature could improve understanding of the effects of disease. We report a deep-learning approach for this task. 35 OCT-A images were obtained on the Zeiss Plex Elite 9000. 16 images (size 12x12x3mm) were acquired of 10 patients with diabetic retinopathy. 19 OCT-A images of scan sizes 12x12x3mm, 15x9x3mm and 3x3x3mm were acquired of 10 healthy participants not ascertained for disease status. Vessels were semi-automatically segmented using a custom-built Python software which outputted the vasculature in graph format. With these ground truth labels a 3D UNet was trained. Accuracy and dice scores were used as performance metrics and 5-fold cross validation was employed. Vessel metrics of branching angle, length, tortuosity were evaluated: mean branching angle diabetic retinopathy 104.3 (sd 45.3), healthy controls 104.4 (42.3); mean vessel length diabetic retinopathy 64.4 (sd 52.8), health controls 71.0 (55.2); mean tortuosity diabetic retinopathy 267.4 (285.5)  and healthy controls 287.5 (314.7). 5-fold cross validation demonstrated validation accuracy between 0.61-0.63 (mean: 0.62, sd: 0.0064). This pilot study indicates potential of deep learning-based methods for extraction of 3D vessel structures.
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: deep learning; retinal imaging; ophthalmology

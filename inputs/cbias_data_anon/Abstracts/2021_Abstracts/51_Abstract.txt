@@ -1,0 +1,12 @@
+
+
+Institution: Institut Pasteur
+
+Title: RegFus: A toolbox for distributed multi-view image reconstruction
+
+
+Abstract: Multi-view and multi-tile light (sheet) microscopy techniques produce large image datasets that are unaligned in space, time and channels. We present RegFus, a toolbox that provides algorithm implementations and scripts to register and fuse such datasets in 2-5d, including e.g. group registration and multi-view deconvolution. Based on the scientific python stack and leveraging dask for chunked and distributed image processing, RegFus enables the efficient reconstruction of large multi-view datasets with low memory requirements, allowing to make use of GPUs and distributed computing. An associated napari plugin helps to visually guide and troubleshoot the reconstruction process.
+
+Keywords: ["Web/Cloud Interfaces\n","New Tools\n","High-Throughput","3D/4D/ ... nD Data\n","Big Data\n","Open Science"]
+
+Additional Keywords: Stitching Fusion Registration

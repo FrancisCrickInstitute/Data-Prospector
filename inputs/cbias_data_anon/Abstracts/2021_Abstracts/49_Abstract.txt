@@ -1,0 +1,22 @@
+
+
+Institution: The Rosalind Franklin Institute
+
+Title: Estimation of local resolution from single images with Fourier Ring Correlation
+
+
+Abstract: Resolution is a useful image quality metric for quality control and optimisation of imaging protocols. Fourier Ring Correlation (FRC) is a common method to measure resolution in cryo-electron and super-resolution microscopy. FRC compares two independent images of the same specimen to determine the highest frequency where the images are compatible, which is where signal is greater than noise. This approach requires two independent measurements of the image noise, so two images are required. 
+
+Double image acquisition to determine resolution is infeasible for most tomography applications, as scan durations are long, and the specimen could degrade from repeated X-ray or electron beam exposure. Alternatively, FRC resolution could be calculated from separate reconstructions of the even and odd projections, though this introduces additional errors from under-sampling in projection space and is not representative of the final reconstruction.  
+
+Koho et al. proposed performing FRC analysis on a single image, by taking even and odd pixels in a checkerboard pattern to obtain the two images required for FRC analysis (1). Using this method on reconstructed tomograms enables fast calculation of FRC resolution, without requiring double image acquisition and reconstruction or introducing projection-space under-sampling errors. Here, we present an adaptation of this method to provide a map of local resolutions across individual images, which shows spatial and statistical variations of the image quality. This approach is useful for quantitative comparison of imaging protocols. Besides that, applying the resolution estimation tool on-the-fly during acquisition will aid automation by continuous evaluation of collected images, and the resolution information can be saved as metadata with the images for future use. 
+
+This local resolution estimation tool is available as an open-source Napari plugin, Quoll (github.com/rosalindfranklininstitute/quoll). 
+
+References:
+
+1. Koho, S., Tortarolo, G., Castello, M. et al. Fourier ring correlation simplifies image restoration in fluorescence microscopy. Nat Commun 10, 3103 (2019). https://doi.org/10.1038/s41467-019-11024-z
+
+Keywords: ["Quality Control\n","Open Science"]
+
+Additional Keywords: 

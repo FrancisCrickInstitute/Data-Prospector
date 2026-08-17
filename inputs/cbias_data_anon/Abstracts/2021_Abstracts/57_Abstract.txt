@@ -1,0 +1,12 @@
+
+
+Institution: Sage Bionetworks
+
+Title: Wrangling multiplexed imaging: Enabling curation visualisation and reuse through the HTAN Data Coordinating Center
+
+
+Abstract: The Human Tumor Atlas Network (HTAN) is an NCI Cancer Moonshot Initiative to generate molecular and spatial atlases of human tumours and to characterise crucial transitions in cancer progression and treatment. HTAN centers have generated data from emerging multiplexed imaging modalities including CyCIF, CODEX and MIBI, alongside bulk, single cell and spatial sequencing. The HTAN Data Coordinating Center (DCC) develops infrastructure and tools to ingest, curate, explore, and share these data in a FAIR manner.  HTAN’s data model was generated through community driven Request for Comments processes. For multiplexed imaging the “Minimum Information for Tissue Imaging” guidelines were adopted, detailing metadata requirements for raw data, harmonised OME-TIFFs, segmentation masks and feature arrays. These are complemented by extensive participant and biospecimen metadata. Schema validation rules and an interface for metadata submission ensure consistent information from nearly 800 attributes are curated. The DCC manages the HTAN Data Portal, providing metadata exploration  and pointers to data availability in NCI repositories including the NCI CRDC  Imaging Data Commons. It includes image visualisation using Minerva,  a light-weight, narrative image browser, and a novel tool for unsupervised multiplexed image thumbnails. To date, the HTAN DCC has released over 170 TB of data, including images from over 1300 biospecimens and 700 cases from 12 cancer types, with many more to come in the next year.
+
+Keywords: ["Web/Cloud Interfaces\n","Open Science","Multi-Disciplinary"]
+
+Additional Keywords: 

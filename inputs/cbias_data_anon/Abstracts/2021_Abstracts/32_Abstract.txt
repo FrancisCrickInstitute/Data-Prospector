@@ -1,0 +1,13 @@
+
+
+Institution: The Francis Crick Institute
+
+Title: From mammalian circuits to synapses: correlative multimodal imaging using hard X-rays
+
+
+
+Abstract: Integrating physiology and structure at the neuronal circuit scale can provide a mechanistic understanding on how that circuit works. A correlative multimodal imaging pipeline that combines in vivo 2-photon microscopy (2P), synchrotron X-ray computed tomography with propagation-based phase contrast (SXRT) and serial block-face electron microscopy generates these multimodal maps reliably. In it, SXRT brings subcellular context of multi-mm3 landscapes non-destructively. SXRT also enables a bridging use: 2P and SXRT datasets can be warped at single-cell accuracy, informing on optimal specimen trimming strategies. Finally, this pipeline is compatible with other complementary hard X-ray imaging modalities: X-ray nano-holotomography resolves lateral dendrites of mitral and tufted neurons of known physiological profiles, and X-ray ptychographic tomography could resolve 60% of the synaptic contacts with an 80% precision. Altogether, this approach enables harnessing the resolving power of multiphoton, hard X-ray and volume electron microscopy technologies to create detailed multimodal maps of brain circuits. 
+
+Keywords: ["Multi-Disciplinary","Big Data\n","3D/4D/ ... nD Data\n","New Tools\n","Web/Cloud Interfaces\n"]
+
+Additional Keywords: neuroscience, connectomics, correlative

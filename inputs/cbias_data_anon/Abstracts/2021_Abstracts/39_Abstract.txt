@@ -1,0 +1,14 @@
+
+
+Institution: University of Sheffield
+
+Title: morphoHeart: a novel comprehensive open-access image analysis tool to capture and quantify 3D extracellular matrix dynamics and tissue morphology in cardiac development
+
+
+Abstract: Light-sheet microscopy has emerged as a valuable in vivo imaging solution for understanding the ‎highly dynamic processes of embryonic development. This powerful imaging capability, combined with the use of zebrafish embryos to model human heart defects, has started to allow the characterisation of cardiac abnormalities during live embryogenesis in ways not previously ‎possible and calls for the analysis of heart morphogenesis in a more robust quantitative 3D manner. However, available options for processing, segmenting and analysing whole organ datasets in 3D are computationally demanding, and objective quantification of such images remains limited. 
+Consequently, we developed morphoHeart, an open-access quantitative image analysis tool that allows the ‎segmentation of the cardiac layers -including the extracellular matrix- and quantification of tissue organisation and morphology throughout zebrafish heart development. morphoHeart is an exciting alternative to free and commercially available software, offering a comprehensive pipeline that provides semi-automated segmentation capabilities and improves the suite of tools and quantifications available in the biological field to characterise organ morphology and tissue distribution. While morphoHeart was initially developed for the study of zebrafish heart development, its modular nature for 3D segmentation and morphometric analysis gives this tool an application plasticity that the broader community can use to study a wide range of morphogenetic processes in other organs and organisms, contributing to our understanding of the tissue-organisation mechanisms underpinning them.
+
+
+Keywords: ["Segmentation","New Tools\n","3D/4D/ ... nD Data\n","Open Science"]
+
+Additional Keywords: 3D Quantification, Organ Morphology, Tissue Distribution

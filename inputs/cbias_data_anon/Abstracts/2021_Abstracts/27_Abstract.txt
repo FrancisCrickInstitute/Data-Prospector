@@ -1,0 +1,14 @@
+
+
+Institution: Walter and Eliza Hall Institute of Medical Research
+
+Title: napari-lattice: Interactive and modular analysis of lattice lightsheet data
+
+
+Abstract: Lattice light sheet microscopy (LLSM) has enabled researchers to examine biological mechanisms with previously unachievable levels of spatio-temporal resolution. Due to its speed and low phototoxicity, datasets in the order of terabytes are generated routinely. Combined with the need to pre-process the lattice lightsheet data, image visualization and analysis is a significant bottleneck. 
+To overcome this, we have developed a napari plugin, “napari-lattice", that enables GPU-accelerated LLS data processing. napari-lattice works with proprietary file formats, allows previewing, cropping and processing of user-defined channels/timepoints instead of processing the entire dataset. It also allows batch processing independent of napari. The strength of napari-lattice is in its interoperability between various open-source image analysis plugins/software. Custom image processing workflows can be designed interactively using napari plugins such as pyclesperanto-assistant, which does not require prior coding experience. Moreover, users can integrate widely used software such as Cellpose and ilastik for processing their LLS datasets. These workflows can be re-used and shared thus enabling reproducible and transparent research. 
+napari-lattice will be a valuable addition to the scientific and bioimage analysis ecosystem by bridging the divide between LLS acquisition and analysis. This will allow researchers to focus their time on interpreting the data and understanding the biology. 
+
+Keywords: ["New Tools\n","3D/4D/ ... nD Data\n","Big Data\n","Multi-Disciplinary","Open Science","AI & Machine/Deep Learning","Segmentation"]
+
+Additional Keywords: Lattice Lightsheet, Designing workflows, napari, oblique plane microscopy, GPU-accelerated image processing

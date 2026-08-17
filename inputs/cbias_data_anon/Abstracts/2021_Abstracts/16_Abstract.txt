@@ -1,0 +1,13 @@
+
+
+Institution: Department of Bioengineering/Imperial College London
+
+Title: Analysis of membrane Piezo1 kinetics using GenEPi - A new tool for non-invasive imaging of Piezo1 activity 
+
+
+
+Abstract: Mechanosensation is a fundamental biological process in which mechanical stimuli are translated into complex biochemical and cellular responses. Piezo1, an essential mechanosensitive ion channel, has been identified to play a critical role in many physiological processes. Previously, fluorescent tagging of Piezo1 has been used to monitor the membrane localization of Piezo1 channels. However, the channel's activity, i.e., when the channel is open and Ca2+ flows through, cannot be reported by such approaches. We recently developed GenEPi, a genetically encoded fluorescent reporter of Piezo1 activity, which simultaneously reports the localization and activity of Piezo1 clusters captured using Total Internal Reflection Fluorescence (TIRF) microscopy. Here, we used Trackmate/Fiji and Python cell segmentation and tracking pipelines to track individual GenEPi clusters in the cell membrane of HEK293T cells. We used the produced tracks (TrackMate - 4110 tracks, Python - 940 tracks) to perform diffusion analyses using (i) Mean Squared Displacement (MSD) and (ii) Jump Distance Distribution (JDD). After testing different diffusion models, such as pure, directed, or anomalous diffusion, and their combinations, we found that Piezo1 presents an anomalous diffusion, with an average diffusion coefficient of ~0.0004 um^2/s, in the range of previously reported values for wt-Piezo1. Future analyses of Piezo1 cluster kinetics and connection to their activity profiles using GenEPi will enable us to reveal the complex role of Piezo1 in cell physiology and homeostasis. 
+
+Keywords: ["New Tools\n","Object Tracking","Segmentation"]
+
+Additional Keywords: mechanotransduction, mechanosensation, ion channels, Piezo1

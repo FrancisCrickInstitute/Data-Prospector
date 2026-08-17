@@ -1,0 +1,12 @@
+
+
+Institution: University of Edinburgh
+
+Title: Identification of phosphatases required for cyst formation and growth in Toxoplasma gondii using HRMAn high-content image analysis pipeline
+
+
+Abstract: Studies of acute Toxoplasma infection overshadow its chronic cyst-forming stage, despite the ability of the latter to reactivate the onset of the disease. Our work aims to bridge the gap by finding and localizing proteins essential for healthy cyst formation and growth. TgPPM3B is one of the secreted phosphatases upregulated during the chronic stage with the potential role in the regulation of cyst wall formation. We expressed TgPPM3B endogenously tagged with HA in the ME49 strain of T. gondii and observed differential phosphatase distribution at acute and chronic stages in model human foreskin fibroblasts. We now apply CRISPR/Cas9 gene editing to generate the respective knockout and study its effect on cyst formation and growth using HRMAn high-content image analysis method, a machine-learning algorithm that allows automatic analysis of the parameters of host-pathogen interaction derived from immunofluorescent assays. In the future, TgPPM3B will be further assessed in neuronal culture as a disease-relevant cell type to determine any cell type-specific phenotypes using HRMAn analysis pipeline.
+
+Keywords: ["High-Throughput","AI & Machine/Deep Learning"]
+
+Additional Keywords: Toxoplasma; phosphatase; cyst; machine-learning; high-content image analysis; HRMAn

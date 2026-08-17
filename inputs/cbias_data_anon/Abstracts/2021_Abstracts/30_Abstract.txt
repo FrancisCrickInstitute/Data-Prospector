@@ -1,0 +1,14 @@
+
+
+Institution: Ludwig-Maximilians-University Munich
+
+Title: Spatio-temporal tracking of mitochondrial biogenesis
+
+
+Abstract: Mitochondria host their own genome (mtDNA), present in multiple copies throughout the mitochondrial network in a semi-regular spaced fashion. In S.cerevisiae, mtDNA encodes for 8 proteins that form the core subunits of the respiratory chain complexes. During budding, the mother cell equips the newly-formed daughter with fully functional cellular components, albeit retaining the faulty proteins. However, whether this biased provision of proteins also applies to mitochondrial OXPHOS subunits of dual genomic origin remains to be determined.
+In a widefield fluorescence live-cell microscopy approach, we used a photoconvertible fluorophore to tag proteins of the inner mitochondrial membrane, in order for us to track their biogenesis across generations in spatio-temporal manner. This asymmetric nature of protein biogenesis and distribution is especially apparent in early daughters, contrary to their respective mother cells. Additionally, a similar trend is observed for mtDNA amount in daughter cells. By non-invasively tagging the mitochondrial genome, we could visualize and follow its dynamics throughout the cell cycle. For subsequent image analysis we used self-written python and FIJI scripts to semi-automatically segment, track, and analyze the fluorescent signals in the cells in a 3-dimensional environment.
+
+
+Keywords: ["Segmentation","3D/4D/ ... nD Data\n","Big Data\n"]
+
+Additional Keywords: 

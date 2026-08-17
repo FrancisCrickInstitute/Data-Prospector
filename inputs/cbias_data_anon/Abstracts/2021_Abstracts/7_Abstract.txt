@@ -1,0 +1,19 @@
+
+
+Institution: Sainsbury Wellcome Centre, UCL.
+
+Title: The BrainGlobe Initiative: An Open Source Neuroanatomy Platform for the 21st Century
+
+
+
+
+Abstract: Neuroanatomy is key for understanding the brain, but software to analyse the data are often single purpose, for one model species and suffer from lack of support following publication. We have established the BrainGlobe Initiative (BGI) - an international, distributed team of users and developers working towards the goal of creating open-source, interoperable and easy to use tools for the analysis of all types of neuroanatomical data. 
+
+To analyze data from many samples, it is critical to map individual datasets onto a standard anatomical reference atlas, but neuroscience relies on many animal model species. The BrainGlobe toolkit is therefore not built around a specific brain atlas but rather a generalised atlas framework (the BrainGlobe Atlas API) which is regularly updated with new brain atlases from multiple species. 
+
+We have initially focussed on the analysis of whole-brain microscopy data (e.g. from tissue clearing or blockface methods). The BGI software suite includes brainreg, a 3D registration tool for mapping data to an atlas space. Novel tools have also been developed to map specific structures or objects within the brain, such as the volume and location of virus-labelled cells and the location of implanted devices such as recording electrodes. Lastly, brainrender can be used for the visualisation of any data registered to the reference atlas. This includes all data from BGI software, but importantly, data from other software packages and from large-scale efforts such as the Allen Brain Institute.
+
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning","New Tools\n","3D/4D/ ... nD Data\n","Big Data\n","Open Science"]
+
+Additional Keywords: neuroscience, neuroanatomy, Python

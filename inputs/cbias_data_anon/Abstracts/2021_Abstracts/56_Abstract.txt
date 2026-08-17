@@ -1,0 +1,17 @@
+
+
+Institution: DFG Cluster of Excellence “Physics of Life”, TU Dresden
+
+Title: Deep learning OMERO Scripts
+
+
+Abstract: Over the last decade, imaging techniques have experienced a sharp growth in size, complexity and diversity. This resulted in a never seen before acquisition rate of Terabytes of data from life sciences researchers, turning cloud processing a must. At the same time, Open Science arouse as a new concept to foster new discoveries, fueling easy and efficient data sharing. The Open Microscopy Environment consortium has designed the OMERO platform [1] to ease complex data sharing and management. In principle, data could be processed server-side right after acquisition, ensuring reproducibility and scalability. To explore capabilities of the OMERO ecosystem, we set up an OMERO server with a standardized virtual python environment including python libraries needed for image processing and deep learning. The computer is equipped with an NVidia RTX 3090 enabling high-performance image computing. This setup allows our collaborators to employ high-performance image processing and deep learning without the need to install any software on their computers or to download the data to any remote location. Furthermore, as users typically use pre-defined scripts developed by experts to process their data, these experts can instruct proper folder structures and naming conventions. Such conventions are key to successful research data management. To demonstrate a typical workflow we implemented the deep learning based nuclei segmentation algorithm, Stardist [2], as an OMERO Python script, which was applied to images from the BBBC039 dataset [3] to obtain labeled nuclei images. The user can select from the three pre-trained Stardist models on multichannel images and the output labeled images are stored in the same folder, linked to the original image by name and key-value pairs. This implementation demonstrates that semi-automatic data processing is not only viable, but also appealing as a way to open avenues for bio-image deep learning based algorithms with OMERO. 
+
+References
+[1] Allan, C., Burel, JM., Moore, J. et al. OMERO: flexible, model-driven data management for experimental biology. Nat Methods 9, 245–253 (2012). https://doi.org/10.1038/nmeth.1896
+[2] Schmidt, U., Weigert, M., Broaddus, C., Myers, G. (2018). Cell Detection with Star-Convex Polygons. In: Frangi, A., Schnabel, J., Davatzikos, C., Alberola-López, C., Fichtinger, G. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2018. MICCAI 2018. Lecture Notes in Computer Science(), vol 11071. Springer, Cham. https://doi.org/10.1007/978-3-030-00934-2_30
+[3] Caicedo et al. 2018, BBBC039v1 image set, available from the Broad Bioimage Benchmark Collection [Ljosa et al., Nature Methods, 2012]
+
+Keywords: ["Segmentation","AI & Machine/Deep Learning","Open Science"]
+
+Additional Keywords: Data Management

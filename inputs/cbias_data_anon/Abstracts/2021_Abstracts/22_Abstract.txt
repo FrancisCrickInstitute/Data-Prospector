@@ -1,0 +1,12 @@
+
+
+Institution: Institute of Cancer Research
+
+Title: 3D single-cell shape analysis of cancer cells using geometric deep learning
+
+
+Abstract: Aberrations in cell geometry are linked to cell signalling and disease. Despite this, there is a paucity of methods to quantify cell shape in 3D and little understanding of the shape-space cells explore in tissue-like contexts. Current methods use classical measures of cell geometry which are predefined and not data-driven. We present a novel dynamic graph convolutional foldingnet autoencoder with improved deep embedded clustering to simultaneously learn lower-dimensional representations and classes of 3D cell shapes from a dataset of more than 70,000 drug-treated melanoma cells imaged by high throughput light-sheet microscopy. We propose describing cell shape using 3D quantitative morphological signatures, which represent a cell's similarity to shape modes in the dataset and are a direct output from our model. We have implemented these methods as an open-source Python package to promote open science. We used the extracted features to reveal the extent of the cell shape landscape and found that fixed shape features could predict drug treatment (up to 90 % accuracy) and cell microenvironment, and are explainable. In particular, we found strikingly similar deep learning shape signatures between cells treated with microtubule polymerisation inhibitors and branched actin inhibitors. We extended analysis to a dataset of melanoma cells depleted for all human rhoGEFs and rhoGAPs. We further tested our models on a recently published dataset of 3D red blood cells and found our learned shape features outperformed spherical harmonics and classical measures of cell geometry in shape classification, suggesting that not only are our features generalisable across datasets but that our geometric deep learning models are capturing features which are not explained by classical measures of shape. 
+
+Keywords: ["AI & Machine/Deep Learning","New Tools\n","High-Throughput","3D/4D/ ... nD Data\n","Big Data\n","Open Science"]
+
+Additional Keywords: geometric deep learning, shape analysis

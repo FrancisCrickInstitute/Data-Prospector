@@ -1,0 +1,13 @@
+
+
+Institution: EMBL-EBI
+
+Title: Simulated structurally variable Nuclear Pore Complexes to survey the capabilities of SMLM analysis methods
+
+
+
+Abstract: The Nuclear Pore Complex (NPC) is a massive, 8-fold symmetrical protein assembly that enables macromolecular exchange between the cytoplasm and nucleus. The average architecture of proteins within the NPC has been resolved with pseudo-atomic precision, however observed NPC heterogeneities such as varying diameters, elliptical shapes, 9-fold symmetry, and irregular shapes evidence a high degree of divergence from this average. Single Molecule Localization Microscopy (SMLM) images NPCs at protein-level resolution, whereupon image analysis methods study their heterogeneity. SMLM noise however complicates image analysis and impedes ground truth annotation of NPC variability. We developed a pipeline that simulates geometrically variable and irregularly shaped NPCs for SMLM based on architectural models of the NPC. Scale, geometry, and shape irregularity of simulated NPCs can represent hypothesized NPC variability, or function as a stand-in for structures other than the NPC. Such simulations can be used to study the capabilities of SMLM analysis methods to extract parameters of NPC variability and to cluster NPCs based on their structural variability. Simulations further allow to investigate how analysis methods detect false clusters when true parameters vary continuously. Additionally, simulations permit studying the effect of shape irregularity on particle averaging methods. Ultimately, this will allow to tune analysis software parameters, to make informed decisions about which analysis method is best suited for a specific task, as well as to trial the data quality needed to extract hypothesized structural variability.
+
+Keywords: ["New Tools\n","Modelling"]
+
+Additional Keywords: Image Simulation 

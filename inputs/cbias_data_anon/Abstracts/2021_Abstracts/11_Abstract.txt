@@ -1,0 +1,15 @@
+
+
+Institution: Neural development and regeneration, Center For Regenerative Therapies Dresden, Technische Universität Dresden
+
+Title: Image and data analysis pipeline to characterize immune cell behaviour after spinal cord injury in zebrafish larvae  
+
+Affiliation: Neural development and regeneration, Center For Regenerative Therapies Dresden, Technische Universität Dresden
+
+Abstract: In regenerative biology, the zebrafish larva is an emerging model organism with the ability to functionally recover within 48h after spinal cord injury. The interplay of immune cells like macrophages and neutrophils is critical for this regenerative capacity. In larvae with respective fluorescent reporters, we acquired 3D+t datasets around the injury site in order to investigate the cellular spatiotemporal behaviour during regeneration.
+The subsequent analysis pipeline is scalable, focusing on stack-wise batch processing for each timelapse. Image processing was performed in FIJI, combining plugins for image preparation (N2V, DeconvolutionLab2), pixel classification (Labkit), object detection, measurement of morphological features (3D Suite) and tracking (Mastodon). Together with the morphological features and information on cell motility, a dataset of 200 000 objects with 47   features was created (4 fish, 865–956 timepoints). Cells were linked over time in a total of 26 000 tracks. This database was further analysed in R (Seurat package) in analogy to single cell transcriptomics data to identify cellular behaviour patterns, represented by distinct clusters after dimensionality reduction. We detected dynamics of initial migration, presence at the injury and reverse migration from this database. Additional feature combinations were identified by unsupervised clustering, however the relevance of these clusters might only become apparent when comparing the baseline values to results obtained after genetic or pharmacological intervention. Depending on the scientific question, the analysis pipeline can be adjusted and poses a flexible approach to extract extensive information from large 3D+t datasets. It will form the basis for future pharmacological and genetic analyses of the innate immune response to spinal injury in this accessible model organism.
+
+
+Keywords: ["Segmentation","Object Tracking","3D/4D/ ... nD Data\n"]
+
+Additional Keywords: 

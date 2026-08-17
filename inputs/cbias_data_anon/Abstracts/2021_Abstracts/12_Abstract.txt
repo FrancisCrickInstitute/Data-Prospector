@@ -1,0 +1,12 @@
+
+
+Institution: The Jackson Laboratory
+
+Title: Extending the OMERO APIs for the image data management of the future
+
+
+Abstract: In this talk, we present APIs for interacting with OMERO, an open-source data management platform that is increasingly favored for large-scale projects, developed at the Jackson Laboratory. Bioimaging data science is at a point of inflection. New equipment and new methods are generating more data than ever, and local, desktop-based analysis is becoming infeasible. Moreover, naive data management techniques are unsuited for the huge amounts of data the modern bioimage analyst needs to deal with. To help solving these challenges, we have developed ezomero, a simplified API to perform common tasks in Python while interacting with an OMERO server, and omero-cli-transfer, to create and use single-file transfer packets to move data from and to OMERO servers. These tools extend a robust ecosystem of libraries and APIs surrounding OMERO and decreases the barrier of entry for novice programmers and administrators to deal with that platform.
+
+Keywords: ["New Tools\n","Big Data\n","Multi-Disciplinary","Open Science","Web/Cloud Interfaces\n"]
+
+Additional Keywords: - 

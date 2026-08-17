@@ -1,0 +1,15 @@
+
+
+Institution: University of Bristol
+
+Title: MIA: Modular image and object analysis workflows in Fiji
+
+
+Abstract: ModularImageAnalysis (MIA) is an image and object analysis workflow plugin for Fiji. This plugin allows for construction of complex analysis workflows using a series of sequentially-executed modules, with each module responsible for a distinct task. At present, the near 200 included modules cover a wide range of applications, allowing workflows to be automated from initial raw image loading through image processing, object detection, extraction of image and object measurements, measurement-based object filtering, visualisation, and data exporting.  Furthermore, MIA supports integration with many commonly-used Fiji plugins including BioFormats, StarDist and TrackMate; allowing these tools and their outputs to be directly incorporated into MIA workflows.  With out-of-the-box compatibility for spatially-calibrated 5D images, image and object measurements can be acquired in both pixel and calibrated units. A hierarchical object relationship model allows for both parent-child (one-to-many) and partner (many-to-many) relationships to be established. These relationships underpin MIA’s ability to track objects through time, represent complex spatial relationships (e.g. skeletons) and measure object distributions (e.g. count puncta per cell).  
+
+The MIA interface has been designed with both workflow developers and analysis end-users in mind. A fully-documented “editing view” offers access to the full list of modules and parameters in the workflow, while a simplified “processing view” can be configured to display only a focused subset of controls. MIA workflows are reactive, with module groups automatically enabling/disabling in response to a variety of factors such as availability of images/objects, user inputs and measurement-based filters.  All MIA workflows are batch-enabled by default, with valid files within a specified folder being processed automatically and exported to a single spreadsheet. To facilitate analysis of larger image stacks, MIA makes use of a memory-efficient quadtree-based data structure for storing object coordinates. Beyond the included modules, functionality can be extended both internally, through integration with the ImageJ scripting interface (supported languages include ImageJ1 macro, Jython and Groovy), and externally, by developing third-party Java modules that extend the core MIA framework.
+
+
+Keywords: ["New Tools\n","High-Throughput"]
+
+Additional Keywords: 

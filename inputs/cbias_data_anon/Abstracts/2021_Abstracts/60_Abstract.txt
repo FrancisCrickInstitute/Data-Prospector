@@ -1,0 +1,17 @@
+
+
+Institution: Institut Pasteur
+
+Title: clEsperanto : A unified architecture for GPU-accelerated image processing library
+
+
+
+Abstract: Modern imaging and microscopy currently used in Life-Science generate large images in quantities. Processing and analyzing them requires image processing solutions to be available. Multiple libraries across languages and software emerged. Each of them has their own usage, requirements, advantages and limitations, and their advocates. While diversity is beneficial, it also complicates interactions between communities through language barriers. Furthermore, reproducibility between solutions is not guaranteed. 
+
+clEsperanto is a new library, still in prototype, that extends the custom OpenCL dialect proposed in CLIJ. It aims at making GPU-accelerated image processing available to all the languages and software used in BioImage Analysis. This library relies on an architecture of language specific top-layer API wrapped around CLIc, a generic low-level layer in charge of managing processing operations and device-host communications. The top-layer maintains a common generic naming convention and usage across language and software. Concurrently, CLIc ensures identical computation regardless of the operating system or the programming language used. Altogether they improve reusability, reproducibility, and maintainability, while drastically lowering the learning curve for using GPU-acceleration in BioImage Analysis.
+
+In this talk we will present the clEsperanto library, the next-level incarnation of  CLIJ. We will present its architecture, and discuss its performance.
+
+Keywords: ["New Tools\n"]
+
+Additional Keywords: GPU

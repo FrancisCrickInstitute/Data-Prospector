@@ -1,0 +1,16 @@
+
+
+Institution: Centre for Cell Imaging, University of Liverpool
+
+Title: Who are you? Identifying cell types in a mixed culture using KNIME Analytics Platform
+
+
+
+Abstract: Identifying different cell types in a mixed population is a complex problem that has been addressed in a variety of ways, from manually identifying and labelling cells, through semi-automation, up to machine learning-based approaches. Manually identifying cells is only feasible for small data sets and is time intensive, error prone and highly biased whereas machine learning requires a large amount of training data. When time is short and data is sparse, a middle ground approach is required. 
+The nature of the samples used in this study did not allow for generating the required amounts of training data for machine learning but was too much to manually identify individual cell types. This is true for a lot of the projects for which images are generated in the imaging facility. KNIME analytics platform has been used to establish a workflow that provides a middle ground solution. Cells are segmented using the transmitted light channel via the Cellpose node. Following quality control, the cells are categorised according to a set of parameters including intensity of certain fluorescent markers, presence of DAPI and cell size. These categories can then be readily used for downstream analysis.   
+KNIME was chosen for this workflow due to its ability to include image analysis and downstream data processing which would otherwise have required different platforms, increasing the learning curve and hesitancy for users. Also, the interface is user-friendly which was an attractive benefit as the workflow was handed over from the image analyst who developed the workflow to the user who independently applied it to their images. 
+
+
+Keywords: ["AI & Machine/Deep Learning","Segmentation","Teaching/Training"]
+
+Additional Keywords: 

@@ -1,0 +1,12 @@
+
+
+Institution: Institut de la Vision, Sorbonne University
+
+Title: Branching morphogenesis in human lung development 
+
+
+Abstract: The airway tree in the human lung is built by branching morphogenesis from 4 post-conceptional weeks (PCW) until 17 PCW. Here we study the entire airway tree in left and right lungs between 6-12 PCW with whole-mount immunostaining, tissue clearing, and light-sheet microscopy. What are the statistical, topological, and cellular organization of the branching epithelium in early human lung development, and how do they change in time? Human lung proceeds by a genetically predetermined stereotypical phase followed by a stochastic, space-filling phase, but in-depth studies have not been feasible due to technical limitations in the resolution and computational power to reconstruct complex structures, as well as access to intact fetal organs. We have developed an image processing pipeline to extract the centerline of the tree by anatomically defined bronchopulmonary segments using readily available commercial and open-source tools. Images are cropped with Imaris, processed with Aivia’s machine learning Pixel Classifier, thresholded into binary images with FIJI, reconstructed into a 3D surface, and split into discrete datasets of bronchopulmonary segments using Meshmixer and Python package Vedo. Centerlines are extracted with Python package Skan and visualized in 3D with Napari. Surfaces can be visualized in the web browser using Blender and Verge3D and 3D printed as anatomical models. To better understand the balance between stereotypic and stochastic influences on the large-scale architecture of the human airway, we will study the statistical features of the branching network such as the probability distribution of branch lengths, average duct length  and termination probabilities of a given branch. This data will become the basis of a mathematical model to simulate the 3D branching pattern of the developing lung. Altogether, this project will provide a reference atlas of the developing human airway tree, give insight into mechanisms behind branching morphogenesis in human lungs, and the balance between the factors at play. 
+
+Keywords: ["Multi-Disciplinary","Web/Cloud Interfaces\n","3D/4D/ ... nD Data\n","Modelling","AI & Machine/Deep Learning","Segmentation","Big Data\n","Teaching/Training"]
+
+Additional Keywords: light-sheet microscopy, data visualization, 3D printing from data

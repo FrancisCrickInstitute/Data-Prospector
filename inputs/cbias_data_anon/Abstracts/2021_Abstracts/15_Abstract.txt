@@ -1,0 +1,12 @@
+
+
+Institution: Ruhr University Bochum
+
+Title: Resolving phase separation behavior of PrP at the membrane
+
+
+Abstract: The membrane-anchored prion protein (PrPc) has been identified as a key player in neurodegenerative disorders characterized by protein aggregation. Our group recently showed that the N-terminus of PrP is responsible and sufficient for its phase separation in solution[1]. However, due to association of PrPc with the membrane via a GPI anchor, we speculate different behavior of PrP phase separation at the membrane. By establishing an in vitro technique to mimic membrane adherence of PrP in cells, we want to investigate the role of membrane adherence in phase transition of soluble PrP to misfolded neurotoxic conformers. Using high resolution microscopy techniques, we aim to perform diffusion and interaction studies using FSC, STED and FRAP assays.
+
+Keywords: ["New Tools\n","Multi-Disciplinary"]
+
+Additional Keywords: 

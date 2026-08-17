@@ -1,0 +1,35 @@
+
+
+Institution: The Francis Crick Institute
+
+Title: napari-superres, an open-source implementation of methods for Fluorescence Fluctuation-based Super-Resolution Microscopy (FF-SRM)
+
+
+
+
+
+
+
+
+Abstract: Fluorescence microscopy is a well-developed imaging modality that is used in life sciences to study tissues, organoids, and cells. The inspection on the microscopic scale is limited by the resolving power of the used optical system, but more specialized techniques for Super-Resolution Microscopy (SRM) are able to render even nanoscopic details of biological samples. However, the accessibility to SRM has been historically hindered by the availability of high-tech, usually expensive, microscopy platforms. Unfortunately, scientific advances of nanoscopy in countries of Africa, Latin America, and Eastern Europe have historically lagged behind developed nations, due to the lack of geographically well-distributed infrastructures. Fortunately, the development of methods for Fluorescence Fluctuation-based Super-Resolution Microscopy (FF-SRM) has facilitated the access to nanoscopic information by assessing the statistical properties of fluorescence intermittency, hence, by analyzing a temporal stack of diffraction-limited images it is possible to study biological systems at the nanoscale. FF-SRM methods are applicable to data sets acquired with any fluorescence microscopy setup (reviewed in [1]), but have not been implemented yet in an integrated GUI - they are instead available as a multitude of scripts/software, based on Matlab [2,7], Python [3,7], and FIJI/ImageJ [2,4,5,6,7]. This project aims to unify the FF-SRM within the open-source “napari-superres” plugin, including at least SOFI [3], 3B [5], ESI [4], MUSICAL [2], SRRF [6], and MSSR [7]. We believe that such an effort will enrich the napari ecosystem, enabling the benchmarking of different approaches to SRM within the same software. Moreover, a suite of FF-SRM methods will foster the development of science, removing some economical inequalities, and granting global access to nanoscopic imaging, especially across countries lacking specialized hardware for SRM imaging.
+
+References
+
+1. Alva, Alma, Eduardo Brito-Alarcón, Alejandro Linares, Esley Torres-García, Haydee O. Hernández, Raúl Pinto-Cámara, Damián Martínez, et al. 2022. “Fluorescence Fluctuation-Based Super-Resolution Microscopy: Basic Concepts for an Easy Start.” Journal of Microscopy, August. https://doi.org/10.1111/jmi.13135.
+
+2. Agarwal, Krishna, and Radek Macháň. 2016. “Multiple Signal Classification Algorithm for Super-Resolution Fluorescence Microscopy.” Nature Communications 7 (1): 13752. https://doi.org/10.1038/ncomms13752.
+
+3. Miao, Yuting, Shimon Weiss, and Xiyu Yi. 2022. “PySOFI: An Open Source Python Package for SOFI.” Biophysical Reports 2 (2): 100052. https://doi.org/10.1016/j.bpr.2022.100052.
+
+4. Yahiatene, Idir, Simon Hennig, Marcel Müller, and Thomas Huser. 2015. “Entropy-Based Super-Resolution Imaging (ESI): From Disorder to Fine Detail.” ACS Photonics 2 (8): 1049–56. https://doi.org/10.1021/acsphotonics.5b00307.
+
+5. Cox, Susan, Edward Rosten, James Monypenny, Tijana Jovanovic-Talisman, Dylan T. Burnette, Jennifer Lippincott-Schwartz, Gareth E. Jones, and Rainer Heintzmann. 2012. “Bayesian Localization Microscopy Reveals Nanoscale Podosome Dynamics.” Nature Methods 9 (2): 195–200. https://doi.org/10.1038/nmeth.1812.
+
+6. Gustafsson, Nils, Siân Culley, George Ashdown, Dylan M. Owen, Pedro Matos Pereira, and Ricardo Henriques. 2016. "Fast live-cell conventional fluorophore nanoscopy with ImageJ through super-resolution radial fluctuations." Nature communications 7 (1): 1-9. https://doi.org/10.1038/ncomms12471
+
+7. García, Esley Torres, Raúl Pinto Cámara, Alejandro Linares, Damián Martínez, Víctor Abonza, Eduardo Brito-Alarcón, Carlos Calcines-Cruz, et al. 2021. “Nanoscopic Resolution within a Single Imaging Frame.” BioRxiv, October, 2021.10.17.464398. https://doi.org/10.1101/2021.10.17.464398.
+
+
+Keywords: ["New Tools\n","Open Science","Quality Control\n","Teaching/Training"]
+
+Additional Keywords: computational methods, fluorescence fluctuations, microscopy, napari, nanoscopy, super-resolution 

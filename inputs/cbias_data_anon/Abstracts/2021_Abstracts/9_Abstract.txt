@@ -1,0 +1,13 @@
+
+
+Institution: University College London
+
+Title: Using geometric constraints and Bayesian statistics to extract protein architectures from 3D fluorescent images at nanometres resolution
+
+
+Abstract: Spot fitting methods have significantly extended the spatial range of fluorescent microscopy. However, they face two big difficulties when trying to identify macro-molecular architectures: Firstly, the signal-to-noise ratio limits the resolution. And second, systematic distortions of the architectures can occur, because direct measurements of lengths or angles are statistically inconsistent. We present a flexible computational post-processing method that uses a multi-fluorophore model to exploit the inherent geometric constraints and addresses both of these problems. We utilise Bayesian statistics to demonstrate we can infer the 3D geometry of human kinetochores (a macro-molecular complex of about 100nm total length) with localisation accuracies reaching down to the single-nanometres range on a spinning disk confocal microscope. Furthermore, our method infers the spot localisation errors together with the protein architectures, allowing to study spot sizes and fluorophore quality. 
+Our method is a version of averaging techniques. One problem for these is, that in biological systems the same protein can occur in multiple conformations that cannot be distinguished experimentally. We extended our algorithm to allow heterogeneous populations composed of multiple conformational states. Using this, we examine the conformational change induced on kinetochores by microtubule attachment, inferring their conformations during prometaphase and metaphase and quantifying the mixture proportions during these mitotic stages.
+
+Keywords: ["Modelling","New Tools\n","3D/4D/ ... nD Data\n","Quality Control\n"]
+
+Additional Keywords: 

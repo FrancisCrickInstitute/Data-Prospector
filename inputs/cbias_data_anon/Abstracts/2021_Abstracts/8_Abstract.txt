@@ -1,0 +1,16 @@
+
+
+Institution: KU Leuven, Belgium
+
+Title: Absolute quantification of cellular activities with photochromic single-fluorophore biosensors
+
+
+
+Abstract: Genetically-encoded biosensors based on a single fluorescent protein are widely used to visualize analyte levels or enzymatic activities in cells, though usually to monitor relative changes rather than absolute values. We report photochromism-enabled absolute quantification (PEAQ) biosensing, a method that leverages the photochromic properties of biosensors to provide an absolute measure of the analyte concentration or activity. To this end, we develop an imaging procedure for photochromic variants of the GCaMP family of calcium biosensors combined with an image analysis pipeline to absolutely quantify calcium concentrations. We also develop intermittent quantification, a measurement and analysis technique that combines absolute PEAQ acquisitions with fast fluorescence acquisitions to deliver fast but fully quantitative measurements, while reducing photobleaching. Additionally, we show how the photochromism-based measurements can be expanded to situations and complex samples where the absolute illumination intensities are unknown. In principle, the PEAQ analysis procedure can be applied with other biosensors with photochromic properties, thereby expanding the possibilities for fully quantitative measurements in complex and dynamic systems [1].
+
+[1] Franziska Bierbuesse, Anaïs C. Bourges, Vincent Gielen, Viola Mönkemöller, Wim Vandenberg, Yi Shen, Johan Hofkens, Pieter Vanden Berghe, Robert E. Campbell, Benjamien Moeyaert, and Peter Dedecker, "Absolute measurement of cellular activities using photochromic single-fluorophore biosensors and intermittent quantification", Nat Commun 13, 1850 (2022).
+
+Keywords: ["New Tools\n","Multi-Disciplinary"]
+
+Additional Keywords: Fluorescence Microscopy
+Biosensing
