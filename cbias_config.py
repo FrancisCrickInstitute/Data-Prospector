@@ -1,7 +1,9 @@
 """Crick Bioimage Analysis Symposium (CBIAS) domain configuration for the pipeline.
 
-Analyses four years (2022-2025) of attendee registrations, post-event feedback surveys, and abstract
-submissions to answer year-on-year trend questions (see inputs/cbias_report/task_report.md).
+Analyses six years of symposium programs (2020-2025), five years of abstract submissions (2021-2025),
+and four years (2022-2025) of attendee registrations and post-event feedback surveys, to answer
+year-on-year trend questions (see inputs/cbias_report/task_report.md). The 2020 and 2021 editions
+were online-only (COVID) and are not directly comparable to the in-person 2022-2025 editions.
 
 The data this points at (inputs/cbias_data_anon/, produced by anonymize_cbias_data.py from the raw,
 gitignored inputs/cbias_data/) has had direct identifiers - names, emails, phone numbers, precise
@@ -47,11 +49,15 @@ from assuming an older matplotlib API than what was actually installed):
 """
 
 DOMAIN_NOTES = """
-Analyse four years (2022-2025) of anonymised CBIAS data, in four sub-directories under the data
+Analyse anonymised CBIAS data spanning UNEVEN years across the four data types (programs 2020-2025,
+abstracts 2021-2025, attendees and feedback 2022-2025), in four sub-directories under the data
 directory (or INPUT_FOLDER env var). This is anonymised data (see the module docstring) - some
 identifying columns/fields present in the original raw data have been removed entirely; don't assume
 fields like attendee name, email, or precise location exist. Programs/ is the one exception - see
-below.
+below. The 2020 and 2021 editions were ONLINE-ONLY (COVID), not in-person like 2022-2025: do not
+fold an online-only year's participation numbers into an in-person trend as if they were the same
+quantity, and treat any trend that crosses the 2021->2022 online/in-person boundary as suspect (the
+format change, not the field, may be doing the work).
 
 EXACT PATHS - build globs against these, not an assumed/simplified layout. Getting this wrong means
 zero files load and the script has nothing to analyse:
@@ -64,7 +70,7 @@ zero files load and the script has nothing to analyse:
   YEAR under Abstracts/ - a flat glob directly on Abstracts/*.txt will find nothing; glob
   Abstracts/*_Abstracts/*.txt or walk one level down first)
 - Programs:   {INPUT_FOLDER}/Programs/CBIAS_<year>_Program_Day_<n>.csv  (<n> is 1 or 2 - two files
-  per year, one per symposium day)
+  per year, one per symposium day, EXCEPT 2020 which has only Day 1)
 All four sub-directories (Attendees/, Feedback/, Abstracts/, Programs/) are direct children of the
 data directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt files directly.
 
@@ -113,8 +119,10 @@ data directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt fi
 - Abstracts/<year>_Abstracts/<n>_Abstract.txt - one plain-text file per submission, "Label: value"
   lines, where a field's value may wrap onto further lines before the next label. Author-identifying
   fields (Name, Email, Authors, Presenting author) have been removed from every year during
-  anonymisation - do not expect them. Remaining fields present across all years: Institution, Title,
-  Affiliation/Affiliations, Abstract, Keywords, Additional Keywords. 2024-2025 files additionally add
+  anonymisation - do not expect them. Remaining fields vary by year: Institution, Title, Abstract,
+  Keywords, Additional Keywords are near-universal; Affiliation/Affiliations is common in 2022-2023
+  but essentially absent from 2021 (present in 1 of 56 files); References is common in 2022-2023 but
+  rare in 2021 (2 of 56). 2024-2025 files additionally add
   "Themes" and "Gender of presenting author" (2025 sometimes also has "Special requirements"). Parse
   leniently by known field-label prefixes rather than assuming a fixed field order or a complete set per
   file - a few files also have one-off extra fields (e.g. "References", "doi"). The "Keywords" /
@@ -122,14 +130,22 @@ data directory/INPUT_FOLDER itself - do not search the top level for CSVs/txt fi
   ["Segmentation","Object Tracking"]) with occasional stray "\\n" inside entries - strip whitespace after
   parsing.
 
-- Programs/CBIAS_<year>_Program_Day_<n>.csv - one file per symposium day, two per year. HEADERLESS
-  and RAGGED: do not assume column headers or a fixed column meaning. Column 1 holds a time OR a
-  "Session N" label; column 2 holds a speaker name OR a session theme OR an agenda item like
-  "Registration & Exhibition"; column 3 holds an affiliation OR a session chair; column 4 holds a
-  talk title - and which of these a given row holds shifts between years, so parse defensively by
-  row shape/content rather than by fixed column index. Speaker names here ARE real, unanonymised
-  data (public information, published by the Crick) - the identifying-fields-removed caveat above
-  does not apply to this file.
+- Programs/CBIAS_<year>_Program_Day_<n>.csv - one file per symposium day, two per year (EXCEPT 2020,
+  which has only Day 1). TWO DIFFERENT FORMATS are used, so inspect before assuming:
+  - Headerless/ragged (2020, 2022-2025): no column headers, no fixed column meaning. Column 1 holds
+    a time OR a "Session N" label; column 2 holds a speaker name OR a session theme OR an agenda item
+    like "Registration & Exhibition"; column 3 holds an affiliation OR a session chair; column 4
+    holds a talk title - and which of these a given row holds shifts between years, so parse
+    defensively by row shape/content rather than by fixed column index.
+  - Headed (2021 only): the file HAS a header row ("Start,Duration,End,..."), so the first three
+    columns are start time, duration, and end time, with the remaining columns holding
+    speaker/session, affiliation/theme, and title - still with the session-label-vs-speaker-name
+    ambiguity in the name column, so still parse defensively rather than trusting the header.
+  Speaker names here ARE real, unanonymised data (public information, published by the Crick) - the
+  identifying-fields-removed caveat above does not apply to this file. The 2020 and 2021 programmes
+  are for ONLINE-ONLY editions: their speaker pool, talk formats, and timing reflect a virtual event,
+  so a speaker/affiliation/sector trend that crosses 2021->2022 mixes an online with an in-person
+  programme - treat that boundary as a structural break, not a field shift.
 """
 
 _ABSTRACT_FIELD_LABELS = [
@@ -229,6 +245,23 @@ def _profile_csv(f: Path, base: Path, header="infer") -> str:
     return "\n".join(lines)
 
 
+_PROGRAM_TIME_RE = re.compile(r"^\d{1,2}:\d{2}(?::\d{2})?\s*$")
+
+
+def _program_has_header(df: pd.DataFrame) -> bool:
+    """Heuristic flag for the program files' two formats. A headerless program file (2020, 2022-2025)
+    starts its substantive content with a time in the first column (e.g. "08:30"); the headed format
+    (2021) starts with column labels (e.g. "Start"). Return True when the first non-empty first-column
+    value is NOT a time - i.e. it reads as a label row, not a data row. Deliberately a lightweight
+    one-line signal, not a gate: it surfaces headed-vs-headerless drift without trusting DOMAIN_NOTES
+    prose alone, but the ragged column meaning is still described there, not derived here."""
+    first_values = df[0].dropna()
+    if first_values.empty:
+        return False
+    first = str(first_values.iloc[0]).strip()
+    return not bool(_PROGRAM_TIME_RE.match(first))
+
+
 def generate_data_profile(directory: str) -> str:
     """Live Issue 31: a MECHANICAL per-run profile of the actual data - no LLM in the loop, so it
     cannot hallucinate a value that isn't there and cannot go stale, unlike the hand-maintained
@@ -259,14 +292,20 @@ def generate_data_profile(directory: str) -> str:
     # the naive version silently dumped every speaker name and talk title verbatim - real content,
     # but not the kind of gap this profile exists to catch, at a genuinely large token cost for no
     # matching benefit (no A/B/C-class failure in DIVERGER_PLAN.md has ever involved Programs).
+    # The one thing added since: a per-file header/headerless flag (see _program_has_header below),
+    # because the 2021 files are headed while the rest are headerless - a one-line mechanical signal
+    # for that format split, still not the value enumeration the above argues against.
     program_lines = []
     for f in sorted(base.glob("Programs/*.csv")):
         df = pd.read_csv(f, encoding="utf-8", header=None)
-        program_lines.append(f"  {f.relative_to(base)}: {len(df)} rows, {len(df.columns)} columns")
+        kind = "header row" if _program_has_header(df) else "headerless"
+        program_lines.append(
+            f"  {f.relative_to(base)}: {len(df)} rows, {len(df.columns)} columns, {kind}"
+        )
     if program_lines:
         sections.append(
-            "Programs (headerless and ragged - column meaning shifts per row, see Domain notes "
-            "above; row/column counts only, not a value profile):\n" + "\n".join(program_lines)
+            "Programs (row/column counts and a header/headerless flag only, not a value profile - "
+            "see Domain notes above for the ragged column meaning):\n" + "\n".join(program_lines)
         )
 
     # Abstracts aren't tabular, so "profile" means something different here: one real sample value

@@ -10,17 +10,20 @@ analysis software, and other stakeholders.
 
 ## Input
 
-A parent directory, containing subdirectories, each with data for one of four specific years (2022-2025 inclusive). The
-data consists of:
+A parent directory, containing subdirectories, each with data for a given year. Coverage is uneven across the four
+data types: programs span 2020-2025, abstracts 2021-2025, and attendees/feedback 2022-2025. The 2020 and 2021
+editions were online-only (COVID) and are not directly comparable to the in-person 2022-2025 editions. The data
+consists of:
 
 - **Attendees**: one CSV per year (`CBIAS_YYYY_Attendees.csv`), one row per registration, including a ticket
   type/category (e.g. Academic, Industry, Online Only, Sponsors).
 - **Feedback**: one CSV per year, one row per respondent, columns are the survey questions asked that year.
 - **Abstracts**: one subfolder per year (`YYYY_Abstracts`), each containing one plain-text file per submission
   (`NN_Abstract.txt`) with `Label: value` fields (title, abstract text, keywords, etc.).
-- **Programs**: two CSV files per year (one for each day), listing all speakers, their affiliations, and talk titles
+- **Programs**: CSV files listing all speakers, their affiliations, and talk titles - two per year (one per day) for
+  2021-2025, one day for 2020; the 2021 files use a headed layout, the others are headerless
 
-Note: file formats, column names, and field labels are not perfectly consistent across all four years – handle
+Note: file formats, column names, and field labels are not perfectly consistent across years – handle
 missing/renamed fields gracefully rather than assuming an identical schema every year.
 
 ## Guiding Questions for Analysis
