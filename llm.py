@@ -151,6 +151,21 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
             text = "".join(block.text for block in response.content if block.type == "text")
             truncated = response.stop_reason == "max_tokens"
             if text.strip() and not (reject_truncated and truncated):
+                # Live Issue 5 (§4's "still to verify" item): the whole caching investment -
+                # cache_prefix on every repeated-content call site - has never had a single
+                # real measurement taken against it. usage is on every response regardless of
+                # provider/cache_prefix use, so log it unconditionally rather than special-casing
+                # cached calls - a 0 here is itself the data point for an uncached call, and
+                # cache_read_input_tokens/cache_creation_input_tokens default to None (not a
+                # missing attribute) if a provider's response omits them entirely, so this is
+                # safe on DeepSeek's Anthropic-Messages-API-compatible endpoint too, which is
+                # exactly the client Live Issue 31 grew the compiler/worker prefixes on.
+                usage = response.usage
+                print(
+                    f"  [cache] {model}: input={usage.input_tokens} output={usage.output_tokens} "
+                    f"cache_read={usage.cache_read_input_tokens or 0} "
+                    f"cache_write={usage.cache_creation_input_tokens or 0}"
+                )
                 return text
 
             # Either no text at all, or (reject_truncated only) text that was cut off mid-
