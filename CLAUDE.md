@@ -175,6 +175,17 @@ are needed. A domain config module must provide:
   over listing specific exceptions, which generalises to cases you haven't seen yet.
 - `extract_input_metadata(data_dir) -> str` — scans the input directory and returns a description fed to
   ideation and the orchestrator (e.g. `cbias_config.py` summarizes the CSV/text layout under `data_dir`).
+- `data_profile(data_dir) -> str` (optional — defaults to `None`) — a MECHANICALLY generated per-run
+  profile of the real data (column names, dtypes, null counts, full value sets under a cardinality
+  cutoff; no LLM in the loop, so it cannot hallucinate a value and cannot go stale), reaching the same
+  three realisation prefixes `domain_notes` does (orchestrator/worker/compiler — see the caching table
+  below), never ideation. `domain_notes` above stays hand-written for what a profile *can't* derive —
+  semantics, provenance, absence, the anti-target list — while `data_profile` answers only "what is
+  actually in the data": three straight `domain_notes` vocabulary patches each worked on their first
+  live run and were each found incomplete by the very next one (`DIVERGER_PLAN.md` Live Issue 31),
+  which is what this field exists to stop recurring. `cbias_config.py`'s `generate_data_profile` is the
+  only implementation; `""` (its default when a config leaves this unset) formats cleanly into the
+  prompt templates with no placeholder leakage.
 - `design_stances: list[str]` (optional — defaults to `DEFAULT_DESIGN_STANCES` in `config.py`). Ideation
   call `m` within an iteration gets `design_stances[(m + iteration) % len(...)]` as a one-line
   "Approach for this design:" steer (e.g. conventional/robust, depth-first, contrarian).
@@ -209,9 +220,9 @@ call while looking correct.
 |---|---|---|
 | Ideation | `report`, ideation criteria, `input_data`, anti-targets | `stance`, `guiding_question`, `existing_angles`, `n` |
 | Judging (`judge_insight`/`judge_soundness`) | `report`, ideation criteria, `input_data` | the individual angle |
-| Realisation orchestrator | `report` (the true report, not the angle brief), `input_data`, deliverable rubric, `domain_notes` | the angle being realised |
-| Realisation workers (`_call_worker`) | `report`, `input_data`, `available_libraries`, `domain_notes` | function/description/input/output |
-| Realisation compiler (`compile_script`) | `analysis`, `functions` (the orchestrator/worker output being assembled), `available_libraries`, `domain_notes`, seed section (currently always empty — see note below) | `error_feedback` from the prior compile attempt |
+| Realisation orchestrator | `report` (the true report, not the angle brief), `input_data`, deliverable rubric, `domain_notes`, `data_profile` | the angle being realised |
+| Realisation workers (`_call_worker`) | `report`, `input_data`, `available_libraries`, `domain_notes`, `data_profile` | function/description/input/output |
+| Realisation compiler (`compile_script`) | `analysis`, `functions` (the orchestrator/worker output being assembled), `available_libraries`, `domain_notes`, `data_profile`, seed section (currently always empty — see note below) | `error_feedback` from the prior compile attempt |
 | Realisation validator (`validate_realization`) | `report`, deliverable rubric | claimed pattern, angle scope, script, execution output, images |
 
 `compile_script` still accepts a `seed_script` parameter (mutate-a-prior-script support, left over from
