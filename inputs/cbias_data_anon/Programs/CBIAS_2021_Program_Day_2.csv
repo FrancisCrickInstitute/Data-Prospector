@@ -1,0 +1,46 @@
+,,,,,
+,,,,23rd November 2021,
+,,,,,
+,,,,Draft Programme,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+Start,Duration,End,,,
+,,,,,
+09:00,02:00,11:00,Session 3,Inter-Disciplinary Approaches,
+09:00,00:30,09:30,Carolina Wählby,Uppsala University,Image analysis and AI for squeezing the most out of spatially resolved in situ sequencing data
+09:30,00:30,10:00,Emma Robinson,Kings College London,Precision modelling of individual variability from brain imaging using deep generative modelling
+10:00,00:10,10:10,Jasmine Michalowska,University College London,Using deep learning and single cell tracking to understand competitive interactions in cell populations
+10:10,00:30,10:40,Virginie Uhlmann,European Bioinformatics Institute,Establishing shape correspondence in microscopy data
+10:40,00:10,10:50,Patrice Mascalchi,Leica Microsystems,"Aivia, the Future of AI Microscopy"
+10:50,00:10,11:00,Martina Sciola,Mathworks,Big Image Datasets: challenges and solutions
+,,,,,
+11:00,00:30,11:30,Explore Gather!,,
+,,,,,
+11:30,01:30,13:00,Session 4,Super-Resolution & Particle Tracking,
+11:30,00:10,11:40,Sumin Lee,Tomocube,Label-free three-dimensional analyses of live cells with deep-learning-based segmentation exploiting refractive index distributions
+11:40,00:30,12:10,Dylan Owen,University of Birmingham,Quantifying the nanoscale organisation of proteins on the cell surface
+12:10,00:30,12:40,Edward Avezov,University of Cambridge,Single-particle and in-bulk photoconversion signal tracking reveal organelles nanofluidic properties that facilitate intracellular communication.
+12:40,00:10,12:50,Nick Jones,Bitplane,Imaris - Practical Tools for Image Analysis
+12:50,00:10,13:00,Jonny Hancox,NVIDIA,NVIDIA in Health & Life Sciences
+,,,,,
+13:00,01:30,14:30,Lunch & Workshops,,
+,,,,,
+14:30,00:30,15:00,Rita Strack,Nature Methods,A view from Nature Methods: tips on publishing and thoughts on the future of bioimage analysis.
+,,,,,
+15:00,01:20,16:20,Session 5,Electron Microscopy & Big Data,
+15:00,00:30,15:30,Albert Cardona,University of Cambridge,Mapping and analyzing neural circuits from volume EM with CATMAID
+15:30,00:10,15:40,Lucas Pagano,Oregon Health & Science University,A benchmark of supervised deep learning models for 3D nuclei and nucleoli segmentation in electron microscopy images
+15:40,00:30,16:10,Aubrey Weigel,Janelia Research Campus,Towards automatic organelle segmentation in volume electron microscopy
+16:10,00:10,16:20,Michele Darrow,Rosalind Franklin Institute,SuRVoS 2: Accelerating Annotation and Segmentation for Large Volumetric Bioimage Workflows Across Modalities and Scales
+,,,,,
+16:20,00:30,16:50,Explore Gather!,,
+,,,,,
+16:50,01:20,18:10,Session 6,Light-Sheet & 3D Surface Analysis,
+16:50,00:30,17:20,Till Bretschneider,University of Warwick,Machine learning for extracting features from 3D cell surfaces imaged by light sheet microscopy
+17:20,00:10,17:30,Alexandr Kalinin,University of Michigan,Shape modeling for 4D nuclear morphology analysis in valproic acid-treated astrocyte cells
+17:30,00:10,17:40,Andreas Kist,Friedrich-Alexander-Universität Erlangen-Nürnberg,"DeepD3, a framework for detection of dendritic spines and dendrites"
+17:40,00:30,18:10,Meghan Driscoll ,UT Southwestern,Tracking and analyzing signaling on the 3D cell surface
+,,,,,
+18:10,,,End Day 2 - Explore Gather!,,
