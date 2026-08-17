@@ -69,9 +69,14 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
 
     # reject_truncated=True: a compiled script must parse as a whole file, so a response cut off
     # mid-generation is never usable - retry rather than let a truncation-shaped SyntaxError reach
-    # the compile/execute loop as if it were a genuine mistake (Live Issue 26).
+    # the compile/execute loop as if it were a genuine mistake (Live Issue 26). max_tokens=32768
+    # (retry 65536) because a large multi-function architecture can exhaust the old 16384/32768
+    # ladder when the compiler regenerates the whole script in one response (Run 33: an 8-function
+    # design truncated at both budgets). Streaming (Live Issue 23) removed the transport ceiling,
+    # so these larger budgets are sendable; the compiler is DeepSeek-routed (§5), so the cost stays
+    # on the cheap tier.
     compiled_response = await llm_call(compiler_suffix, system_prompt=COMPILER_SYSTEM, model=config.compiler_model,
-                                       cache_prompt=True, max_tokens=16384, cache_prefix=compiler_prefix,
+                                       cache_prompt=True, max_tokens=32768, cache_prefix=compiler_prefix,
                                        reject_truncated=True)
     compiled_script = extract_xml(compiled_response, "response")
 
