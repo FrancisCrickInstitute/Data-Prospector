@@ -1,4 +1,4 @@
-# Converger → Diverger conversion plan (rev. 47)
+# Converger → Diverger conversion plan (rev. 48)
 
 Working plan for `FrancisCrickInstitute/diverger-agents-template`.
 
@@ -174,6 +174,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 32 | 0.12 / 0.11 | working | **First run with the Live Issue 31 data profile live** (commits landed 09:06, run started 09:10). **4 of 4 compiles passed on attempt 1/3** — no retries, no failures, and zero `DOMAIN_NOTES`-class failures. Decisive evidence: the generated role→domain map reproduced **all nine real role values exactly**, where the pre-profile Run 27 invented a taxonomy and made the target category unreachable (§15 A4). Multi-select delimiter also correct first time. 2 realised, 2 realised_null, 1 unsupportable, 0 judge errors. Dedup: 2 would-merges (0.257, 0.235), zero cost. New §15 shape logged: a near-tautological generated metric (C3) |
 | 31 | 0.10 / 0.10 | working | **Issue 30's version pinning confirmed on its first run** — the generated script uses `tick_labels=`, and zero matplotlib deprecations after two in Run 30. 2 realised, 1 realised_null, 1 not-realisable, 1 unsupportable, 0 judge errors. **Two more `DOMAIN_NOTES` gaps of the same class** (`Not Applicable` on the duration scale; two incompatible `Keywords` formats) → Live Issue 31. **Issue 27's cycling detector failed to fire on a genuine 2-cycle** (line numbers shift between regenerated scripts) → Live Issue 32. Dedup: zero would-merges, second time |
 | 30 | 0.08 / 0.10 | working | **The A2/A5 `DOMAIN_NOTES` fix worked on its first run** — the generated `satisfaction-driver-importance-trend` carries both scales separately, handles `"not applicable"` explicitly, and reports unknown values as a data gap (§15 A2/A5). 2 realised, 2 realised_null, 0 not-realisable, 0 unsupportable, 0 judge errors. **But two of four compiles failed attempt 1 on the identical matplotlib `labels=` deprecation** — §15 B4 recurring, now Live Issue 30. Both recovered attempt 2. **Truncation-shaped syntax errors remain at zero for a third run** (Issue 26 unaffected — see its entry). Highest statistical rigour in the log: 2 of 4 realisations reported real tests (two permutation tests with p-values; Spearman rho+p for all six features). Dedup 6th data point: 1 would-merge at 0.247, false positive, zero cost — and `_pick_representative` kept the better angle |
 | 29 | 0.11 / 0.07 | working | **Cleanest run in the log: 4/4 realised or disconfirmed — no not-realisable, no unsupportable, no pattern-not-shown, no judge errors.** Every compile passed on attempt 1/3 for the **second consecutive run** (8 straight first-attempt compiles, Runs 28–29 — Issue 26 further supported). Issues 27 and 28 both **unexercised** (no cycling, no realization errors), so both remain unconfirmed live. **Dedup produced zero would-merges for the first time since the measurement began.** New: an 11-function architecture compiled and passed first time, well above the previous max of 7. §15 A5 logged (`"Not applicable"` cost 2 of 4 years) |
@@ -749,7 +750,33 @@ Two contributing gaps:
 
 **Needs a Dockerfile rebuild before it takes effect** (`docker build --target cbias-analysis -t cbias-analysis:latest .` — not done here; per this project's standing division of labour the user rebuilds Docker images), **then a live run to confirm**: no compile should fail attempt 1 on either named rename again, and any future rename this project hits should get added to this same two-line list rather than prompting a broader rewrite.
 
-**31. `DOMAIN_NOTES` is being hand-maintained to describe facts a script could derive — and it keeps falling one gap behind (Runs 24–31).** Two more instances in Run 31, both of the §15 class-A shape, both found by the model failing rather than by anyone noticing in advance:
+**31. IMPLEMENTED — PROVISIONALLY CONFIRMED (Run 32). The strongest single piece of evidence in this document that the derive-don't-write approach works.**
+
+Run 32 started at 09:10, four minutes after the profile commits landed at 09:06, so it is the first run with `data_profile` threaded into the realisation prefixes.
+
+**The decisive evidence is not the clean-compile count — it is the role taxonomy.** `role-experience-boundary-blurring` hand-wrote a role→home-domain map, and every one of its nine keys matches a real value in the feedback data exactly:
+
+```
+Image/data analyst · Software engineer · Facility director/manager · Facility staff
+Principal investigator · PhD student · Postdoctoral fellow
+Research scientist/associate/staff · None of the above
+```
+
+**This is the same angle that failed as §15 A4 in Run 27**, where the model invented `["life scientist", "software developer", "computational analyst", "microscopist", "funder/manager"]` and rendered the life-scientist row unreachable. The taxonomy is idiosyncratic enough that guessing it correctly is implausible; the profile is the only new input. **A4's mechanism appears closed.**
+
+Corroborating, but weaker on its own:
+- The multi-select delimiter is right first time — `exp_raw.split(";")` against real values of the form `Chemistry/Biochemistry;Cell/Molecular Biology;Image Analysis/Processing;`. Pre-profile scripts sniffed for it or tried `re.split(r"[;,|\n,]")`.
+- **4 of 4 compiles passed on attempt 1/3**, with no scale-detection errors, no unmapped values, and no format assumptions failing.
+
+**Why this is provisional and not closed.** Runs 28 and 29 were also fully clean *before* the profile existed, so a clean-compile count alone proves nothing — only the role-key match is evidence a count could not produce. **The decisive test written into this entry is still unexercised:** no Run 32 angle touched the abstract `Keywords` field, whose two incompatible formats remain in neither `DOMAIN_NOTES` nor any patch. Leave open until a run handles that, or another quirk documented nowhere, unaided.
+
+**Design notes worth keeping from the implementation**, both of which are judgement calls a naive version would have got wrong:
+- **The cardinality cutoff is targeted, not arbitrary.** The failure class this profile addresses — an assumed response or category vocabulary — only ever occurs on low-cardinality columns, so enumerating free text would cost tokens for no benefit.
+- **Programs is deliberately excluded from per-column enumeration.** It is headerless and ragged, so a column position means different things on different rows and there is no real category vocabulary to profile; and with ~20–30 rows per file every column falls under the cutoff by row-count coincidence, so the naive version dumped every speaker name and talk title verbatim. **No A/B/C-class failure in §15 has ever involved Programs**, which is the right test for whether a data source needs profiling at all.
+
+*Original entry follows.*
+
+**31 (original). `DOMAIN_NOTES` is being hand-maintained to describe facts a script could derive — and it keeps falling one gap behind (Runs 24–31).** Two more instances in Run 31, both of the §15 class-A shape, both found by the model failing rather than by anyone noticing in advance:
 
 - **`"Not Applicable"` also appears on the duration scale.** `DOMAIN_NOTES` lists it under the agreement scale only, so `satisfaction-driver-shift` raised on attempt 1: `Cannot determine response scale for column 'The duration of the poster sessions was...': ['about right', 'not app...']`. Verified: **7 of 8 duration columns across 2024/25 carry it** (all four in 2025; all but "average duration of the sessions" in 2024).
 - **The abstract `Keywords` field has two incompatible formats.** `stakeholder-training-hybridity` used `ast.literal_eval` and died on it three times. Both formats are real:
@@ -1538,7 +1565,12 @@ The largest and most damaging class. In each case the description was accurate b
 | # | Failure | Runs | Caught by |
 |---|---|---|---|
 | C1 | **Clean exit on no data.** Script found nothing, printed 28 characters, exited 0. | 24 | `validate_execution`'s no-artifact backstop (Issue 11) |
+| C3 | **A metric that cannot fail (Run 32).** `role-experience-boundary-blurring` scored a respondent as hybrid if **any** selected domain differed from their assigned home domain — so anyone selecting two or more domains scores 1 automatically, and real respondents select 3–7. Hybridity came out "at or near 1.00 for eight of nine roles". The judge flagged the ceiling but attributed it to small per-role n; the likelier cause is that the metric is near-guaranteed by its own definition. | 32 | A confirmation that could not have been a disconfirmation |
 | C2 | **Partial metric loss** (= B2). Four of five metrics computed, fifth silently NA. | 22 | Realisation judge, reported honestly but still ranked top-tier |
+
+**C3 is a different failure from C1/C2 and worth separating.** C1 and C2 are about *execution* — a script that does less than it claims. C3 is about *construction*: the code is correct, runs cleanly, produces a legible chart, and computes a quantity whose value is fixed by its own definition rather than by the data. **No deterministic check can catch this** — it is not a crash, not a silent skip, not a missing artifact — and the realisation judge, which caught A3 and A4 from their plots, read the ceiling as a small-sample artifact instead.
+
+**Do not act on one instance.** The proportionate response is to log it and see whether it recurs; a near-ceiling result is sometimes just a strong finding, and a gate that second-guesses metric construction is exactly the sort of machinery §7 rules out. But note the asymmetry it creates: a tautological metric can only ever produce `realised`, never `realised_null`, so this class is invisible in the one statistic — the disconfirmation rate — that would otherwise reveal it.
 
 C1 is the class the pipeline defends against well and by design; C2 is the gap — the fail-fast instruction covers a *whole script* no-op, not the loss of one metric among several. **Counter-example worth recording:** Run 25's `satisfaction-driver-shift` raised on all three attempts rather than faking a result, and became the first legitimate `not_realisable` in the log. The instruction works when the failure is total.
 
