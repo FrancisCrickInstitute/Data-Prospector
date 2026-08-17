@@ -66,6 +66,7 @@ here.
 - UK vs non-UK in-person attendance over time
 - First-time vs returning attendees, identified by each attendee's earliest year, split by a UK/non-UK region
 - Institution inferred from email domain
+- Registration lead time (days from order date to event start) stratified by ticket type/tier, summarised as per-year medians/IQRs and plotted as a trend — established that academic attendees register earliest (highest median lead time) and online-only/sponsor attendees register closest to the event
 
 In short: per-year frequency counts of terms, keywords, countries, regions, and attendance modes - plotted as trends - 
 are exhausted. So is a year-to-year comparison of aggregated abstract text via TF-IDF or word frequency.
