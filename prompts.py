@@ -97,6 +97,12 @@ Input Data: {input_data}
 Domain notes (exact paths/columns of the real data - design against these, not an assumed layout):
 {domain_notes}
 
+Data profile (MECHANICALLY generated from the actual files this run - not a description, the real
+column names/dtypes/null counts, and the full value set for any low-cardinality column. This is
+ground truth for "what values does this column actually contain" - prefer it over an assumption
+even if Domain notes above seems to say otherwise):
+{data_profile}
+
 Success Criteria (the finished script must satisfy every item below - no more, no less):
 {criteria}
 """
@@ -146,8 +152,9 @@ Return your response in this format:
 """
 
 # Split in two so _call_worker can cache the prefix: original_report/input_data/library_notes/
-# domain_notes are identical across every task in a design (and across the whole run), while
-# function/description/input/output vary per task - see the cache_prefix argument to llm_call.
+# domain_notes/data_profile are identical across every task in a design (and across the whole
+# run), while function/description/input/output vary per task - see the cache_prefix argument to
+# llm_call.
 WORKER_PROMPT_PREFIX = """
 Shared context for this script (task, input data, and constraints):
 
@@ -155,6 +162,11 @@ Task: {original_report}
 Data: {input_data}
 Libraries: {library_notes}
 Domain: {domain_notes}
+
+Data profile (MECHANICALLY generated from the actual files this run - real column names/dtypes/
+null counts and the full value set for low-cardinality columns; trust this over an assumed
+vocabulary, including one implied by Domain above, when they disagree):
+{data_profile}
 """
 
 WORKER_PROMPT_SUFFIX = """
@@ -205,6 +217,12 @@ The tags are metadata markers only—do not include them in the actual Python co
 # the exact paths/columns, so when a worker got a path wrong and execution failed, the compile-retry
 # loop rewrote the script from the traceback alone, with no way to see the real layout that would
 # fix it - repairing blind. Now the compiler sees the same domain notes the worker did.
+#
+# data_profile added (Live Issue 31): a value-mapping bug (e.g. a Likert map missing a real
+# response) is exactly the shape of error the compile-retry loop is worst at repairing from a
+# traceback alone, since the traceback shows a symptom (all-NaN, a dropped year) with no value
+# list to compare against. The compiler is the one call site that actually assembles this code, so
+# it is the most direct place for the real value set to land.
 COMPILER_PROMPT_PREFIX = """
 Integrate these functions into one complete, executable Python script.
 
@@ -216,6 +234,11 @@ Functions:
 Libraries: {library_notes}
 Domain notes (exact paths/columns of the real data - fix any path/column bug against these, not a guess):
 {domain_notes}
+
+Data profile (MECHANICALLY generated from the actual files this run - real column names/dtypes/
+null counts and the full value set for low-cardinality columns; if a value-mapping bug is why the
+previous attempt failed, fix the map against this real value set, not against a guess):
+{data_profile}
 {seed_section}"""
 
 COMPILER_PROMPT_SUFFIX = """{error_feedback}

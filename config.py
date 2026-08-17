@@ -35,6 +35,15 @@ class PipelineConfig:
     available_libraries: str
     domain_notes: str
     extract_input_metadata: Callable[[str], str]
+    # Live Issue 31 (optional - defaults to None, so bioimage/trello are unaffected): a MECHANICAL
+    # per-run profile of the real data (column names, dtypes, null counts, full value sets under a
+    # cardinality cutoff; no LLM involved), fed into the realisation stage's cached prefixes
+    # alongside domain_notes (orchestrator/worker/compiler - see realization.py). Answers "what is
+    # IN the data" so domain_notes doesn't have to hand-enumerate it and go one gap behind the next
+    # run (DIVERGER_PLAN.md's Live Issue 31: three straight DOMAIN_NOTES vocabulary patches each
+    # worked first-run, then were each found incomplete by the very next one). domain_notes stays
+    # for what a profile cannot derive: semantics, provenance, absence, the anti-target list.
+    data_profile: Callable[[str], str] | None = None
     design_stances: list[str] = field(default_factory=lambda: list(DEFAULT_DESIGN_STANCES))
     # D4 dedup: token-set Jaccard threshold (over hypothesis + variables_involved + rough_method)
     # above which two angles are treated as near-duplicates. 0.22 is measured, not guessed - two

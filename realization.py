@@ -18,7 +18,7 @@ from sandbox import _format_artifacts, _load_plot_images, validate_execution
 
 
 async def compile_script(orchestrator_results: dict, config: PipelineConfig, error_feedback: str = "",
-                         seed_script: str = None) -> str:
+                         seed_script: str = None, data_profile: str = "") -> str:
     """Compile worker functions into a single executable script, optionally fixing a prior execution
     error and/or improving a seed_script (a prior working script this design is mutating) instead of
     assembling from scratch."""
@@ -50,16 +50,19 @@ async def compile_script(orchestrator_results: dict, config: PipelineConfig, err
             "architecture and functions above don't touch.\n"
         )
 
-    # Split at the analysis/functions/library_notes/domain_notes/seed boundary: identical across
-    # every sequential compile/execute retry for this design (only error_feedback changes attempt
-    # to attempt), so it's passed as a cache_prefix rather than folded into one flat prompt.
-    # domain_notes lets a retry fix a path/column bug against the real layout instead of guessing
-    # blind from the traceback alone.
+    # Split at the analysis/functions/library_notes/domain_notes/data_profile/seed boundary:
+    # identical across every sequential compile/execute retry for this design (only error_feedback
+    # changes attempt to attempt), so it's passed as a cache_prefix rather than folded into one
+    # flat prompt. domain_notes/data_profile let a retry fix a path/column/value-mapping bug
+    # against the real layout instead of guessing blind from the traceback alone (data_profile:
+    # Live Issue 31 - the mechanically-generated real value sets, vs. domain_notes' hand-maintained
+    # description).
     compiler_prefix = COMPILER_PROMPT_PREFIX.format(
         analysis=analysis,
         functions=functions_text,
         library_notes=config.available_libraries,
         domain_notes=config.domain_notes,
+        data_profile=data_profile,
         seed_section=seed_section,
     )
     compiler_suffix = COMPILER_PROMPT_SUFFIX.format(error_feedback=error_section)
@@ -191,17 +194,19 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
 
 
 async def _call_worker(task_info: dict, task_index: int, report: str, input_metadata: str,
-                       config: PipelineConfig) -> dict:
+                       config: PipelineConfig, data_profile: str = "") -> dict:
     """Call worker for a single task. Used for parallel execution."""
     func_name = task_info.get("function", f"task_{task_index}")
-    # report/input_data/library_notes/domain_notes are identical across every task in this design,
-    # so they're cached as a prefix; function/description/input/output vary and stay in the suffix.
+    # report/input_data/library_notes/domain_notes/data_profile are identical across every task in
+    # this design, so they're cached as a prefix; function/description/input/output vary and stay
+    # in the suffix.
     worker_prefix = format_prompt(
         WORKER_PROMPT_PREFIX,
         original_report=report,
         input_data=input_metadata,
         library_notes=config.available_libraries,
         domain_notes=config.domain_notes,
+        data_profile=data_profile,
     )
     worker_suffix = format_prompt(
         WORKER_PROMPT_SUFFIX,
@@ -222,13 +227,16 @@ async def _call_worker(task_info: dict, task_index: int, report: str, input_meta
 
 async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, input_metadata: str,
                           config: PipelineConfig, data_dir: str, artifacts_dir: str, label: str,
-                          max_compile_attempts: int = 3) -> dict:
+                          max_compile_attempts: int = 3, data_profile: str = "") -> dict:
     """D6: realize ONE judged angle (orchestrate -> workers -> compile/execute loop -> realization
     check). The angle's hypothesis/rough_method - not the whole report - is the brief the
     orchestrator designs against; report/deliverable_rubric stay the TRUE, identical background
     context shared by every angle realized this run, so ORCHESTRATOR_PROMPT_PREFIX and
     WORKER_PROMPT_PREFIX both still hit cache across the top-k angles, not just within one angle's
-    own compile retries.
+    own compile retries. data_profile (Live Issue 31) is the mechanically-generated real-value
+    counterpart to domain_notes, reaching the same three prefixes (orchestrator/worker/compiler);
+    "" (its default) when config.data_profile isn't set, so this degrades gracefully for domain
+    configs that haven't defined one.
 
     Returns {angle_id, realization_status, realization_feedback, pattern_reasoning, delivered_score,
     artifacts, artifacts_dir, script}. pattern_reasoning is the validator's justification for the
@@ -272,7 +280,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         # this run, so cached as a prefix; the angle itself varies per call and stays in the suffix.
         orchestrator_prefix = format_prompt(
             ORCHESTRATOR_PROMPT_PREFIX, report=report, criteria=deliverable_rubric, input_data=input_metadata,
-            domain_notes=config.domain_notes,
+            domain_notes=config.domain_notes, data_profile=data_profile,
         )
         orchestrator_suffix = format_prompt(
             ORCHESTRATOR_PROMPT_SUFFIX,
@@ -294,7 +302,8 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         # so the compiler sees an honest gap instead of a missing function it never knew was missing.
         stage = "workers"
         worker_raw = await asyncio.gather(
-            *[_call_worker(t, i, report, input_metadata, config) for i, t in enumerate(tasks, 1)],
+            *[_call_worker(t, i, report, input_metadata, config, data_profile=data_profile)
+              for i, t in enumerate(tasks, 1)],
             return_exceptions=True,
         )
         worker_results = []
@@ -337,7 +346,8 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         aborted_on_repeat = False
         for attempt in range(max_compile_attempts):
             log(f"Compile attempt {attempt + 1}/{max_compile_attempts}...")
-            compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error)
+            compiled_script = await compile_script(orchestrator_results, config, error_feedback=compile_error,
+                                                   data_profile=data_profile)
             exec_verdict, exec_feedback, exec_output, artifacts = validate_execution(
                 compiled_script, config, data_dir, artifacts_dir=artifacts_dir)
             log(f"Execution: {exec_verdict}")

@@ -45,6 +45,17 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     - "scripts_dir": the directory each realized angle's compiled script was written into, or None.
     """
     input_metadata = config.extract_input_metadata(data_dir) if data_dir else "(No input data provided)"
+    # Live Issue 31: a mechanical, per-run profile of the real data (column names/dtypes/null
+    # counts/full value sets - no LLM involved), computed once here and threaded only into
+    # realisation (orchestrator/worker/compiler - the same reach domain_notes already has), never
+    # into ideation - same "realisation constraint, not an ideation constraint" boundary
+    # available_libraries already draws. config.data_profile is optional (None for configs that
+    # haven't defined one yet), so this degrades to "(no data profile available)" rather than
+    # erroring.
+    data_profile = (
+        config.data_profile(data_dir) if data_dir and config.data_profile
+        else "(no data profile available)"
+    )
 
     # Parse the report into two separate rubrics ONCE, shared by every call that needs them. This
     # is what actually makes the pipeline domain-agnostic - without it, the ideation and (later)
@@ -267,6 +278,7 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     realize_calls = [
         _run_one_design(
             angle, report, deliverable_rubric, input_metadata, config, data_dir,
+            data_profile=data_profile,
             artifacts_dir=str(artifacts_base / angle.get("id", "?")) if artifacts_base else None,
             label=angle.get("id", "?"),
         )

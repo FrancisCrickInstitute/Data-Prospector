@@ -199,6 +199,101 @@ def extract_input_metadata(directory: str) -> str:
     return str({"Attendees": attendees, "Feedback": feedback, "Abstracts": abstracts})
 
 
+# Live Issue 31: columns with more distinct values than this are almost always free text (comments,
+# titles) - listing them in full would blow the token budget for no benefit, since the failure
+# class this profile targets (an assumed response/category vocabulary) only ever occurs on
+# low-cardinality columns. Applied to Attendees/Feedback (genuinely categorical columns); Programs
+# is excluded from per-column enumeration entirely below, for the reason given there.
+_PROFILE_CARDINALITY_CUTOFF = 25
+
+
+def _profile_csv(f: Path, base: Path, header="infer") -> str:
+    """One CSV's worth of DOMAIN_NOTES-style profiling: verbatim column name, dtype, null count,
+    and (if low-cardinality) the FULL set of distinct values actually present - not a description
+    of what a column is expected to contain, but what pandas actually found in it. This is what
+    catches an omitted response value (A5), an already-numeric column mislabelled as text (A2), or
+    an unreachable category (A3/A4) mechanically, without anyone having to notice and transcribe it
+    by hand first."""
+    df = pd.read_csv(f, encoding="utf-8", header=header)
+    lines = [f"  {f.relative_to(base)} ({len(df)} rows):"]
+    for col in df.columns:
+        series = df[col]
+        nulls = int(series.isna().sum())
+        nunique = int(series.nunique(dropna=True))
+        if nunique <= _PROFILE_CARDINALITY_CUTOFF:
+            values = sorted(str(v) for v in series.dropna().unique())
+            lines.append(f"    {col!r} [{series.dtype}, {nulls} null]: {values}")
+        else:
+            lines.append(f"    {col!r} [{series.dtype}, {nulls} null]: "
+                         f"{nunique} distinct values, not enumerated (over the cutoff)")
+    return "\n".join(lines)
+
+
+def generate_data_profile(directory: str) -> str:
+    """Live Issue 31: a MECHANICAL per-run profile of the actual data - no LLM in the loop, so it
+    cannot hallucinate a value that isn't there and cannot go stale, unlike the hand-maintained
+    DOMAIN_NOTES vocabulary enumerations it supplements (each of which worked on its first live run
+    - the A2/A5 fix at rev. 43, library-version pinning at rev. 45 - then was found incomplete by
+    the very next run: Run 31 hit two more gaps of the identical shape). Answers ONLY "what is in
+    the data"; DOMAIN_NOTES above stays the place for what this cannot derive - semantics,
+    provenance, absence, and the anti-target list. Fed into the realisation stage's cached prefixes
+    (orchestrator/worker/compiler - see realization.py), the same reach domain_notes already has,
+    not into ideation - same "realisation constraint, not an ideation constraint" boundary as
+    available_libraries."""
+    base = Path(directory)
+    sections = []
+
+    attendee_lines = [_profile_csv(f, base) for f in sorted(base.glob("Attendees/*.csv"))]
+    if attendee_lines:
+        sections.append("Attendees:\n" + "\n".join(attendee_lines))
+
+    feedback_lines = [_profile_csv(f, base) for f in sorted(base.glob("Feedback/*.csv"))]
+    if feedback_lines:
+        sections.append("Feedback:\n" + "\n".join(feedback_lines))
+
+    # Programs gets row/column counts only, NOT the same full-enumeration treatment as the other
+    # three - it's headerless AND ragged (a given column position means a different thing on
+    # different rows, per Domain notes above), so the per-column-value-set profiling this function
+    # otherwise does isn't measuring a real category vocabulary here. Worse, with only ~20-30 rows
+    # per file, every column stays under the cardinality cutoff by row-count coincidence alone, so
+    # the naive version silently dumped every speaker name and talk title verbatim - real content,
+    # but not the kind of gap this profile exists to catch, at a genuinely large token cost for no
+    # matching benefit (no A/B/C-class failure in DIVERGER_PLAN.md has ever involved Programs).
+    program_lines = []
+    for f in sorted(base.glob("Programs/*.csv")):
+        df = pd.read_csv(f, encoding="utf-8", header=None)
+        program_lines.append(f"  {f.relative_to(base)}: {len(df)} rows, {len(df.columns)} columns")
+    if program_lines:
+        sections.append(
+            "Programs (headerless and ragged - column meaning shifts per row, see Domain notes "
+            "above; row/column counts only, not a value profile):\n" + "\n".join(program_lines)
+        )
+
+    # Abstracts aren't tabular, so "profile" means something different here: one real sample value
+    # per field label actually present in each year's folder, not a value set. This is what makes a
+    # format split like Keywords' JSON-list-in-some-years/comma-text-in-others visible side by side
+    # without anyone having noticed and written it down first (Live Issue 31's second Run 31 gap).
+    abstract_lines = []
+    for year_dir in sorted(base.glob("Abstracts/*_Abstracts")):
+        files = sorted(year_dir.glob("*_Abstract.txt"))
+        samples = {}
+        for f in files:
+            text = f.read_text(encoding="utf-8")
+            for label in _ABSTRACT_FIELD_LABELS:
+                if label in samples:
+                    continue
+                m = re.search(rf"^{re.escape(label)}:\s*(.*)$", text, re.MULTILINE)
+                if m and m.group(1).strip():
+                    samples[label] = m.group(1).strip()[:150]
+        sample_text = "; ".join(f"{label}={value!r}" for label, value in samples.items())
+        abstract_lines.append(f"  {year_dir.name} ({len(files)} submissions): {sample_text}")
+    if abstract_lines:
+        sections.append("Abstracts (one real sample value per field label present, not a full set):\n"
+                        + "\n".join(abstract_lines))
+
+    return "\n\n".join(sections) if sections else "(no data profile available)"
+
+
 CONFIG = PipelineConfig(
     orchestrator_model="claude-opus-4-8",
     # worker/compiler: deliberately routed to DeepSeek (not the all-Anthropic default this config
@@ -222,4 +317,5 @@ CONFIG = PipelineConfig(
     available_libraries=AVAILABLE_LIBRARIES,
     domain_notes=DOMAIN_NOTES,
     extract_input_metadata=extract_input_metadata,
+    data_profile=generate_data_profile,
 )
