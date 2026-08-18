@@ -6,8 +6,7 @@ Analyze a Trello board JSON export to explore and answer key questions about tea
 
 ## Input
 
-Trello board exported as JSON file containing: cards, lists, members, labels, checklists, custom fields, and activity history.
-Of particular interest are the custom fields, particularly "Lab (Name)", "Source" and "Lead".
+Trello board exported as two files: a JSON export (full board — cards, lists, members, labels, checklists, custom field definitions, and activity history) and a CSV export (a flat card table, non-archived cards only, with the custom-field values as columns). Of particular interest are the custom fields `Lab`, `Lead` and `Source` plus the free-text `Lab Name` — note the list-type values (`Lab`, `Lead`, `Source`) are populated in the CSV export but come through as null in the JSON export, so analyses of them must read the CSV and join to the JSON on Card ID.
 
 ## Guiding Questions for Analysis
 
