@@ -36,7 +36,11 @@ from assuming an older matplotlib API than what was actually installed):
 - Standard library: os, sys, re, csv, json, pathlib, datetime, collections, string
 - NumPy 2.5.2: for numerical computing
 - Pandas 3.0.5: for data manipulation and analysis. DataFrame.applymap was REMOVED in pandas 3.0 -
-  use DataFrame.map instead.
+  use DataFrame.map instead. Pandas 3.0 also gives text columns inferred by read_csv their own
+  native `str` dtype, DISTINCT from the legacy `object` dtype - pd.api.types.is_object_dtype()
+  returns False for them (Live Issue 33 - a script that gated Likert-scale detection on
+  is_object_dtype() silently skipped every text column, Run 34). Use pd.api.types.is_string_dtype()
+  when detecting text/categorical columns; it covers both `str` and legacy `object`-dtype text.
 - Matplotlib 3.11.1: for plotting and visualization. boxplot()'s `labels=` keyword was renamed to
   `tick_labels` in matplotlib 3.9 (applies to both pyplot.boxplot and Axes.boxplot) - using `labels=`
   raises a deprecation warning at best and a TypeError in a future release; use `tick_labels=`.
