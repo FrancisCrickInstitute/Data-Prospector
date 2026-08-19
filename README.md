@@ -23,6 +23,24 @@ you, doesn't.
   <img src="assets/pipeline_diagram.svg" alt="Diverger pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
 </p>
 
+## Design influences
+
+The architecture started from two Anthropic sources: *Building effective agents* [1] (the
+orchestrator-worker and evaluator-optimizer patterns behind the code-building step) and the
+`claude-cookbooks` tutorials [2]. The fan-out → judge → selectively-build shape was later informed
+by two published multi-agent science systems [3, 4]. See `DIVERGER_PLAN.md` §1 for how this project
+grew out of an earlier "converger" design that worked the opposite way.
+
+1. Schluntz, E., & Zhang, B. (2024, December 19). *Building effective agents*. Anthropic.
+   https://www.anthropic.com/engineering/building-effective-agents
+2. Anthropic. (n.d.). *claude-cookbooks* [Source code]. GitHub.
+   https://github.com/anthropics/claude-cookbooks
+3. Gottweis, J., Weng, W.-H., Daryin, A., et al. (2026). Accelerating scientific discovery with
+   Co-Scientist. *Nature*, *655*(8122), 487–496. https://doi.org/10.1038/s41586-026-10644-y
+4. Lu, C., Lu, C., Lange, R. T., Yamada, Y., Hu, S., Foerster, J., Ha, D., & Clune, J. (2026). Towards
+   end-to-end automation of AI research *(known informally as "The AI Scientist")*. *Nature*, *651*,
+   914–919. https://doi.org/10.1038/s41586-026-10265-5
+
 ## Why "diverge" instead of "converge"?
 
 Most automated-analysis tools work like a single very persistent analyst: try something, look at
@@ -73,14 +91,14 @@ The report groups every idea it fully tested into one of a few outcomes. These a
 you'll see in the generated report (`realised`, etc. is the internal name, shown in brackets so it
 matches what you'll find if you go looking in the underlying files):
 
-| In the report | What it means |
-|---|---|
-| ✅ **Confirmed** (`realised`) | Fully tested against your real data, and the pattern the idea predicted was actually there. |
-| 🔁 **Checked, not supported** (`realised_null`) | Fully tested — and the data does **not** support it. Still a real result: it tells you what's *not* worth chasing. |
-| ⚠️ **Inconclusive** (`pattern_not_shown`) | The code ran, but its output (e.g. a chart) wasn't clear enough to say either way. A genuine limitation of that attempt, not a finding. |
-| 🚧 **Couldn't be built** (`not_realisable`) | Needed something not set up in this environment (e.g. a missing piece of software) and never got the chance to actually run. |
-| ⚙️ **Technical hiccup** (`realization_error`) | Something in the pipeline itself broke while working on this one idea — unrelated to your data or the idea's merit. |
-| ❌ **Not pursued** (`unsupportable`) | Judged, on paper, as unlikely to be answerable well with this data, so it was never turned into code at all — still listed, with the reviewer's reasoning, in case you disagree. |
+| In the report                                   | What it means                                                                                                                                                                    |
+|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ✅ **Confirmed** (`realised`)                    | Fully tested against your real data, and the pattern the idea predicted was actually there.                                                                                      |
+| 🔁 **Checked, not supported** (`realised_null`) | Fully tested — and the data does **not** support it. Still a real result: it tells you what's *not* worth chasing.                                                               |
+| ⚠️ **Inconclusive** (`pattern_not_shown`)       | The code ran, but its output (e.g. a chart) wasn't clear enough to say either way. A genuine limitation of that attempt, not a finding.                                          |
+| 🚧 **Couldn't be built** (`not_realisable`)     | Needed something not set up in this environment (e.g. a missing piece of software) and never got the chance to actually run.                                                     |
+| ⚙️ **Technical hiccup** (`realization_error`)   | Something in the pipeline itself broke while working on this one idea — unrelated to your data or the idea's merit.                                                              |
+| ❌ **Not pursued** (`unsupportable`)             | Judged, on paper, as unlikely to be answerable well with this data, so it was never turned into code at all — still listed, with the reviewer's reasoning, in case you disagree. |
 
 Confirmed and disconfirmed results are shown together, ranked by how *surprising* they are — not
 by whether they turned out to be "yes" or "no" — because on real datasets the most interesting
@@ -205,11 +223,11 @@ domain does. Concretely, that file needs to:
 `cbias_config.py` is a complete, working example to copy from. The full technical checklist is in
 [`CLAUDE.md`](CLAUDE.md) under "Adding a new domain."
 
-| Example | Status |
-|---|---|
-| `cbias_config.py` | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box. |
-| `trello_config.py` | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) — real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
-| `bioimage_config.py` | A template only — nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data. |
+| Example              | Status                                                                                                                                                                                                                                   |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `cbias_config.py`    | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box.                                                                                  |
+| `trello_config.py`   | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) — real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
+| `bioimage_config.py` | A template only — nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data.                                                                                           |
 
 </details>
 
@@ -231,24 +249,6 @@ domain does. Concretely, that file needs to:
 - [`DIVERGER_PLAN.md`](DIVERGER_PLAN.md) is this project's running design and decision log — every
   tuning choice and known limitation is written up there, in detail, if you want to understand *why*
   something works the way it does.
-
-## Design influences
-
-The architecture started from two Anthropic sources: *Building effective agents* [1] (the
-orchestrator-worker and evaluator-optimizer patterns behind the code-building step) and the
-`claude-cookbooks` tutorials [2]. The fan-out → judge → selectively-build shape was later informed
-by two published multi-agent science systems [3, 4]. See `DIVERGER_PLAN.md` §1 for how this project
-grew out of an earlier "converger" design that worked the opposite way.
-
-1. Schluntz, E., & Zhang, B. (2024, December 19). *Building effective agents*. Anthropic.
-   https://www.anthropic.com/engineering/building-effective-agents
-2. Anthropic. (n.d.). *claude-cookbooks* [Source code]. GitHub.
-   https://github.com/anthropics/claude-cookbooks
-3. Gottweis, J., Weng, W.-H., Daryin, A., et al. (2026). Accelerating scientific discovery with
-   Co-Scientist. *Nature*, *655*(8122), 487–496. https://doi.org/10.1038/s41586-026-10644-y
-4. Lu, C., Lu, C., Lange, R. T., Yamada, Y., Hu, S., Foerster, J., Ha, D., & Clune, J. (2026). Towards
-   end-to-end automation of AI research *(known informally as "The AI Scientist")*. *Nature*, *651*,
-   914–919. https://doi.org/10.1038/s41586-026-10265-5
 
 ## License
 
