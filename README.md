@@ -19,6 +19,10 @@ get more technical, and adapting it to a brand-new dataset needs someone comfort
 Python — but using it on the example data, or your own data once someone has configured it for
 you, doesn't.
 
+<p align="center">
+  <img src="assets/pipeline_diagram.svg" alt="Data Prospector pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
+</p>
+
 ## Before you start: this isn't an oracle
 
 Read this before running anything on your own data — it will save you a disappointing first run.
@@ -40,10 +44,6 @@ had quietly changed its behaviour). Every one of these is recorded, in detail, i
 reliable over time — but assume more are still out there on data and questions it hasn't seen
 before. **Always read the generated code and treat every finding, confirmed or not, as a lead to
 check yourself — not a conclusion to take on trust.**
-
-<p align="center">
-  <img src="assets/pipeline_diagram.svg" alt="Data Prospector pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
-</p>
 
 ## Design influences
 
