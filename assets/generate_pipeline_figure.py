@@ -3,9 +3,9 @@
 
 A from-scratch matplotlib illustration (no external icon libraries/network calls, so it's
 reproducible offline) in the visual grammar of a journal graphical abstract: numbered stage
-panels, simple flat icons, a literal fan-out/narrow-down shape carrying the pipeline's own
-architecture in the picture itself - many independent ideas branching out (it's a "diverger", not
-a "converger" - see DIVERGER_PLAN.md §1), most kept only as a shortlist, a few actually tested.
+panels, simple flat icons, a fan-out that stays plural all the way to the output (it's a "diverger",
+not a "converger" - see DIVERGER_PLAN.md §1): many independent ideas branch out, most are kept only
+as a shortlist, and the few that are tested each run through their own parallel build lane.
 
 Run with: pixi run python assets/generate_pipeline_figure.py
 Writes: assets/pipeline_diagram.svg (embedded in README.md) and .png (quick local preview).
@@ -28,12 +28,13 @@ REALISE_C = "#C1622D"      # burnt orange - built and safety-tested
 CONFIRMED_C = "#3E8B5C"    # green
 DISCONFIRMED_C = "#3D6FB4"  # blue
 INCONCLUSIVE_C = "#9AA0AC"  # gray
+NOT_REALISABLE_C = "#B08968"  # muted tan - "couldn't be built" (an engineering/provisioning gap)
 
 TITLE_Y_OFFSET = 3.05
 CAPTION_Y_OFFSET = 2.55
 
 
-def stage_label(ax, x, y_base, number, title, caption, char_w=0.108):
+def stage_label(ax, x, y_base, number, title, caption, char_w=0.14):
     """Numbered circle + bold title, auto-centered as a block over x; caption below, also centered."""
     title_w = char_w * len(title)
     circle_x = x - title_w / 2 - 0.24
@@ -121,24 +122,22 @@ def draw_gear_shield(ax, x, y, r=0.42, color=REALISE_C):
                          linewidth=1.4, zorder=5))
 
 
-def draw_gallery(ax, x, y, w=1.5, h=1.9, color=INK):
-    """The output document: a page whose body is a stack of colour-coded outcome tiles."""
+def draw_gallery(ax, x, y, w=1.5, h=4.0, color=INK, tiles=None):
+    """The output document: a page whose body is a stack of colour-coded outcome tiles.
+
+    `tiles` is a list of (colour, fraction_of_width, tile_y_centre) - one per realised outcome,
+    each aligned so its stage-4 lane runs straight into its own tile rather than converging.
+    """
     ax.add_patch(FancyBboxPatch((x - w / 2, y - h / 2), w, h,
                                  boxstyle="round,pad=0,rounding_size=0.06",
                                  facecolor=PAPER, edgecolor=color, linewidth=1.7, zorder=3))
-    ax.plot([x - w / 2 + 0.12, x + w / 2 - 0.12], [y + h / 2 - 0.2] * 2,
+    ax.plot([x - w / 2 + 0.12, x + w / 2 - 0.12], [y + h / 2 - 0.15] * 2,
              color=color, linewidth=2.0, zorder=4, solid_capstyle="round")
-    rows = [
-        (CONFIRMED_C, 1.0), (CONFIRMED_C, 0.72), (DISCONFIRMED_C, 0.88),
-        (DISCONFIRMED_C, 0.58), (INCONCLUSIVE_C, 0.4),
-    ]
-    top = y + h / 2 - 0.42
-    row_h = (h - 0.6) / len(rows)
-    for i, (c, frac) in enumerate(rows):
-        ry = top - i * row_h
-        ax.add_patch(Rectangle((x - w / 2 + 0.13, ry - row_h * 0.3),
-                                (w - 0.26) * frac, row_h * 0.52,
-                                facecolor=c, edgecolor="none", alpha=0.85, zorder=4))
+    for c, frac, ty in (tiles or []):
+        bar_h = 0.28
+        ax.add_patch(Rectangle((x - w / 2 + 0.14, ty - bar_h / 2),
+                                (w - 0.28) * frac, bar_h,
+                                facecolor=c, edgecolor="none", alpha=0.9, zorder=4))
 
 
 def arrow(ax, xy_from, xy_to, color=MUTED, lw=1.6, connectionstyle="arc3,rad=0.0", alpha=1.0):
@@ -148,28 +147,28 @@ def arrow(ax, xy_from, xy_to, color=MUTED, lw=1.6, connectionstyle="arc3,rad=0.0
 
 
 def main():
-    fig, ax = plt.subplots(figsize=(23, 8), dpi=200)
-    ax.set_xlim(0, 23)
-    ax.set_ylim(0, 8.2)
+    fig, ax = plt.subplots(figsize=(19, 9), dpi=200)
+    ax.set_xlim(0, 19)
+    ax.set_ylim(0, 9)
     ax.axis("off")
     fig.patch.set_facecolor(PAPER)
     ax.set_facecolor(PAPER)
 
-    baseline = 3.85
+    baseline = 5.6
 
     # === Stage 1: input =====================================================================
-    input_x = 1.35
+    input_x = 1.5
     draw_document(ax, input_x - 0.15, baseline + 0.5)
     draw_spreadsheet(ax, input_x + 0.2, baseline - 0.5)
     stage_label(ax, input_x, baseline, 1, "Your inputs",
                 "a short report describing the\nquestion, plus your dataset")
-    arrow(ax, (input_x + 0.85, baseline), (3.15, baseline), color=INK, lw=1.8)
+    arrow(ax, (input_x + 0.85, baseline), (3.6, baseline), color=INK, lw=1.8)
 
     # === Stage 2: fan-out (ideation) ========================================================
-    fan_source = (3.3, baseline)
+    fan_source = (3.75, baseline)
     n_ideas = 9
-    idea_x = 5.6
-    idea_ys = np.linspace(baseline - 2.15, baseline + 2.15, n_ideas)
+    idea_x = 4.7
+    idea_ys = np.linspace(baseline - 2.0, baseline + 2.0, n_ideas)
     rng = np.random.default_rng(7)  # fixed seed - deterministic figure, not a data plot
     for iy in idea_ys:
         jitter_x = idea_x + rng.uniform(-0.1, 0.1)
@@ -180,14 +179,14 @@ def main():
                 "each one proposed on its own -\ne.g. 24 hypotheses per run")
 
     # === Stage 3: judge, then narrow (selection) ============================================
-    neck_x = 9.6
-    kept_idx = [1, 3, 5, 7]  # which of the n_ideas visually survive, purely illustrative
+    neck_x = 8.7
     for iy in idea_ys:
-        ax.plot([idea_x + 0.1, neck_x], [iy, baseline], color=MUTED, linewidth=0.7,
+        ax.plot([idea_x + 0.1, neck_x - 0.35], [iy, baseline], color=MUTED, linewidth=0.7,
                  alpha=0.35, zorder=0.5)
-    draw_magnifier_check(ax, (idea_x + neck_x) / 2 + 0.3, baseline + 1.55)
-    shortlist_y = baseline - 2.55
-    arrow(ax, (neck_x, baseline - 0.12), (neck_x - 0.15, shortlist_y + 0.35), color=MUTED,
+    # The magnifier sits on the bottleneck itself - scoring is what causes the narrowing.
+    draw_magnifier_check(ax, neck_x, baseline)
+    shortlist_y = baseline - 3.4
+    arrow(ax, (neck_x, baseline - 0.28), (neck_x - 0.15, shortlist_y + 0.35), color=MUTED,
           lw=1.3, connectionstyle="arc3,rad=-0.25", alpha=0.7)
     for i in range(6):
         cx = neck_x - 0.55 + (i % 3) * 0.28
@@ -195,38 +194,49 @@ def main():
         draw_spark(ax, cx, cy, r=0.075, color=MUTED, alpha=0.65, rays=False)
     ax.text(neck_x - 0.35, shortlist_y - 0.75, "kept as a shortlist -\njudged, never run as code",
              ha="center", va="top", color=MUTED, fontsize=8.6, style="italic", linespacing=1.4)
-
-    realise_x = 13.6
-    kept_ys = np.linspace(baseline - 0.65, baseline + 0.65, len(kept_idx))
-    for ky in kept_ys:
-        ax.plot([neck_x, realise_x - 1.0], [baseline, ky], color=IDEATE_C,
-                 linewidth=1.6, alpha=0.85, zorder=1.2,
-                 solid_capstyle="round")
-        draw_spark(ax, realise_x - 1.1, ky, r=0.1)
     stage_label(ax, neck_x, baseline, 3, "Scored, then narrowed",
                 "how surprising is it, and how well\ndoes the data actually support it?")
 
     # === Stage 4: realise (build + sandbox-test) ============================================
-    for ky in kept_ys:
-        arrow(ax, (realise_x - 0.95, ky), (realise_x - 0.42, baseline), color=REALISE_C,
-              lw=1.1, connectionstyle=f"arc3,rad={(ky - baseline) * -0.28}")
-    draw_gear_shield(ax, realise_x, baseline)
-    stage_label(ax, realise_x, baseline, 4, "Built and safety-tested",
+    # Four parallel lanes - one per surviving idea - NOT a shared build step: each idea runs its
+    # own orchestrator, workers, compile loop and Docker container independently (asyncio.gather),
+    # so plurality survives all the way to the gallery instead of converging into a single script.
+    lane_start_x = 10.4
+    gear_x = 12.6
+    gallery_x = 16.2
+    gallery_w = 1.5
+    lane_ys = [baseline - 2.1, baseline - 0.7, baseline + 0.7, baseline + 2.1]
+    lane_colours = [NOT_REALISABLE_C, INCONCLUSIVE_C, DISCONFIRMED_C, CONFIRMED_C]  # bottom -> top
+    for i, ky in enumerate(lane_ys):
+        ax.plot([neck_x + 0.35, lane_start_x - 0.2], [baseline, ky], color=IDEATE_C,
+                 linewidth=1.6, alpha=0.85, zorder=1.2, solid_capstyle="round")
+        draw_spark(ax, lane_start_x, ky, r=0.1)
+        ax.plot([lane_start_x + 0.2, gear_x - 0.42], [ky, ky], color=IDEATE_C,
+                 linewidth=1.4, alpha=0.85, zorder=1.2, solid_capstyle="round")
+        draw_gear_shield(ax, gear_x, ky, r=0.26)
+        ax.plot([gear_x + 0.42, gallery_x - gallery_w / 2 + 0.14], [ky, ky], color=lane_colours[i],
+                 linewidth=1.5, alpha=0.9, zorder=1.5, solid_capstyle="round")
+    stage_label(ax, gear_x, baseline, 4, "Built and safety-tested",
                 "turned into real code, run inside\nan isolated sandbox on your data")
-    arrow(ax, (realise_x + 0.5, baseline), (realise_x + 1.7, baseline), color=INK, lw=1.8)
 
     # === Stage 5: gallery ====================================================================
-    gallery_x = 17.5
-    draw_gallery(ax, gallery_x, baseline)
+    gallery_tiles = [
+        (CONFIRMED_C, 0.95, lane_ys[3]),
+        (DISCONFIRMED_C, 0.85, lane_ys[2]),
+        (INCONCLUSIVE_C, 0.6, lane_ys[1]),
+        (NOT_REALISABLE_C, 0.7, lane_ys[0]),
+    ]
+    draw_gallery(ax, gallery_x, baseline, w=gallery_w, h=4.4, tiles=gallery_tiles)
     stage_label(ax, gallery_x, baseline, 5, "A skimmable report",
                 "confirmed findings, useful non-\nfindings, side by side")
 
     legend_items = [
         (CONFIRMED_C, "confirmed"),
-        (DISCONFIRMED_C, "checked, not supported - still a finding"),
-        (INCONCLUSIVE_C, "inconclusive or couldn't be completed"),
+        (DISCONFIRMED_C, "checked, not supported"),
+        (INCONCLUSIVE_C, "inconclusive"),
+        (NOT_REALISABLE_C, "couldn't be built"),
     ]
-    lx, ly = gallery_x + 1.15, baseline + 0.75
+    lx, ly = gallery_x - 0.55, baseline - 3.4
     for i, (c, label) in enumerate(legend_items):
         ax.add_patch(Rectangle((lx, ly - i * 0.4), 0.22, 0.16, facecolor=c, edgecolor="none"))
         ax.text(lx + 0.32, ly - i * 0.4 + 0.08, label, ha="left", va="center",
