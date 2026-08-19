@@ -132,6 +132,116 @@ def extract_input_metadata(directory: str) -> str:
         return f"Error reading Trello data: {str(e)}"
 
 
+# Live Issue 31, ported from cbias_config.py: distinguish a genuinely categorical column from
+# free text. Same cutoff, same rationale - low-cardinality columns are exactly where an assumed
+# vocabulary (a hand-written value list that's gone stale, or was never complete) actually bites.
+_PROFILE_CARDINALITY_CUTOFF = 25
+
+
+def generate_data_profile(directory: str) -> str:
+    """MECHANICAL per-run profile of the actual JSON+CSV export - no LLM in the loop, so it cannot
+    hallucinate a value that isn't there and cannot go stale. Ported from cbias_config.py's
+    generate_data_profile (Live Issue 31) before this config's own hand-written DOMAIN_NOTES value
+    lists go stale the same way cbias's did there - three straight hand-transcribed vocabulary
+    patches each worked on their first live run, then were each found incomplete by the very next
+    one (DIVERGER_PLAN.md's Live Issue 31 / rev. 62). Answers ONLY "what is actually in the data";
+    DOMAIN_NOTES above stays the place for what this can't derive - semantics, provenance, the
+    CSV-not-JSON reading instruction and why. Reaches the same three realisation-stage cached
+    prefixes domain_notes does (orchestrator/worker/compiler - see realization.py), never
+    ideation - the same "realisation constraint, not an ideation constraint" boundary
+    available_libraries already draws.
+    """
+    base = Path(directory)
+    sections = []
+
+    csv_file = next(iter(sorted(base.glob("*.csv"))), None)
+    if csv_file is not None:
+        df = pd.read_csv(csv_file, encoding="utf-8")
+        lines = [f"  {csv_file.name} ({len(df)} rows, non-archived cards only):"]
+        for col in df.columns:
+            series = df[col]
+            nulls = int(series.isna().sum())
+            nunique = int(series.nunique(dropna=True))
+            if nunique <= _PROFILE_CARDINALITY_CUTOFF:
+                values = sorted(str(v) for v in series.dropna().unique())
+                lines.append(f"    {col!r} [{series.dtype}, {nulls} null]: {values}")
+            else:
+                lines.append(f"    {col!r} [{series.dtype}, {nulls} null]: "
+                             f"{nunique} distinct values, not enumerated (over the cutoff)")
+        sections.append(
+            "CSV columns - EVERY column present, not just the named custom fields (catches a "
+            "convenience column DOMAIN_NOTES doesn't mention, e.g. 'List Name' being directly "
+            "available here without an idList join, and any drift in the values it does mention):"
+            "\n" + "\n".join(lines)
+        )
+
+    json_file = next(iter(sorted(base.glob("*.json"))), None)
+    if json_file is not None:
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        lists_by_pos = sorted(data.get("lists", []), key=lambda l: l.get("pos", 0))
+        labels = data.get("labels", [])
+        custom_fields = data.get("customFields", [])
+        cards = data.get("cards", [])
+
+        lines = [
+            f"  lists ({len(lists_by_pos)}, in board order - exact names a stage-transition "
+            "script must match verbatim): " + ", ".join(repr(l.get("name")) for l in lists_by_pos),
+            f"  labels ({len(labels)}): " + ", ".join(
+                f"{l.get('name') or '(unnamed)'} [{l.get('color')}, {l.get('uses', 0)} uses]"
+                for l in labels
+            ),
+            f"  members: {len(data.get('members', []))}",
+        ]
+
+        # customFields DEFINITIONS - the full defined vocabulary for each list-type field, not a
+        # sample of what's currently used (that's the CSV column profile above). Verified against
+        # this export: the CSV's actual "Lead" values are Dave/Ken/Rocco/Sara/Stefania (5, all
+        # currently in use), but the field DEFINES a 6th option, "Todd", with zero cards using it
+        # right now - a real, mechanically-derived distinction ("defined but unused" vs "in use")
+        # that a hand-written note describing only observed values cannot show, and that changes
+        # the moment someone actually assigns a card to Todd.
+        cf_lines = []
+        for cf in custom_fields:
+            if cf.get("type") == "list":
+                options = sorted(
+                    v for o in cf.get("options", []) if (v := o.get("value", {}).get("text"))
+                )
+                cf_lines.append(f"    {cf['name']!r} (list, {len(options)} DEFINED options, "
+                                f"not just those in use): {options}")
+            else:
+                cf_lines.append(f"    {cf['name']!r} ({cf.get('type')})")
+        lines.append("  customFields (field DEFINITIONS):\n" + "\n".join(cf_lines))
+
+        # Mechanically confirms - rather than hand-asserts - DOMAIN_NOTES' "list-type fields are
+        # null in the JSON" instruction, precisely: a customFieldItem DOES exist on these cards,
+        # but its inline `value` is None; the actual selection is only resolvable by joining
+        # idValue -> customFields[].options[].id, which the CSV has already done for you. If a
+        # future export ever stops matching this shape, it shows up here instead of the
+        # instruction to read the CSV silently going stale.
+        cf_id_to_name = {cf["id"]: cf["name"] for cf in custom_fields}
+        cf_id_to_type = {cf["id"]: cf.get("type") for cf in custom_fields}
+        null_counts, populated_counts = {}, {}
+        for card in cards:
+            for item in card.get("customFieldItems", []):
+                if cf_id_to_type.get(item.get("idCustomField")) != "list":
+                    continue
+                name = cf_id_to_name.get(item.get("idCustomField"), "?")
+                bucket = null_counts if item.get("value") is None else populated_counts
+                bucket[name] = bucket.get(name, 0) + 1
+        lines.append(
+            f"  list-type customFieldItems in the JSON: {null_counts} have a null inline `value` "
+            f"(selection only resolvable via idValue -> customFields[].options[].id); "
+            f"{populated_counts} have a populated inline value. The CSV already resolves this "
+            "join for you - read it instead of the JSON for Lab/Lead/Source."
+        )
+
+        sections.append("JSON structure:\n" + "\n".join(lines))
+
+    return "\n\n".join(sections) if sections else "(no data profile available)"
+
+
 CONFIG = PipelineConfig(
     orchestrator_model="claude-opus-4-8",
     worker_model="deepseek-v4-pro",
@@ -148,4 +258,5 @@ CONFIG = PipelineConfig(
     available_libraries=AVAILABLE_LIBRARIES,
     domain_notes=DOMAIN_NOTES,
     extract_input_metadata=extract_input_metadata,
+    data_profile=generate_data_profile,
 )

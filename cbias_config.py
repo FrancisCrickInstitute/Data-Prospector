@@ -17,8 +17,9 @@ AVAILABLE_LIBRARIES below) but is not built automatically - build/rebuild it loc
 execution-validation will work for this config, and again whenever the Dockerfile's package list
 changes:
     docker build --target cbias-analysis -t cbias-analysis:latest .
-`trello_config.py`'s `python-analysis:latest` has the same build-it-yourself requirement, but no
-Dockerfile target exists for it yet.
+`trello_config.py` reuses this same `cbias-analysis:latest` image rather than a dedicated target -
+a trello angle only ever imports the numpy/pandas/matplotlib subset of AVAILABLE_LIBRARIES below,
+so the extra CBIAS-specific libraries baked into this image are simply inert for it.
 """
 
 import re
