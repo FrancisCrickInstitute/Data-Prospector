@@ -30,8 +30,8 @@ DISCONFIRMED_C = "#3D6FB4"  # blue
 INCONCLUSIVE_C = "#9AA0AC"  # gray
 NOT_REALISABLE_C = "#B08968"  # muted tan - "couldn't be built" (an engineering/provisioning gap)
 
-TITLE_Y_OFFSET = 3.05
-CAPTION_Y_OFFSET = 2.55
+TITLE_Y_OFFSET = 3.4
+CAPTION_Y_OFFSET = 2.9
 
 
 def stage_label(ax, x, y_base, number, title, caption, char_w=0.14):
@@ -149,7 +149,7 @@ def arrow(ax, xy_from, xy_to, color=MUTED, lw=1.6, connectionstyle="arc3,rad=0.0
 def main():
     fig, ax = plt.subplots(figsize=(19, 9), dpi=200)
     ax.set_xlim(0, 19)
-    ax.set_ylim(0, 9)
+    ax.set_ylim(0, 9.4)
     ax.axis("off")
     fig.patch.set_facecolor(PAPER)
     ax.set_facecolor(PAPER)
