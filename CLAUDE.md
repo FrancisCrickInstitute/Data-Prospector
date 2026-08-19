@@ -39,7 +39,13 @@ docker build --target cbias-analysis -t cbias-analysis:latest .   # the image cb
 
 Without a running Docker daemon, `execute_script_in_docker` returns `None`, `validate_execution` reports
 `SKIPPED` (never silently reported as `PASS`), and every angle that would have been realised ends up
-`not_realisable` instead — no code is graded without a verified sandbox run.
+`not_realisable` instead — no code is graded without a verified sandbox run. `app.py` checks for this
+*before* any of that happens: a startup preflight (`preflight.py`, Live Issue 29) verifies Docker is
+reachable and every configured model responds, hard-stopping the run before its ~25-110 LLM calls are
+committed rather than discovering a down daemon (or a bad key/stale model string) only at the end, the
+way Run 35 did. Pass `--skip-preflight` to bypass it deliberately (e.g. testing ideation/judging only
+with Docker known to be down) — with it skipped, or once past it, this paragraph's SKIPPED/`not_realisable`
+behaviour is what actually happens if Docker later becomes unavailable mid-run.
 
 There is no test suite, linter config, or CI in this repo currently — the closest thing to an oracle is
 the Docker exit code (`validate_execution`, grounded in the container's exit code, no LLM involved); there
