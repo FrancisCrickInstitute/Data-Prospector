@@ -23,27 +23,14 @@ you, doesn't.
   <img src="assets/pipeline_diagram.svg" alt="Data Prospector pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
 </p>
 
-## Before you start: this isn't an oracle
-
-Read this before running anything on your own data — it will save you a disappointing first run.
-
-This tool doesn't discover truth on its own. It's only ever as good as two things you provide: how
-clearly your report states what you actually want to know, and how clean and well-organised your
-data is. A vague report paired with messy, disorganised, or inconsistent data is unlikely to
-produce anything useful — not because the tool failed, but because there wasn't enough real signal
-in the input for it to work with. The clearer and more specific your question, and the more
-consistent your data, the better a shot it has.
-
-It's also a genuinely new, actively-developed research tool, not a finished, hardened product.
-Building it has surfaced a long list of real bugs and limitations along the way, and the large
-majority of them trace back to the same root cause: an assumption — made by the AI, not by
-you — about the input data or the report that turned out to be wrong (a response value the report
-never mentioned, a column that didn't mean what it looked like it meant, a software library that
-had quietly changed its behaviour). Every one of these is recorded, in detail, in
-[`DIVERGER_PLAN.md`](DIVERGER_PLAN.md), and fixing them has made the pipeline noticeably more
-reliable over time — but assume more are still out there on data and questions it hasn't seen
-before. **Always read the generated code and treat every finding, confirmed or not, as a lead to
-check yourself — not a conclusion to take on trust.**
+> [!WARNING]
+>## Before you start: this isn't an oracle
+>
+>Read this before running anything on your own data — it will save you a disappointing first run.
+>
+>This tool doesn't discover truth on its own. It's only ever as good as two things you provide: how clearly your report states what you actually want to know, and how clean and well-organised your data is. A vague report paired with messy, disorganised, or inconsistent data is unlikely to produce anything useful — not because the tool failed, but because there wasn't enough real signal in the input for it to work with. The clearer and more specific your question, and the more consistent your data, the better a shot it has.
+>
+>It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption — made by the AI, not by you — about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). Every one of these is recorded, in detail, in [`DIVERGER_PLAN.md`](DIVERGER_PLAN.md), and fixing them has made the pipeline noticeably more reliable over time — but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself — not a conclusion to take on trust.**
 
 ## Design influences
 
