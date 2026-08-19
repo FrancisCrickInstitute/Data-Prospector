@@ -1,11 +1,11 @@
-# Diverger
+# Data Prospector
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.14+](https://img.shields.io/badge/Python-3.14+-green.svg)](https://www.python.org/downloads/)
 [![Anthropic API](https://img.shields.io/badge/Anthropic-API-orange.svg)](https://www.anthropic.com)
 [![Docker](https://img.shields.io/badge/Docker-containerized-blue.svg)](https://www.docker.com)
 
-Diverger explores a dataset from **many independent angles at once**, using AI — instead of
+Data Prospector explores a dataset from **many independent angles at once**, using AI — instead of
 converging on one "best" analysis, the way most automated analysis tools do. You give it a short
 description of your question and your data; it comes back with a shortlist of the most
 interesting, best-supported ideas it found, each one backed by real code that was actually run
@@ -20,7 +20,7 @@ Python — but using it on the example data, or your own data once someone has c
 you, doesn't.
 
 <p align="center">
-  <img src="assets/pipeline_diagram.svg" alt="Diverger pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
+  <img src="assets/pipeline_diagram.svg" alt="Data Prospector pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
 </p>
 
 ## Design influences
@@ -49,7 +49,7 @@ producing something that *works* — but it tends to settle on the same conventi
 analysis a competent analyst would reach for first, because "keep refining the same idea" is
 exactly the process that rewards convention.
 
-Diverger does the opposite. It asks many independent "reasoners" to each propose a *different*
+Data Prospector does the opposite. It asks many independent "reasoners" to each propose a *different*
 idea about your data — deliberately never letting them see or build on each other's proposals mid-thought
 — then has two independent reviewers score every idea for how surprising it is and how well the
 data actually seems to support it, and only *then* picks the strongest handful to actually build

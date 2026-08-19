@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A **diverger**: given a task report and a dataset, it fans out many independent, LLM-generated analytical
+**Data Prospector** (internally, a "diverger" — see `DIVERGER_PLAN.md` for why that architectural term is
+still used throughout this codebase and design log even though the product-facing name is now Data
+Prospector; nothing else changed on account of the rename, it's prose-only): given a task report and a
+dataset, it fans out many independent, LLM-generated analytical
 **angles** (hypotheses about the data), judges each one for non-obviousness and soundness, selectively
 realises the top-ranked few into Docker-verified Python scripts, and writes the result up as a tiered
 markdown **gallery** — not a single "best" script. The goal is a skimmable spread of distinct, defensible,
