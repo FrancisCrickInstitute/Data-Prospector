@@ -246,10 +246,17 @@ CONFIG = PipelineConfig(
     orchestrator_model="deepseek-v4-pro",
     worker_model="deepseek-v4-flash",
     compiler_model="deepseek-v4-pro",
-    requirements_evaluator_model="deepseek-v4-pro",
+    # requirements_evaluator_model is the one role that CANNOT follow orchestrator/worker/compiler
+    # onto DeepSeek: it's validate_realization's model, and validate_realization is passed the
+    # angle's actual PNG artifacts (images=). DeepSeek's endpoint does not support image input -
+    # confirmed rev. 66, DIVERGER_PLAN.md - so this stays on Anthropic, matching cbias_config.py's
+    # identical carve-out for the same reason.
+    requirements_evaluator_model="claude-sonnet-5",
     angle_model="deepseek-v4-flash",
-    # D5 judging: frontier tier, matching orchestrator_model - once req_score is gone these two
-    # judges (insight/soundness) are the entire quality bar (DIVERGER_PLAN.md §5).
+    # D5 judging: matches orchestrator_model's tier, NOT reverted to Anthropic like
+    # requirements_evaluator_model above - judge_insight/judge_soundness never see images (see
+    # CLAUDE.md's caching table), so the vision gap above doesn't apply here. Left on DeepSeek
+    # deliberately (rev. 66) pending more evidence on judging quality specifically, not vision.
     judge_model="deepseek-v4-pro",
     # Reuses the pinned cbias-analysis image (numpy/pandas/matplotlib + more) rather than a dedicated
     # python-analysis target, which has no Dockerfile entry. A trello angle only ever imports the
