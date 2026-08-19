@@ -243,14 +243,14 @@ def generate_data_profile(directory: str) -> str:
 
 
 CONFIG = PipelineConfig(
-    orchestrator_model="claude-opus-4-8",
-    worker_model="deepseek-v4-pro",
+    orchestrator_model="deepseek-v4-pro",
+    worker_model="deepseek-v4-flash",
     compiler_model="deepseek-v4-pro",
-    requirements_evaluator_model="claude-sonnet-5",
-    angle_model="deepseek-v4-pro",
+    requirements_evaluator_model="deepseek-v4-pro",
+    angle_model="deepseek-v4-flash",
     # D5 judging: frontier tier, matching orchestrator_model - once req_score is gone these two
     # judges (insight/soundness) are the entire quality bar (DIVERGER_PLAN.md §5).
-    judge_model="claude-opus-4-8",
+    judge_model="deepseek-v4-pro",
     # Reuses the pinned cbias-analysis image (numpy/pandas/matplotlib + more) rather than a dedicated
     # python-analysis target, which has no Dockerfile entry. A trello angle only ever imports the
     # numpy/pandas/matplotlib AVAILABLE_LIBRARIES lists, so the extra libraries are inert.
