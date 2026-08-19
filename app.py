@@ -5,13 +5,28 @@ Supports multiple domain configs (bioimage, trello, etc.) via --config flag.
 
 import argparse
 import asyncio
+import sys
 
 from pipeline import generate_and_optimize
+from preflight import run_preflight
 
 
 async def main(report_path: str, data_dir: str, output_dir: str, max_iterations: int,
-               realize_top_k: int, angles_per_iteration: int):
+               realize_top_k: int, angles_per_iteration: int, skip_preflight: bool = False):
     """Run the pipeline on a task report with domain-specific configuration."""
+    # Live Issue 29: verify every configured model is reachable and Docker is available before
+    # committing this run's ~25-110 LLM calls (Run 35 spent a full run finding out Docker was
+    # down only at the very end, with zero verified output to show for it). Hard-stops rather
+    # than warning-and-continuing, on the same "fail loudly, not silently degrade" convention the
+    # generated scripts themselves are held to - --skip-preflight is the deliberate opt-out for
+    # e.g. testing ideation/judging only with Docker known to be unavailable.
+    if not skip_preflight and not await run_preflight(CONFIG):
+        sys.exit(
+            "Preflight check failed - see the [preflight] report above for which check(s) and "
+            "why. Fix the problem, or pass --skip-preflight to run anyway (e.g. deliberately "
+            "testing ideation/judging only, with Docker known to be unavailable)."
+        )
+
     with open(report_path, 'r', encoding='utf-8') as f:
         report_content = f.read()
 
@@ -93,6 +108,14 @@ if __name__ == "__main__":
              "higher than the pre-D6 --designs-per-iteration default of 3, since ideation-only "
              "generation (D2) is much cheaper than full design + compile + Docker execution."
     )
+    parser.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip the startup check that every configured model is reachable and Docker is "
+             "available (Live Issue 29). Use this to deliberately run ideation/judging only "
+             "with Docker known to be unavailable; otherwise leave it on so a bad key, a stale "
+             "model string, or a down daemon fails fast instead of after ~25-110 wasted calls."
+    )
 
     args = parser.parse_args()
 
@@ -117,4 +140,4 @@ if __name__ == "__main__":
     data_dir = args.data_dir or data_dir_default
 
     asyncio.run(main(report_path, data_dir, args.output_dir, args.max_iterations,
-                     args.realize_top_k, args.angles_per_iteration))
+                     args.realize_top_k, args.angles_per_iteration, args.skip_preflight))

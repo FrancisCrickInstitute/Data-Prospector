@@ -27,6 +27,20 @@ DOCKER_SANDBOX_FLAGS = [
 ]
 
 
+def is_docker_available(timeout: int = 5) -> bool:
+    """Cheap reachability check: is a Docker daemon actually there to run against? Shared by
+    execute_script_in_docker's own pre-check below and the startup preflight (Live Issue 29,
+    preflight.py) - Run 35 spent a full ~110-call run with Docker down and nothing checked first,
+    so every realisation was SKIPPED for zero verified output; the preflight exists to catch
+    exactly that before committing the run, using this same check.
+    """
+    try:
+        subprocess.run(["docker", "ps"], capture_output=True, timeout=timeout, check=False)
+        return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
 def execute_script_in_docker(script: str, data_dir: str, docker_image: str, timeout: int = 300,
                              artifacts_dir: str = None) -> tuple[bool, str, list[dict]]:
     """
@@ -34,9 +48,7 @@ def execute_script_in_docker(script: str, data_dir: str, docker_image: str, time
     Returns (success, output_or_error, artifacts) or (None, message, []) if Docker unavailable.
     Each artifact is a dict: {"name": str, "size": int}. Files are copied to artifacts_dir if given.
     """
-    try:
-        subprocess.run(["docker", "ps"], capture_output=True, timeout=5, check=False)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    if not is_docker_available():
         return None, "Docker not available - skipping execution test", []
 
     try:
