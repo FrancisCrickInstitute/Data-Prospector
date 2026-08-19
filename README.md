@@ -1,7 +1,7 @@
 # Data Prospector
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python 3.14+](https://img.shields.io/badge/Python-3.14+-green.svg)](https://www.python.org/downloads/)
+[![Python 3.14](https://img.shields.io/badge/Python-3.14-green.svg)](https://www.python.org/downloads/)
 [![Anthropic API](https://img.shields.io/badge/Anthropic-API-orange.svg)](https://www.anthropic.com)
 [![Docker](https://img.shields.io/badge/Docker-containerized-blue.svg)](https://www.docker.com)
 
@@ -100,9 +100,10 @@ each idea's score is far more trustworthy than any single number would be, so th
 
 ## What you'll actually get
 
-The report groups every idea it fully tested into one of a few outcomes. These are the exact words
-you'll see in the generated report (`realised`, etc. is the internal name, shown in brackets so it
-matches what you'll find if you go looking in the underlying files):
+The report groups every idea into one of a few outcomes - most were fully tested, one (see the last
+row below) deliberately wasn't. These are the exact words you'll see in the generated report
+(`realised`, etc. is the internal name, shown in brackets so it matches what you'll find if you go
+looking in the underlying files):
 
 | In the report                                   | What it means                                                                                                                                                                    |
 |-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -160,9 +161,10 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 (this file is already excluded from version control, so your key won't accidentally get shared).
-The bundled example config additionally routes some of its mechanical, high-volume calls to
-DeepSeek for cost reasons (get a key at [platform.deepseek.com](https://platform.deepseek.com)) -
-add two more lines to the same `.env` file:
+Both bundled, ready-to-run examples (`cbias` and `trello`) additionally route some of their calls
+to DeepSeek for cost reasons (get a key at [platform.deepseek.com](https://platform.deepseek.com))
+- without it, those two configs fail as soon as they reach a DeepSeek-routed call. Add two more
+lines to the same `.env` file:
 
 ```
 DEEPSEEK_API_KEY=...
