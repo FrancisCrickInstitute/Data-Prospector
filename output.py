@@ -204,7 +204,7 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
     also_generated = [a for a in all_angles if a.get("id") not in considered_ids]
 
     lines = [
-        f"# Diverger gallery — {timestamp}", "",
+        f"# Data Prospector gallery — {timestamp}", "",
         f"{len(all_angles)} candidate angle(s) surfaced this run: {len(realized_top)} realised or "
         f"disconfirmed, {len(not_shown)} executed but illegible, {len(realization_errors)} executed "
         f"but unscored (judge failure), {len(not_realisable)} not realisable, {len(unsupportable)} "

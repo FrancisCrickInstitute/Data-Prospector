@@ -1,4 +1,4 @@
-"""Diverger pipeline orchestration: criteria split -> ideate (fan-out) -> judge -> dedup
+"""Data Prospector pipeline orchestration: criteria split -> ideate (fan-out) -> judge -> dedup
 (measurement only) -> rank -> realise top-k -> gallery. See CLAUDE.md for the architecture and
 DIVERGER_PLAN.md for the full design/run/decision history. This module holds only
 generate_and_optimize - every stage's actual implementation lives in its own module (llm.py,

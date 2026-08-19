@@ -3,8 +3,9 @@
 
 A from-scratch matplotlib illustration (no external icon libraries/network calls, so it's
 reproducible offline) in the visual grammar of a journal graphical abstract: numbered stage
-panels, simple flat icons, a literal fan-out/narrow-down shape carrying the "diverger" name's own
-idea - many independent ideas branching out, most kept only as a shortlist, a few actually tested.
+panels, simple flat icons, a literal fan-out/narrow-down shape carrying the pipeline's own
+architecture in the picture itself - many independent ideas branching out (it's a "diverger", not
+a "converger" - see DIVERGER_PLAN.md §1), most kept only as a shortlist, a few actually tested.
 
 Run with: pixi run python assets/generate_pipeline_figure.py
 Writes: assets/pipeline_diagram.svg (embedded in README.md) and .png (quick local preview).
