@@ -5,27 +5,240 @@
 [![Anthropic API](https://img.shields.io/badge/Anthropic-API-orange.svg)](https://www.anthropic.com)
 [![Docker](https://img.shields.io/badge/Docker-containerized-blue.svg)](https://www.docker.com)
 
-A pipeline built around the Anthropic API to generate a **spread of distinct, defensible analytical
-angles** on a dataset, rather than converging on one "best" script. Every model role is swappable per
-domain config; this repo runs ideation/judging on Claude and routes two mechanical, high-volume roles to
-DeepSeek via its Anthropic-Messages-API-compatible endpoint (see `DIVERGER_PLAN.md` §5) — any model that
-speaks that API works. Given a task report and input data, it fans out many independent hypotheses,
-judges each for non-obviousness and soundness, selectively realises the top-ranked few into
-Docker-verified Python scripts, and writes the whole run up as a tiered markdown **gallery** for a human
-to skim and evaluate. There is no pass/fail oracle for idea quality — that judgement belongs to the
-person reading the gallery, not the pipeline.
+Diverger explores a dataset from **many independent angles at once**, using AI — instead of
+converging on one "best" analysis, the way most automated analysis tools do. You give it a short
+description of your question and your data; it comes back with a shortlist of the most
+interesting, best-supported ideas it found, each one backed by real code that was actually run
+against your data. Crucially, that shortlist includes ideas that turned out to be **wrong** —
+tested and found unsupported, not swept away — because knowing what *isn't* true is often just as
+useful as knowing what is.
 
-**This is currently a CBIAS research instrument, not a validated general-purpose template.** `cbias_config.py`
-is the only domain config that has ever produced a real run; see [Adapting to a new domain](#adapting-to-a-new-domain)
-for what that means for the other two configs shipped here.
+No single step here needs you to write or read Python — running an analysis is copy-pasting one
+command into a terminal. Understanding the *design* of the pipeline (further down this file) does
+get more technical, and adapting it to a brand-new dataset needs someone comfortable editing
+Python — but using it on the example data, or your own data once someone has configured it for
+you, doesn't.
+
+<p align="center">
+  <img src="assets/pipeline_diagram.svg" alt="Diverger pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
+</p>
+
+## Why "diverge" instead of "converge"?
+
+Most automated-analysis tools work like a single very persistent analyst: try something, look at
+the result, refine it, try again, and hand you one final, polished script. That process is good at
+producing something that *works* — but it tends to settle on the same conventional, unsurprising
+analysis a competent analyst would reach for first, because "keep refining the same idea" is
+exactly the process that rewards convention.
+
+Diverger does the opposite. It asks many independent "reasoners" to each propose a *different*
+idea about your data — deliberately never letting them see or build on each other's proposals mid-thought
+— then has two independent reviewers score every idea for how surprising it is and how well the
+data actually seems to support it, and only *then* picks the strongest handful to actually build
+and test. The result isn't one script — it's a spread of leads, ranked and explained, for you to
+read and judge for yourself. See [`DIVERGER_PLAN.md`](DIVERGER_PLAN.md) §1 for the fuller
+rationale, including the earlier "converger" design this project grew out of.
+
+## How it works
+
+1. **Your inputs.** A short written report describing your research question (what you want to
+   find out, and anything you already know or want to rule out), plus your actual dataset — CSVs,
+   text files, whatever shape your data is in.
+2. **Many independent ideas.** The AI proposes a batch of candidate hypotheses about your data —
+   by default, 24 per run (`2` rounds × `12` per round) — each one generated on its own, without
+   seeing what the others came up with, so they genuinely differ rather than being variations on
+   one theme.
+3. **Scored, then narrowed.** Every idea is independently rated on two separate questions: *is
+   this actually a surprising, non-obvious angle*, and *does the data plausibly support it at
+   all*? Only the highest-scoring handful (`4` by default) go on to the next step — the rest are
+   kept as a written shortlist, with the reviewers' reasoning attached, but never turned into code.
+4. **Built and safety-tested.** Each selected idea is turned into real, runnable Python code and
+   executed inside a locked-down sandbox (via [Docker](https://www.docker.com)) — no internet
+   access, limited memory, and no ability to touch anything outside that one test run — against
+   your actual data. If it fails, it gets a few automatic attempts to fix itself before being
+   reported as unable to run.
+5. **A skimmable report.** Everything lands in one markdown file: confirmed findings and
+   *disconfirmed* findings shown side by side (a clean "no" is treated as a real result, not
+   hidden), plus anything that couldn't be completed and why. You open it in any text editor, or a
+   markdown viewer/previewer, and read it top to bottom in a few minutes.
+
+There is deliberately no automatic "quality" score standing between you and the ideas it
+generates — the AI's own numeric self-ratings turned out, across many runs, to be a poor guide to
+what's actually worth reading (see `DIVERGER_PLAN.md` §15, class E). The *written reasoning* behind
+each idea's score is far more trustworthy than any single number would be, so that's what's shown.
+
+## What you'll actually get
+
+The report groups every idea it fully tested into one of a few outcomes. These are the exact words
+you'll see in the generated report (`realised`, etc. is the internal name, shown in brackets so it
+matches what you'll find if you go looking in the underlying files):
+
+| In the report | What it means |
+|---|---|
+| ✅ **Confirmed** (`realised`) | Fully tested against your real data, and the pattern the idea predicted was actually there. |
+| 🔁 **Checked, not supported** (`realised_null`) | Fully tested — and the data does **not** support it. Still a real result: it tells you what's *not* worth chasing. |
+| ⚠️ **Inconclusive** (`pattern_not_shown`) | The code ran, but its output (e.g. a chart) wasn't clear enough to say either way. A genuine limitation of that attempt, not a finding. |
+| 🚧 **Couldn't be built** (`not_realisable`) | Needed something not set up in this environment (e.g. a missing piece of software) and never got the chance to actually run. |
+| ⚙️ **Technical hiccup** (`realization_error`) | Something in the pipeline itself broke while working on this one idea — unrelated to your data or the idea's merit. |
+| ❌ **Not pursued** (`unsupportable`) | Judged, on paper, as unlikely to be answerable well with this data, so it was never turned into code at all — still listed, with the reviewer's reasoning, in case you disagree. |
+
+Confirmed and disconfirmed results are shown together, ranked by how *surprising* they are — not
+by whether they turned out to be "yes" or "no" — because on real datasets the most interesting
+result is often a confirmed surprise sitting right next to an equally-surprising thing that turned
+out not to hold up.
+
+Alongside the report, you also get: every compiled script that produced a result (so you, or a
+collaborator with more coding experience, can check exactly what was run), any charts/plots it
+produced, and a second file listing *every* idea that was generated and scored this run — not just
+the handful that got built — in case something further down the ranking still looks worth a second
+look.
+
+## Getting set up
+
+You'll need three things before your first run. None of this needs Python knowledge — it's
+installing a couple of standard applications and pasting a few commands into a terminal.
+
+**1. [pixi](https://pixi.sh)**, which installs the exact Python version and packages this project
+needs for you — you don't manage any of that by hand. [Install pixi](https://pixi.sh/latest/#installation),
+then, from inside this folder:
+
+```bash
+pixi install
+```
+
+**2. [Docker Desktop](https://www.docker.com/products/docker-desktop/)**, running in the
+background. This is what actually runs the AI-generated code — inside an isolated, locked-down
+mini-environment with no internet access and no way to touch anything outside that one test, so
+nothing it does can affect your real computer or files. Install it, start it, then build the image
+this project uses (a one-off step, and again any time the project's `Dockerfile` changes):
+
+```bash
+docker build --target cbias-analysis -t cbias-analysis:latest .
+```
+
+**3. An Anthropic API key.** This is what lets the pipeline talk to Claude. Get one at
+[console.anthropic.com](https://console.anthropic.com), then create a plain text file named
+`.env` in this folder containing:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+(this file is already excluded from version control, so your key won't accidentally get shared).
+The bundled example config additionally routes some of its mechanical, high-volume calls to
+DeepSeek for cost reasons (get a key at [platform.deepseek.com](https://platform.deepseek.com)) —
+add two more lines to the same `.env` file:
+
+```
+DEEPSEEK_API_KEY=...
+DEEPSEEK_BASE_URL=https://api.deepseek.com/anthropic
+```
+
+> **A note on cost.** Every run makes real calls to Claude (and, for the bundled example,
+> DeepSeek) — typically several dozen to a little over a hundred, depending on the settings below.
+> That has a genuine, if modest, cost billed to whichever account the API key belongs to. If
+> you're just getting a feel for the tool, consider starting with a smaller `--angles-per-iteration`
+> (see Flags below) before running it at full scale.
+
+## Running your first analysis
+
+A worked example — a real academic symposium's registration data, feedback surveys, and
+programme — already ships with this repository, so this runs immediately with no setup beyond the
+above:
+
+```bash
+pixi run python app.py --config cbias
+```
+
+This takes a while (the pipeline is doing dozens of AI calls and running several pieces of
+generated code) — expect somewhere from several minutes to a while longer, depending on the
+settings. When it finishes, it prints exactly where everything was written; the report itself
+lands at `outputs/gallery_<timestamp>.md`.
+
+### Flags
+
+You won't need most of these on a first run — they're here for once you're comfortable and want
+more or fewer ideas explored.
+
+```
+--config {bioimage,trello,cbias}   Which example/domain to run (default: cbias — the only one
+                                    with sample data and a ready-to-use setup in this repository)
+--report PATH                      Your own report file, if not using the bundled example
+--data-dir PATH                    Your own data folder, if not using the bundled example
+--output-dir PATH                  Where to write the report (default: ./outputs)
+--max-iterations N                 How many rounds of idea generation to run (default: 2)
+--angles-per-iteration N           How many ideas to generate per round (default: 12)
+--realize-top-k N                  How many of the top-ranked ideas actually get built and tested
+                                    as real code (default: 4) — the rest stay as a written
+                                    shortlist only
+--skip-preflight                   Skip the startup check that Docker and the AI services are
+                                    reachable before committing to a full run. Leave this on
+                                    unless you're deliberately testing without Docker running.
+```
+
+At the defaults, that's `2 × 12 = 24` candidate ideas generated and scored, with the top `4`
+actually built and tested — see `DIVERGER_PLAN.md` §12.4 for the full cost breakdown if you want to
+plan around it.
+
+## Using this on your own data
+
+This currently ships with one fully worked example (CBIAS, above) and one further domain
+(`trello`) that has run successfully once but is still early days — see the table below. Pointing
+this at a genuinely new dataset and question is possible, but it's a task for whoever on your team
+is comfortable editing Python and reading a bit of existing example code, not a config file you
+fill in — expect to sit down with a collaborator for this part if that's not you.
+
+<details>
+<summary><strong>What "adapting it" actually involves</strong> (click to expand)</summary>
+
+The pipeline itself never changes between domains — only a small Python file describing the new
+domain does. Concretely, that file needs to:
+
+- Say which AI model handles which role (there are six roles, from cheap/fast ones for mechanical
+  work to a higher-quality one for judging ideas and safety-checking output)
+- List which Python libraries the generated code is allowed to use, and point at a
+  [Docker](https://www.docker.com) image that already has them installed
+- Describe the shape of the data (file layout, column names, known quirks) so the AI isn't
+  guessing
+- Provide a small function that scans the actual data folder and summarises what's really there
+
+`cbias_config.py` is a complete, working example to copy from. The full technical checklist is in
+[`CLAUDE.md`](CLAUDE.md) under "Adding a new domain."
+
+| Example | Status |
+|---|---|
+| `cbias_config.py` | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box. |
+| `trello_config.py` | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) — real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
+| `bioimage_config.py` | A template only — nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data. |
+
+</details>
+
+## A few practical notes
+
+- Generated code can only use the software libraries each example explicitly allows — see
+  `AVAILABLE_LIBRARIES` near the top of the relevant `*_config.py` file if you're curious exactly
+  what's available for the bundled CBIAS example.
+- By default, the pipeline checks that Docker and the AI services it needs are actually reachable
+  *before* doing any real work, and stops with a clear message if something's wrong — rather than
+  running for several minutes and discovering the problem only at the end. If you deliberately skip
+  that check (`--skip-preflight`) and Docker turns out to be unavailable partway through, ideas are
+  still generated and scored as normal, but nothing gets built or tested as real code — every idea
+  that would have been tested is reported honestly as "couldn't be built," never silently marked as
+  a pass.
+- There's no automated check for whether an idea is a *good* one — that's deliberate. The only
+  automatic check is whether generated code actually runs correctly; judging whether a finding is
+  worth pursuing is left to you, the reader.
+- [`DIVERGER_PLAN.md`](DIVERGER_PLAN.md) is this project's running design and decision log — every
+  tuning choice and known limitation is written up there, in detail, if you want to understand *why*
+  something works the way it does.
 
 ## Design influences
 
 The architecture started from two Anthropic sources: *Building effective agents* [1] (the
-orchestrator-worker and evaluator-optimizer patterns behind the realise step, D6) and the
-`claude-cookbooks` tutorials [2]. The fan-out → judge → selectively-realise shape was later informed by
-two published multi-agent science systems [3, 4]. See `DIVERGER_PLAN.md` §1 for how this fork inverted
-its parent repo's converge-to-one-winner design into the diverge-then-judge one described below.
+orchestrator-worker and evaluator-optimizer patterns behind the code-building step) and the
+`claude-cookbooks` tutorials [2]. The fan-out → judge → selectively-build shape was later informed
+by two published multi-agent science systems [3, 4]. See `DIVERGER_PLAN.md` §1 for how this project
+grew out of an earlier "converger" design that worked the opposite way.
 
 1. Schluntz, E., & Zhang, B. (2024, December 19). *Building effective agents*. Anthropic.
    https://www.anthropic.com/engineering/building-effective-agents
@@ -36,162 +249,6 @@ its parent repo's converge-to-one-winner design into the diverge-then-judge one 
 4. Lu, C., Lu, C., Lange, R. T., Yamada, Y., Hu, S., Foerster, J., Ha, D., & Clune, J. (2026). Towards
    end-to-end automation of AI research *(known informally as "The AI Scientist")*. *Nature*, *651*,
    914–919. https://doi.org/10.1038/s41586-026-10265-5
-
-## How it works
-
-```
-Task Report + Input Data
-        ↓
-Criteria split (once per run): report → <ideation_criteria> + <deliverable_rubric>
-        ↓
-┌─── Ideation (fanned out) ─────────────────────────────────────────────┐
-│  max-iterations × angles-per-iteration independent one-angle calls,   │
-│  each one hypothesis + variables + rough method + why it's non-obvious│
-└─────────────────────────────────────────────────────────────────────┘
-        ↓
-Judging: every archived angle scored for insight (non-obviousness) AND
-         soundness (solid / caveat / unsupportable) — graded, not gated
-        ↓
-Dedup (measurement only — logs near-duplicate clusters, doesn't remove them)
-        ↓
-Rank by soundness then insight → take the top `--realize-top-k`
-        ↓
-┌─── Realise (per selected angle) ──────────────────────────────────────┐
-│  Orchestrator (architecture for THIS angle) → Workers (parallel,      │
-│  one call per function) → Compiler → Docker execution                 │
-│  (retried up to 3x on FAIL) → Realisation judge (does the output      │
-│  legibly show the claimed pattern?)                                   │
-└─────────────────────────────────────────────────────────────────────┘
-        ↓
-Gallery: realised/disconfirmed (top, by insight) → illegible → judge-failed
-         → not realisable (provisioning gap) → unsupportable by the data
-```
-
-- **Selective execution**: code is only written and run for the `--realize-top-k` angles that rank best
-  after judging — the rest of the archive stays text, judged but never compiled, and appears one line
-  each in the gallery's closing summary.
-- **Never one winner**: a clean disconfirmation (`realised_null`) ranks *alongside* a confirmation in the
-  gallery, not beneath it — closing a question is often as useful as answering one, and burying the
-  disconfirmations would defeat the point of running a diverger at all.
-- **Five distinct outcomes per realised angle**, never conflated with each other: `realised`,
-  `realised_null` (disconfirmed, not a failure), `pattern_not_shown` (a genuine quality failure — the
-  output is illegible), `not_realisable` (an engineering/provisioning gap, e.g. a missing library — shown
-  with what it needed), and `realization_error` (the pipeline itself broke on this angle, unrelated to the
-  angle or the data — kept out of the provisioning tier so it doesn't misdirect what to provision next).
-- **Role-based models**: a frontier Anthropic model for ideation-judging and realisation-orchestration (the
-  two places quality is actually decided, now that no rubric-gate score exists), and a cheaper/high-volume
-  tier for mechanical work — worker implementation and script compilation, both protected by the Docker
-  execution check acting as a real oracle. Set per-role in each `*_config.py`; see `DIVERGER_PLAN.md` §5.
-- **Containerized execution**: generated scripts run in a pre-built Docker image, sandboxed with no
-  network access, capped memory/CPU, a read-only root filesystem, dropped capabilities, and a non-root
-  user — both pinning dependencies and isolating untrusted LLM-generated code.
-- **Structured I/O**: XML-tagged prompts/responses for reliable parsing and validation, with regex/markdown
-  fallbacks that tolerate minor formatting drift.
-
-## Adapting to a new domain
-
-The pipeline itself (`pipeline.py`) never changes per use case — only the domain config and input data do.
-Three domain configs currently exist, selected via `--config`:
-
-| Config | Status |
-|---|---|
-| `cbias_config.py` | **The only one that has ever produced a real run.** Every calibrated threshold and tuned prompt in `DIVERGER_PLAN.md` is CBIAS-shaped. Sample input data ships in this repo (`inputs/cbias_report/`, `inputs/cbias_data_anon/`) and its Docker image target exists (`cbias-analysis`). |
-| `trello_config.py` | Sample input data ships in this repo (`inputs/trello_reports/`, `inputs/trello_data/`), but it references a `python-analysis:latest` Docker image that the `Dockerfile` does not build — execution-validation has never actually been exercised for this config. |
-| `bioimage_config.py` | Its default report/data paths (`inputs/report/`, `inputs/images/`) don't exist in this repo — no sample data ships for it, and no run has ever been done. No longer `app.py`'s default (see Flags below); pass `--config bioimage` only if you're supplying your own report/data. |
-
-`PipelineConfig` (`config.py`) is the interface all three satisfy and the swap point for adding a fourth:
-
-1. **Create a domain config** (e.g. `my_domain_config.py`):
-   - Instantiate a `PipelineConfig` — see `config.py` for every field
-   - Set the six model-role fields: `orchestrator_model`, `judge_model` (frontier — these two make the
-     quality calls), `worker_model`, `compiler_model`, `angle_model` (cheap/high-volume, Docker- and
-     judge-protected downstream), `requirements_evaluator_model` (must be vision-capable — it's passed
-     the angle's actual PNG artifacts)
-   - Define `available_libraries` (allowed imports for generated scripts) and `domain_notes`
-     (domain-specific data-layout constraints) — treat `domain_notes` as an interface, not a comment; a
-     single wrong line in it can silently break multiple independently generated scripts the same way
-     (`DIVERGER_PLAN.md` Live Issue 25)
-   - Provide `extract_input_metadata(data_dir)` — scans input files and returns a description fed to
-     ideation and the orchestrator
-   - Point `docker_image` at an image that **already exists locally** and matches `available_libraries`
-   - Optionally override `design_stances` (defaults to `DEFAULT_DESIGN_STANCES` in `config.py`) or
-     `angle_similarity_threshold` (defaults to `0.22`, currently inert everywhere — see Flags below)
-
-2. **Update `app.py`**: add the new config to the `--config` choices.
-
-3. **Update `Dockerfile`**: add a build target pre-installing the domain's required packages.
-
-4. **Update `pixi.toml`** (optional): add the domain's Python dependencies.
-
-See `cbias_config.py` for a concrete, fully working example.
-
-## Setup
-
-Requirements: [pixi](https://pixi.sh), Docker Desktop running, an Anthropic API key.
-
-```bash
-pixi install
-docker build --target cbias-analysis -t cbias-analysis:latest .
-```
-
-Set `ANTHROPIC_API_KEY` — either export it in the shell or put it in a `.env` file (loaded automatically
-via `python-dotenv`). `cbias_config.py` additionally routes its worker/compiler roles to DeepSeek, which
-needs `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` set the same way.
-
-## Usage
-
-### CBIAS symposium analysis
-
-Sample report and anonymised input data already ship under `inputs/cbias_report/` and
-`inputs/cbias_data_anon/`, so this runs out of the box:
-
-```bash
-pixi run python app.py --config cbias
-```
-
-### Flags
-
-```
---config {bioimage,trello,cbias}   Domain configuration to use (default: cbias — the only config with
-                                    sample data and a built Docker image in this repo; see Adapting to
-                                    a new domain above)
---report PATH                      Path to task report file (defaults to the config's sample report)
---data-dir PATH                    Path to input data directory (defaults to the config's sample data)
---output-dir PATH                  Output directory for the gallery and its artifacts (default: ./outputs)
---max-iterations N                 Ideation iterations (default: 2). Each iteration generates
-                                    angles-per-iteration candidate angles as TEXT ONLY — no code, no
-                                    Docker — so this is cheap relative to realisation.
---angles-per-iteration N           Candidate angles generated per iteration (default: 12).
---realize-top-k N                  How many of the top-ranked, non-unsupportable judged angles to
-                                    actually write and run code for (default: 4). Selective execution —
-                                    the rest of the archive is judged as text only, never compiled or run.
-```
-
-At default settings that's `2 × 12 = 24` candidate angles generated and judged per run, with only the
-top `4` actually compiled and executed — see `DIVERGER_PLAN.md` §12.4 for the full call-count/cost
-breakdown.
-
-The gallery is written to `outputs/gallery_<timestamp>.md`, alongside a sibling images directory and a
-`surfaced_angles_<timestamp>.md` dump with full judge detail on every angle (not just the realised top-k).
-Each realised angle's compiled script is written to `outputs/scripts/<timestamp>/<angle_id>.py` and linked
-from its gallery entry.
-
-### Notes
-
-- Generated scripts are restricted to each config's pre-installed libraries — see `AVAILABLE_LIBRARIES`
-  in the relevant `*_config.py` (for `cbias`: numpy, pandas, matplotlib, scipy, scikit-learn, nltk,
-  seaborn, textstat, plus the standard library). Versions are pinned in both the `Dockerfile` and
-  `AVAILABLE_LIBRARIES` (not just the library names) so a rebuild can't silently change the API a
-  generated script is targeting — see `DIVERGER_PLAN.md` Live Issue 30.
-- Execution timeout: 300s per attempt, with up to 3 compile/execute retries per angle (both configurable
-  in code), aborting early if an error repeats verbatim across attempts.
-- Docker is required to validate execution — without it, every angle that would have been realised comes
-  back `not_realisable` instead (reported honestly, never as a pass).
-- No test suite, linter config, or CI currently exists in this repo — there is no oracle for angle
-  *quality* by design; the Docker exit code is the only mechanical check, and the human reading the
-  gallery is the rest of the test.
-- `DIVERGER_PLAN.md` is the living design/run/decision log for this project — every calibrated threshold
-  and known issue is recorded there.
 
 ## License
 
