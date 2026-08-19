@@ -13,6 +13,10 @@ against your data. Crucially, that shortlist includes ideas that turned out to b
 tested and found unsupported, not swept away - because knowing what *isn't* true is often just as
 useful as knowing what is.
 
+*(One naming note up front: this tool is **Data Prospector**, but it was formerly called
+**Diverger** - the design log, the repository name, and the code's internal terminology still use
+that name, so don't be surprised to see both.)*
+
 No single step here needs you to write or read Python - running an analysis is copy-pasting one
 command into a terminal. Understanding the *design* of the pipeline (further down this file) does
 get more technical, and adapting it to a brand-new dataset needs someone comfortable editing
@@ -143,6 +147,10 @@ this project uses (a one-off step, and again any time the project's `Dockerfile`
 docker build --target cbias-analysis -t cbias-analysis:latest .
 ```
 
+That command builds the image used by the `cbias` and `trello` examples. The `bioimage` example
+needs a different image, built with `docker build -t bia-analysis:latest .` - each example's
+`*_config.py` file names the image it expects, so run the matching build.
+
 **3. An Anthropic API key.** This is what lets the pipeline talk to Claude. Get one at
 [console.anthropic.com](https://console.anthropic.com), then create a plain text file named
 `.env` in this folder containing:
@@ -188,8 +196,8 @@ You won't need most of these on a first run - they're here for once you're comfo
 more or fewer ideas explored.
 
 ```
---config {bioimage,trello,cbias}   Which example/domain to run (default: cbias - the only one
-                                    with sample data and a ready-to-use setup in this repository)
+--config {bioimage,trello,cbias}   Which example/domain to run (default: cbias). cbias and trello
+                                    both ship sample data and a ready-to-use setup; bioimage is a template only
 --report PATH                      Your own report file, if not using the bundled example
 --data-dir PATH                    Your own data folder, if not using the bundled example
 --output-dir PATH                  Where to write the report (default: ./outputs)
@@ -199,7 +207,7 @@ more or fewer ideas explored.
                                     as real code (default: 4) - the rest stay as a written
                                     shortlist only
 --skip-preflight                   Skip the startup check that Docker and the AI services are
-                                    reachable before committing to a full run. Leave this on
+                                    reachable before committing to a full run. Don't pass this
                                     unless you're deliberately testing without Docker running.
 ```
 
@@ -245,6 +253,9 @@ domain does. Concretely, that file needs to:
 - Generated code can only use the software libraries each example explicitly allows - see
   `AVAILABLE_LIBRARIES` near the top of the relevant `*_config.py` file if you're curious exactly
   what's available for the bundled CBIAS example.
+- The pipeline itself runs on Python 3.14 (set up for you by pixi), but the AI-generated code runs
+  inside Docker images built on Python 3.13 - so the scripts it writes target 3.13, not your host
+  Python.
 - By default, the pipeline checks that Docker and the AI services it needs are actually reachable
   *before* doing any real work, and stops with a clear message if something's wrong - rather than
   running for several minutes and discovering the problem only at the end. If you deliberately skip
