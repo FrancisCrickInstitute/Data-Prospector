@@ -231,14 +231,20 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         f"would merge {merge_stats['within_iteration']} within-iteration, "
         f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
     )
-    for merge in merge_stats["merges"]:
-        # "->" points at the best match AT MERGE TIME, which is not necessarily who would have
-        # survived - "would keep" is the actual representative-picking winner, so the line is
-        # self-consistent even when they differ. None of this is applied - see the comment above.
-        print(
-            f"    would merge [{merge['record_id']}] -> [{merge['matched_id']}] "
-            f"(similarity={merge['similarity']:.3f}, {merge['type']}) would keep [{merge['survivor_id']}]"
-        )
+    for cluster in merge_stats["clusters"]:
+        # One line per actual cluster, not per pairwise event (Live Issue 34): a cluster with 3+
+        # members forms from several pairwise merges, and printing those in isolation misled a
+        # reader on a chain - "merged A into B" then "would keep C" looked like a mismatched pair
+        # even though C simply joined the same cluster via a later event. Report what would
+        # actually happen instead: every member, the one representative, and the pairwise
+        # similarities that built the cluster. None of this is applied - see the comment above.
+        members = ", ".join(f"[{m}]" for m in cluster["members"])
+        print(f"    cluster {{{members}}} -> would keep [{cluster['representative']}]")
+        for pair in cluster["pairwise"]:
+            print(
+                f"        [{pair['record_id']}] -> [{pair['matched_id']}] "
+                f"(similarity={pair['similarity']:.3f}, {pair['type']})"
+            )
     print()
     all_angles = [rec["angle"] for rec in archive]
 

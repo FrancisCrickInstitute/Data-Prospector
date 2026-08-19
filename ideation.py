@@ -157,12 +157,19 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     O(n^2) comparisons, fine at the angle counts this pipeline produces per run.
 
     Returns (kept_records, merge_stats) where merge_stats = {"within_iteration": int,
-    "across_iteration": int, "merges": list[dict]} - counts split so within-iteration
-    duplication (stance/question differentiation too weak) and across-iteration duplication
-    ({existing_angles} pressure too weak) can be diagnosed separately. "merges" records each
-    individual merge event (record id, the id of the most-similar existing record it matched, the
-    similarity score, the type, and the id of the cluster's eventual survivor) so which specific
-    pair merged, AND which one was kept, can be read off the run log without the two disagreeing.
+    "across_iteration": int, "merges": list[dict], "clusters": list[dict]} - counts split so
+    within-iteration duplication (stance/question differentiation too weak) and across-iteration
+    duplication ({existing_angles} pressure too weak) can be diagnosed separately. "merges"
+    records each individual pairwise merge event (record id, the id of the most-similar existing
+    record it matched, the similarity score, the type, and the id of the cluster's eventual
+    survivor). "clusters" groups those same events by the cluster they actually built (Live Issue
+    34): a cluster with 3+ members forms from several pairwise events, and reporting those events
+    in isolation misleads a reader once a chain forms - "merged A into B" followed on the very
+    next line by "would keep C" reads as a mismatched pair even though it's correct, because C
+    simply joined the same cluster via a later event the isolated view doesn't show. Every merge
+    in "merges" still carries its own survivor_id (self-consistent per-line), but "clusters" is
+    the form that actually reports what would happen: one entry per cluster, listing every member,
+    the single representative, and the pairwise similarities that produced it.
 
     best_match is still the best-matching member AT MERGE TIME, not necessarily the survivor -
     _pick_representative runs after clustering completes and can pick a different cluster member
@@ -203,14 +210,36 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     kept = [_pick_representative(cluster) for cluster in clusters]
 
     # Resolve each merge's cluster to the representative _pick_representative actually kept, now
-    # that clustering (and therefore the cluster's final membership) is settled. cluster_idx was
-    # only ever needed to make this lookup possible - drop it from the public dict so callers see
-    # the same shape as before plus survivor_id.
+    # that clustering (and therefore the cluster's final membership) is settled.
     for merge in merges:
-        merge["survivor_id"] = kept[merge.pop("cluster_idx")]["angle"].get("id", "?")
+        merge["survivor_id"] = kept[merge["cluster_idx"]]["angle"].get("id", "?")
+
+    # Group by cluster for reporting (Live Issue 34 - see the docstring above for why the flat
+    # per-pair list alone misleads on a chain). One entry per cluster that actually merged
+    # (size > 1): every member in the order it joined, the resolved representative, and the
+    # pairwise events that built it.
+    cluster_reports = [
+        {
+            "members": [record["angle"].get("id", "?") for record in cluster],
+            "representative": kept[idx]["angle"].get("id", "?"),
+            "pairwise": [
+                {"record_id": m["record_id"], "matched_id": m["matched_id"],
+                 "similarity": m["similarity"], "type": m["type"]}
+                for m in merges if m["cluster_idx"] == idx
+            ],
+        }
+        for idx, cluster in enumerate(clusters)
+        if len(cluster) > 1
+    ]
+
+    # cluster_idx was only needed to build survivor_id and cluster_reports above - drop it from
+    # the public "merges" dicts so callers see the same shape as before plus survivor_id.
+    for merge in merges:
+        del merge["cluster_idx"]
 
     return kept, {
         "within_iteration": within_iteration,
         "across_iteration": across_iteration,
         "merges": merges,
+        "clusters": cluster_reports,
     }
