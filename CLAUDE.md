@@ -12,12 +12,18 @@ non-obvious leads for a human to evaluate, not one winning analysis (see `DIVERG
 full rationale — this fork inverted a converger that hill-climbed toward one script). The pipeline itself
 (`pipeline.py`) never changes per use case; only the domain config and input data do.
 
-**In practice this is a CBIAS research instrument, not a proven template.** `cbias_config.py` is the only
-domain config that has ever been run — every calibrated threshold, prompt, and piece of tuning in
-`DIVERGER_PLAN.md` is CBIAS-shaped. `bioimage_config.py` and `trello_config.py` still satisfy
-`PipelineConfig` and import cleanly, but neither has ever produced a real run. `app.py`'s bare-default
-invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing `--config bioimage`
-selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
+**In practice this is primarily a CBIAS research instrument, with one early, real data point that it
+generalises.** `cbias_config.py` is still where every calibrated threshold, prompt, and piece of tuning
+in `DIVERGER_PLAN.md` comes from — over thirty runs of evidence. `trello_config.py` has one live run
+behind it (Run 37, DIVERGER_PLAN.md rev. 57): it completed end to end on a genuinely different domain
+(a Trello board JSON+CSV export, no anti-target list, a different rubric) with no infrastructure
+failures, which is real evidence the pipeline itself is domain-portable — but it is one run, and
+`trello_config.py` needed real per-domain configuration first (pinned library versions, data-structure
+notes, a ported `data_profile` — Live Issue 31/rev. 62), not a zero-effort drop-in. `bioimage_config.py`
+still satisfies `PipelineConfig` and imports cleanly but has never produced a real run. `app.py`'s
+bare-default invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing
+`--config bioimage` selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this
+repository.
 
 ## Commands
 
