@@ -239,14 +239,14 @@ domain does. Concretely, that file needs to:
   guessing
 - Provide a small function that scans the actual data folder and summarises what's really there
 
-`cbias_config.py` is a complete, working example to copy from. The full technical checklist is in
+`configs/cbias_config.py` is a complete, working example to copy from. The full technical checklist is in
 [`CLAUDE.md`](CLAUDE.md) under "Adding a new domain."
 
 | Example              | Status                                                                                                                                                                                                                                   |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `cbias_config.py`    | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box.                                                                                  |
-| `trello_config.py`   | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) - real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
-| `bioimage_config.py` | A template only - nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data.                                                                                           |
+| `configs/cbias_config.py`    | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box.                                                                                  |
+| `configs/trello_config.py`   | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) - real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
+| `configs/bioimage_config.py` | A template only - nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data.                                                                                           |
 
 </details>
 

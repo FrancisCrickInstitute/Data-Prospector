@@ -16,13 +16,13 @@ full rationale — this fork inverted a converger that hill-climbed toward one s
 (`pipeline.py`) never changes per use case; only the domain config and input data do.
 
 **In practice this is primarily a CBIAS research instrument, with one early, real data point that it
-generalises.** `cbias_config.py` is still where every calibrated threshold, prompt, and piece of tuning
-in `docs/DEVELOPMENT_LOG.md` comes from — over thirty runs of evidence. `trello_config.py` has one live run
+generalises.** `configs/cbias_config.py` is still where every calibrated threshold, prompt, and piece of tuning
+in `docs/DEVELOPMENT_LOG.md` comes from — over thirty runs of evidence. `configs/trello_config.py` has one live run
 behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely different domain
 (a Trello board JSON+CSV export, no anti-target list, a different rubric) with no infrastructure
 failures, which is real evidence the pipeline itself is domain-portable — but it is one run, and
-`trello_config.py` needed real per-domain configuration first (pinned library versions, data-structure
-notes, a ported `data_profile` — Live Issue 31/rev. 62), not a zero-effort drop-in. `bioimage_config.py`
+`configs/trello_config.py` needed real per-domain configuration first (pinned library versions, data-structure
+notes, a ported `data_profile` — Live Issue 31/rev. 62), not a zero-effort drop-in. `configs/bioimage_config.py`
 still satisfies `PipelineConfig` and imports cleanly but has never produced a real run. `app.py`'s
 bare-default invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing
 `--config bioimage` selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this
@@ -43,7 +43,7 @@ pixi run python app.py --config cbias --report <path> --data-dir <path> --output
 Docker is required for the execution-validation step of the pipeline (not for running `app.py` itself):
 
 ```bash
-docker build --target cbias-analysis -t cbias-analysis:latest .   # the image cbias_config.py uses
+docker build --target cbias-analysis -t cbias-analysis:latest .   # the image configs/cbias_config.py uses
 ```
 
 Without a running Docker daemon, `execute_script_in_docker` returns `None`, `validate_execution` reports
@@ -61,7 +61,7 @@ the Docker exit code (`validate_execution`, grounded in the container's exit cod
 is no oracle for angle *quality* by design — that's the human reading the gallery.
 
 `ANTHROPIC_API_KEY` must be set (`.env` file, loaded via `python-dotenv`, or exported in the shell).
-`cbias_config.py` routes its `worker_model`/`compiler_model` to DeepSeek, which additionally needs
+`configs/cbias_config.py` routes its `worker_model`/`compiler_model` to DeepSeek, which additionally needs
 `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` — those two roles are mechanical/high-volume and
 oracle-protected by Docker, so they don't need a frontier model; ideation and judging do, and stay on
 Anthropic models (see `docs/DEVELOPMENT_LOG.md` §5 for the full per-role tiering rationale).
@@ -173,7 +173,7 @@ are needed. A domain config module must provide:
 - `orchestrator_model`, `judge_model` — frontier Anthropic tier; with `req_score` gone, `judge_insight`
   and `judge_soundness` *are* the entire quality bar.
 - `worker_model`, `compiler_model` — mechanical/high-volume and Docker-oracle-protected, so a cheap tier
-  is fine (`cbias_config.py` routes these to DeepSeek — see Commands above for the extra env vars that
+  is fine (`configs/cbias_config.py` routes these to DeepSeek — see Commands above for the extra env vars that
   needs).
 - `angle_model` — cheap tier; volume matters more than polish here, since dedup/judges filter downstream.
 - `requirements_evaluator_model` — used for the criteria-split call *and* `validate_realization`; **must
@@ -189,7 +189,7 @@ are needed. A domain config module must provide:
   scripts (`docs/DEVELOPMENT_LOG.md` Live Issue 25). Prefer "inspect the actual data before assuming X" phrasing
   over listing specific exceptions, which generalises to cases you haven't seen yet.
 - `extract_input_metadata(data_dir) -> str` — scans the input directory and returns a description fed to
-  ideation and the orchestrator (e.g. `cbias_config.py` summarizes the CSV/text layout under `data_dir`).
+  ideation and the orchestrator (e.g. `configs/cbias_config.py` summarizes the CSV/text layout under `data_dir`).
 - `data_profile(data_dir) -> str` (optional — defaults to `None`) — a MECHANICALLY generated per-run
   profile of the real data (column names, dtypes, null counts, full value sets under a cardinality
   cutoff; no LLM in the loop, so it cannot hallucinate a value and cannot go stale), reaching the same
@@ -198,7 +198,7 @@ are needed. A domain config module must provide:
   semantics, provenance, absence, the anti-target list — while `data_profile` answers only "what is
   actually in the data": three straight `domain_notes` vocabulary patches each worked on their first
   live run and were each found incomplete by the very next one (`docs/DEVELOPMENT_LOG.md` Live Issue 31),
-  which is what this field exists to stop recurring. `cbias_config.py`'s `generate_data_profile` is the
+  which is what this field exists to stop recurring. `configs/cbias_config.py`'s `generate_data_profile` is the
   only implementation; `""` (its default when a config leaves this unset) formats cleanly into the
   prompt templates with no placeholder leakage.
 - `design_stances: list[str]` (optional — defaults to `DEFAULT_DESIGN_STANCES` in `config.py`). Ideation
