@@ -33,6 +33,14 @@ NOT_REALISABLE_C = "#B08968"  # muted tan - "couldn't be built" (an engineering/
 TITLE_Y_OFFSET = 3.4
 CAPTION_Y_OFFSET = 2.9
 
+# Gallery box sizing (draw_gallery): the box height is derived from the tile lane geometry, not
+# hardcoded, so it can't drift out of sync again if the lane count/spacing ever changes. GALLERY_PAD
+# is the vertical clearance left between the outermost tile's edge and the box border on each side;
+# it must exceed the header rule's own 0.15 inset (see draw_gallery) or the rule re-collides with
+# the top tile the same way a hardcoded box height silently did before.
+GALLERY_TILE_H = 0.28
+GALLERY_PAD = 0.2
+
 
 def stage_label(ax, x, y_base, number, title, caption, char_w=0.14):
     """Numbered circle + bold title, auto-centered as a block over x; caption below, also centered."""
@@ -122,11 +130,13 @@ def draw_gear_shield(ax, x, y, r=0.42, color=REALISE_C):
                          linewidth=1.4, zorder=5))
 
 
-def draw_gallery(ax, x, y, w=1.5, h=4.0, color=INK, tiles=None):
+def draw_gallery(ax, x, y, h, w=1.5, color=INK, tiles=None, bar_h=GALLERY_TILE_H):
     """The output document: a page whose body is a stack of colour-coded outcome tiles.
 
     `tiles` is a list of (colour, fraction_of_width, tile_y_centre) - one per realised outcome,
-    each aligned so its stage-4 lane runs straight into its own tile rather than converging.
+    each aligned so its stage-4 lane runs straight into its own tile rather than converging. `h`
+    has no default deliberately - callers must size it from the actual tile/lane extent (see
+    GALLERY_PAD above) rather than guessing a box height and hoping the lanes still fit inside it.
     """
     ax.add_patch(FancyBboxPatch((x - w / 2, y - h / 2), w, h,
                                  boxstyle="round,pad=0,rounding_size=0.06",
@@ -134,7 +144,6 @@ def draw_gallery(ax, x, y, w=1.5, h=4.0, color=INK, tiles=None):
     ax.plot([x - w / 2 + 0.12, x + w / 2 - 0.12], [y + h / 2 - 0.15] * 2,
              color=color, linewidth=2.0, zorder=4, solid_capstyle="round")
     for c, frac, ty in (tiles or []):
-        bar_h = 0.28
         ax.add_patch(Rectangle((x - w / 2 + 0.14, ty - bar_h / 2),
                                 (w - 0.28) * frac, bar_h,
                                 facecolor=c, edgecolor="none", alpha=0.9, zorder=4))
@@ -226,7 +235,10 @@ def main():
         (INCONCLUSIVE_C, 0.6, lane_ys[1]),
         (NOT_REALISABLE_C, 0.7, lane_ys[0]),
     ]
-    draw_gallery(ax, gallery_x, baseline, w=gallery_w, h=4.4, tiles=gallery_tiles)
+    # Box height derived from the actual lane span, not a hardcoded guess (see GALLERY_PAD above) -
+    # this is what keeps the tiles from overhanging the box border if the lane count/spacing changes.
+    gallery_h = (lane_ys[-1] - lane_ys[0]) + GALLERY_TILE_H + 2 * GALLERY_PAD
+    draw_gallery(ax, gallery_x, baseline, gallery_h, w=gallery_w, tiles=gallery_tiles)
     stage_label(ax, gallery_x, baseline, 5, "A skimmable report",
                 "confirmed findings, useful non-\nfindings, side by side")
 
