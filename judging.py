@@ -34,7 +34,7 @@ async def judge_insight(angle: dict, report: str, ideation_criteria: str, input_
     """
     # report/ideation_criteria/input_data are identical across every judge call in a run - the
     # SAME triple generate_angles caches - so cached as a prefix; the individual angle varies per
-    # call and stays in the suffix (DEVELOPMENT_LOG.md §4).
+    # call and stays in the suffix (docs/DEVELOPMENT_LOG.md §4).
     prefix = format_prompt(INSIGHT_JUDGE_PROMPT_PREFIX, report=report, ideation_criteria=ideation_criteria,
                            input_data=input_metadata)
     suffix = format_prompt(INSIGHT_JUDGE_PROMPT_SUFFIX, angle_text=_format_angle(angle))

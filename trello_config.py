@@ -144,7 +144,7 @@ def generate_data_profile(directory: str) -> str:
     generate_data_profile (Live Issue 31) before this config's own hand-written DOMAIN_NOTES value
     lists go stale the same way cbias's did there - three straight hand-transcribed vocabulary
     patches each worked on their first live run, then were each found incomplete by the very next
-    one (DEVELOPMENT_LOG.md's Live Issue 31 / rev. 62). Answers ONLY "what is actually in the data";
+    one (docs/DEVELOPMENT_LOG.md's Live Issue 31 / rev. 62). Answers ONLY "what is actually in the data";
     DOMAIN_NOTES above stays the place for what this can't derive - semantics, provenance, the
     CSV-not-JSON reading instruction and why. Reaches the same three realisation-stage cached
     prefixes domain_notes does (orchestrator/worker/compiler - see realization.py), never
@@ -249,7 +249,7 @@ CONFIG = PipelineConfig(
     # requirements_evaluator_model is the one role that CANNOT follow orchestrator/worker/compiler
     # onto DeepSeek: it's validate_realization's model, and validate_realization is passed the
     # angle's actual PNG artifacts (images=). DeepSeek's endpoint does not support image input -
-    # confirmed rev. 66, DEVELOPMENT_LOG.md - so this stays on Anthropic, matching cbias_config.py's
+    # confirmed rev. 66, docs/DEVELOPMENT_LOG.md - so this stays on Anthropic, matching cbias_config.py's
     # identical carve-out for the same reason.
     requirements_evaluator_model="claude-sonnet-5",
     angle_model="deepseek-v4-flash",

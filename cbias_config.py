@@ -296,7 +296,7 @@ def generate_data_profile(directory: str) -> str:
     # per file, every column stays under the cardinality cutoff by row-count coincidence alone, so
     # the naive version silently dumped every speaker name and talk title verbatim - real content,
     # but not the kind of gap this profile exists to catch, at a genuinely large token cost for no
-    # matching benefit (no A/B/C-class failure in DEVELOPMENT_LOG.md has ever involved Programs).
+    # matching benefit (no A/B/C-class failure in docs/DEVELOPMENT_LOG.md has ever involved Programs).
     # The one thing added since: a per-file header/headerless flag (see _program_has_header below),
     # because the 2021 files are headed while the rest are headerless - a one-line mechanical signal
     # for that format split, still not the value enumeration the above argues against.
@@ -354,7 +354,7 @@ CONFIG = PipelineConfig(
     angle_model="deepseek-v4-pro",
     # D5 judging: frontier Anthropic tier, NOT DeepSeek like worker/compiler/angle_model above -
     # once req_score is gone these two judges (insight/soundness) are the entire quality bar
-    # (DEVELOPMENT_LOG.md §5), which outweighs the anonymisation-driven cost reasoning that applies
+    # (docs/DEVELOPMENT_LOG.md §5), which outweighs the anonymisation-driven cost reasoning that applies
     # to the high-volume roles above.
     judge_model="claude-opus-4-8",
     docker_image="cbias-analysis:latest",

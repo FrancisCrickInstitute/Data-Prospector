@@ -3,7 +3,7 @@ available BEFORE a run commits its ~25-110 LLM calls to it.
 
 Deliberately does NOT catch Run 28's actual failure (DeepSeek running out of credit mid-run) -
 credit exhaustion partway through is out of scope for any startup check, and is obvious from the
-console anyway when it happens (DEVELOPMENT_LOG.md's Live Issue 29 entry is explicit about this).
+console anyway when it happens (docs/DEVELOPMENT_LOG.md's Live Issue 29 entry is explicit about this).
 What this catches is a bad key, a stale model string, an empty account, or Docker not running -
 all knowable in three-to-five trivial calls, before the real spend starts.
 """
@@ -27,7 +27,7 @@ def _describe_status_error(e: anthropic.APIStatusError) -> str:
     """Turn a status code into the specific action it implies, not a generic "model unavailable" -
     401/403 (credential), 402 (balance) and 404 (usually a stale model string, and §5's per-role
     tiering means model names here change more often than in most projects) all need a different
-    fix, and a generic message sends someone to the wrong one (DEVELOPMENT_LOG.md §15's F-class
+    fix, and a generic message sends someone to the wrong one (docs/DEVELOPMENT_LOG.md §15's F-class
     error, in miniature).
     """
     code = e.status_code

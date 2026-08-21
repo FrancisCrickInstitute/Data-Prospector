@@ -43,7 +43,7 @@ FEEDBACK_DROP_COLUMNS = [
 # columns across 2022-2025, 0 non-empty in any of them) - not assumed. Dropping them here, at the
 # source, rather than telling every downstream consumer to ignore them, removes the ambiguity of
 # three near-identical column names (real answer / Points- / Feedback-) instead of hoping a
-# generated script's column-matching always picks the right one (DEVELOPMENT_LOG.md Live Issue 25 -
+# generated script's column-matching always picks the right one (docs/DEVELOPMENT_LOG.md Live Issue 25 -
 # two independent generated scripts hit exactly this).
 _FEEDBACK_COMPANION_PREFIXES = ("Points - ", "Feedback - ")
 

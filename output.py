@@ -178,7 +178,7 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
       reader deciding what to provision next.
     - not_realisable - an ENGINEERING outcome, not a quality one. Listed prominently with
       `requires`, since that list is the signal for what to provision next
-      (DEVELOPMENT_LOG.md §10).
+      (docs/DEVELOPMENT_LOG.md §10).
     - unsupportable - never reaches realization, but the soundness reasoning is itself
       informative: what the dataset cannot support is a finding about the dataset, not a dead end.
 

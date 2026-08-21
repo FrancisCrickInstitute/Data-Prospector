@@ -1,6 +1,6 @@
 """Data Prospector pipeline orchestration: criteria split -> ideate (fan-out) -> judge -> dedup
 (measurement only) -> rank -> realise top-k -> gallery. See CLAUDE.md for the architecture and
-DEVELOPMENT_LOG.md for the full design/run/decision history. This module holds only
+docs/DEVELOPMENT_LOG.md for the full design/run/decision history. This module holds only
 generate_and_optimize - every stage's actual implementation lives in its own module (llm.py,
 parsing.py, sandbox.py, ideation.py, judging.py, realization.py, output.py).
 """
@@ -31,7 +31,7 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
     {existing_angles}: the accumulated archive of every angle proposed so far, fed back into the
     angle-generation prompt suffix. Once ideation finishes, judging scores every archived angle
     for non-obviousness (judge_insight) and soundness (judge_soundness), and dedup runs against
-    the judged archive but MEASUREMENT ONLY (see DEVELOPMENT_LOG.md's Live Issue 24) - it logs what
+    the judged archive but MEASUREMENT ONLY (see docs/DEVELOPMENT_LOG.md's Live Issue 24) - it logs what
     it would have merged and is not acted on, so every judged angle is ranked. Realisation then
     handles only the top realize_top_k non-unsupportable angles - code is written and run for that
     small selection only, never for the whole archive.
@@ -220,7 +220,7 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             continue
         angle.update(result)
 
-    # Dedup is MEASUREMENT ONLY, not acted on (DEVELOPMENT_LOG.md Live Issue 24). _dedup_angles still
+    # Dedup is MEASUREMENT ONLY, not acted on (docs/DEVELOPMENT_LOG.md Live Issue 24). _dedup_angles still
     # clusters the whole run's archive (all iterations) exactly as before, but its result no longer
     # filters all_angles - every judged angle proceeds to ranking regardless of what would have
     # merged.
