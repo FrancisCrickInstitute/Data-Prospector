@@ -31,7 +31,12 @@ INCONCLUSIVE_C = "#9AA0AC"  # gray
 NOT_REALISABLE_C = "#B08968"  # muted tan - "couldn't be built" (an engineering/provisioning gap)
 
 TITLE_Y_OFFSET = 3.4
-CAPTION_Y_OFFSET = 2.9
+# Shared by all five captions - kept as one constant, not a per-stage override, so every caption
+# sits on the same baseline. 3.1 (not the original 2.9) is set by stage 5's constraint: its
+# geometry-derived gallery box needs that much clearance above it (descenders in "findings, side
+# by side" reach lower than the plain line-height gap 2.9 left), and moving only stage 5's caption
+# to satisfy that broke the row's alignment instead of fixing it - all five move together instead.
+CAPTION_Y_OFFSET = 3.1
 
 # Gallery box sizing (draw_gallery): the box height is derived from the tile lane geometry, not
 # hardcoded, so it can't drift out of sync again if the lane count/spacing ever changes. GALLERY_PAD
@@ -229,11 +234,15 @@ def main():
                 "turned into real code, run inside\nan isolated sandbox on your data")
 
     # === Stage 5: gallery ====================================================================
+    # Equal width for every tile: this used to be a stacked single bar, where frac encoded each
+    # outcome's real share of the total. It's now one full-width bar per lane instead (D7's tiers
+    # aren't parts of a whole), so a leftover 0.95/0.85/0.6/0.7 spread no longer means anything -
+    # equal fractions read as "one row per outcome", not as an unlabelled, meaningless proportion.
     gallery_tiles = [
-        (CONFIRMED_C, 0.95, lane_ys[3]),
-        (DISCONFIRMED_C, 0.85, lane_ys[2]),
-        (INCONCLUSIVE_C, 0.6, lane_ys[1]),
-        (NOT_REALISABLE_C, 0.7, lane_ys[0]),
+        (CONFIRMED_C, 1.0, lane_ys[3]),
+        (DISCONFIRMED_C, 1.0, lane_ys[2]),
+        (INCONCLUSIVE_C, 1.0, lane_ys[1]),
+        (NOT_REALISABLE_C, 1.0, lane_ys[0]),
     ]
     # Box height derived from the actual lane span, not a hardcoded guess (see GALLERY_PAD above) -
     # this is what keeps the tiles from overhanging the box border if the lane count/spacing changes.
@@ -242,16 +251,22 @@ def main():
     stage_label(ax, gallery_x, baseline, 5, "A skimmable report",
                 "confirmed findings, useful non-\nfindings, side by side")
 
+    # Legend sits beside the gallery box, in the empty space to its right, rather than below it
+    # with a dead gap under the box and a whole empty bottom-right quadrant - vertically centered
+    # on baseline so it reads as attached to the box it's explaining, not a separate footnote.
     legend_items = [
         (CONFIRMED_C, "confirmed"),
         (DISCONFIRMED_C, "checked, not supported"),
         (INCONCLUSIVE_C, "inconclusive"),
         (NOT_REALISABLE_C, "couldn't be built"),
     ]
-    lx, ly = gallery_x - 0.55, baseline - 3.4
+    legend_spacing = 0.8
+    lx = gallery_x + gallery_w / 2 + 0.45
+    ly = baseline + legend_spacing * (len(legend_items) - 1) / 2
     for i, (c, label) in enumerate(legend_items):
-        ax.add_patch(Rectangle((lx, ly - i * 0.4), 0.22, 0.16, facecolor=c, edgecolor="none"))
-        ax.text(lx + 0.32, ly - i * 0.4 + 0.08, label, ha="left", va="center",
+        iy = ly - i * legend_spacing
+        ax.add_patch(Rectangle((lx, iy - 0.08), 0.22, 0.16, facecolor=c, edgecolor="none"))
+        ax.text(lx + 0.32, iy, label, ha="left", va="center",
                  color=MUTED, fontsize=9)
 
     ax.set_aspect("equal", adjustable="box")
