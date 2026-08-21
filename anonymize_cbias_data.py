@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pandas as pd
 
-# Every known PII column name across all 4 years' schema variants (see cbias_config.py's
+# Every known PII column name across all 4 years' schema variants (see configs/cbias_config.py's
 # DOMAIN_NOTES for the renames) - dropped with errors="ignore" so a name absent in a given year's
 # file is simply skipped rather than raising.
 ATTENDEE_DROP_COLUMNS = [
@@ -117,7 +117,7 @@ def scrub_text(value, source: str, flagged: list[str], flag_names: bool,
 
 
 def _read_attendees_csv(path: Path) -> pd.DataFrame:
-    """Read an attendee CSV, falling back to latin-1 (matches cbias_config.py's own reader)."""
+    """Read an attendee CSV, falling back to latin-1 (matches configs/cbias_config.py's own reader)."""
     try:
         return pd.read_csv(path, encoding="utf-8")
     except UnicodeDecodeError:

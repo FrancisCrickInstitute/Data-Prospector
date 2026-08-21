@@ -121,15 +121,15 @@ if __name__ == "__main__":
 
     # Load config module
     if args.config == "bioimage":
-        from bioimage_config import CONFIG
+        from configs.bioimage_config import CONFIG
         report_default = "./inputs/report/report_20260710_202254.md"
         data_dir_default = "./inputs/images"
     elif args.config == "trello":
-        from trello_config import CONFIG
+        from configs.trello_config import CONFIG
         report_default = "./inputs/trello_reports/task_report.md"
         data_dir_default = "./inputs/trello_data"
     elif args.config == "cbias":
-        from cbias_config import CONFIG
+        from configs.cbias_config import CONFIG
         report_default = "./inputs/cbias_report/task_report.md"
         data_dir_default = "./inputs/cbias_data_anon"
     else:

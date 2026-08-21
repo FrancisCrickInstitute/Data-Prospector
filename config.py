@@ -16,7 +16,7 @@ class PipelineConfig:
     """Configuration for the multi-agent code-generation pipeline.
 
     This is the swap point for adapting the pipeline to a new domain.
-    Create a new config file (e.g. bioimage_config.py) and pass an instance
+    Create a new config file (e.g. configs/bioimage_config.py) and pass an instance
     of PipelineConfig to generate_and_optimize().
     """
     orchestrator_model: str
