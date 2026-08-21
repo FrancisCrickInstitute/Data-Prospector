@@ -26,7 +26,7 @@ async def generate_angles(report: str, ideation_criteria: str, input_metadata: s
     """
     # report/ideation_criteria/input_data are identical across every angle-generation call in a
     # run, so they're cached as a prefix; stance/guiding_question/existing_angles/n vary per call
-    # and stay in the suffix (see DIVERGER_PLAN.md §4 - both cycling axes belong here, not the prefix).
+    # and stay in the suffix (see DEVELOPMENT_LOG.md §4 - both cycling axes belong here, not the prefix).
     prefix = format_prompt(ANGLE_GENERATION_PROMPT_PREFIX, report=report, ideation_criteria=ideation_criteria,
                            input_data=input_metadata)
     suffix = format_prompt(ANGLE_GENERATION_PROMPT_SUFFIX, stance=stance, guiding_question=guiding_question,
@@ -143,7 +143,7 @@ def _dedup_angles(records: list[dict], threshold: float) -> tuple[list[dict], di
     """D4: cluster archive records ({angle, iteration, stance}) by token-set Jaccard similarity
     over _angle_signature, identifying near-duplicates.
 
-    MEASUREMENT ONLY (see DIVERGER_PLAN.md's Live Issue 24 for the full history and decision
+    MEASUREMENT ONLY (see DEVELOPMENT_LOG.md's Live Issue 24 for the full history and decision
     rule): the caller (generate_and_optimize) logs what this function would have merged and does
     not act on it - every judged angle proceeds to ranking regardless of what is returned here.
     Several attempted repairs (a guiding-question guard, chiefly) have been shown to be false

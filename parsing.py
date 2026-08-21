@@ -83,7 +83,7 @@ def parse_tasks(tasks_xml: str) -> list[dict]:
 # Angle schema: {id, variables_involved, hypothesis, question_or_stakeholder_served,
 # why_non_obvious, rough_method, requires} - the fields ANGLE_GENERATION_PROMPT_SUFFIX asks the
 # model for. requires is instrumentation only - what libraries ideation reaches for, not a
-# constraint on it (DIVERGER_PLAN.md §10) - and is never used to filter.
+# constraint on it (DEVELOPMENT_LOG.md §10) - and is never used to filter.
 _ANGLE_FIELDS = (
     "id", "variables_involved", "hypothesis", "question_or_stakeholder_served",
     "why_non_obvious", "rough_method", "requires",

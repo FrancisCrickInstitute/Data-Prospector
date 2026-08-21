@@ -213,7 +213,7 @@ The tags are metadata markers only—do not include them in the actual Python co
 # sequential compile/execute retries for one design, since only error_feedback changes between
 # attempts - see the cache_prefix argument to llm_call.
 #
-# domain_notes added (DIVERGER_PLAN.md Live Issue 17): previously only WORKER_PROMPT_PREFIX carried
+# domain_notes added (DEVELOPMENT_LOG.md Live Issue 17): previously only WORKER_PROMPT_PREFIX carried
 # the exact paths/columns, so when a worker got a path wrong and execution failed, the compile-retry
 # loop rewrote the script from the traceback alone, with no way to see the real layout that would
 # fix it - repairing blind. Now the compiler sees the same domain notes the worker did.
@@ -357,9 +357,9 @@ that would help, if applicable]"
 """
 
 # --- D2/D3a/D3b: Angle generation (ideation) --------------------------------------------------
-# Human-owned - see DIVERGER_PLAN.md guardrails ("Do not invent objective prompts"). The wording
+# Human-owned - see DEVELOPMENT_LOG.md guardrails ("Do not invent objective prompts"). The wording
 # of these three constants determines the quality of every angle the pipeline ever proposes; left
-# empty deliberately. Split per the caching convention (DIVERGER_PLAN.md §4): PREFIX is
+# empty deliberately. Split per the caching convention (DEVELOPMENT_LOG.md §4): PREFIX is
 # report/ideation_criteria/input_data (identical across every angle-generation call in a run) -
 # ideation_criteria is the IDEATION half of the D3b criteria split (guiding questions, stakeholders,
 # anti-targets, data constraints) - the deliverable rubric (script-delivery mechanics) is withheld
@@ -415,10 +415,10 @@ Return your response as one <angles> block containing exactly {n} <angle> blocks
 """
 
 # --- D5: Insight + soundness judging --------------------------------------------------------
-# Human-owned - see DIVERGER_PLAN.md guardrails ("Do not invent objective prompts") AND D5's own
+# Human-owned - see DEVELOPMENT_LOG.md guardrails ("Do not invent objective prompts") AND D5's own
 # note: "Both prompts are human-owned - they are the product." Once req_score is gone, these two
 # judges ARE the entire quality bar - the machinery is trivial, the wording is the whole game.
-# Split per the caching convention (DIVERGER_PLAN.md §4): PREFIX is report/ideation_criteria/
+# Split per the caching convention (DEVELOPMENT_LOG.md §4): PREFIX is report/ideation_criteria/
 # input_data - the SAME triple generate_angles already caches, since D3b folded the anti-target
 # list into ideation_criteria. SUFFIX is the individual angle being judged ({angle_text}).
 #

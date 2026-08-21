@@ -54,7 +54,7 @@ CONFIG = PipelineConfig(
     requirements_evaluator_model="claude-sonnet-5",
     angle_model="claude-haiku-4-5",
     # D5 judging: frontier tier, matching orchestrator_model - once req_score is gone these two
-    # judges (insight/soundness) are the entire quality bar (DIVERGER_PLAN.md §5).
+    # judges (insight/soundness) are the entire quality bar (DEVELOPMENT_LOG.md §5).
     judge_model="claude-opus-4-8",
     docker_image="bia-analysis:latest",
     available_libraries=AVAILABLE_LIBRARIES,

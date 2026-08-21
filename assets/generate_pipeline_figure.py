@@ -4,7 +4,7 @@
 A from-scratch matplotlib illustration (no external icon libraries/network calls, so it's
 reproducible offline) in the visual grammar of a journal graphical abstract: numbered stage
 panels, simple flat icons, a fan-out that stays plural all the way to the output (it's a "diverger",
-not a "converger" - see DIVERGER_PLAN.md §1): many independent ideas branch out, most are kept only
+not a "converger" - see DEVELOPMENT_LOG.md §1): many independent ideas branch out, most are kept only
 as a shortlist, and the few that are tested each run through their own parallel build lane.
 
 Run with: pixi run python assets/generate_pipeline_figure.py
