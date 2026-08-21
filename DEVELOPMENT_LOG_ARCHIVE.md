@@ -1,8 +1,8 @@
 ﻿# Diverger plan — closed issue archive
 
-This file holds the full text of **Live Issues that are closed, resolved, or confirmed** — split out of `DIVERGER_PLAN.md` to keep the main plan skimmable. Nothing here was deleted or edited; every entry below is moved verbatim, in its original numeric order, from that document's "Live issues" section.
+This file holds the full text of **Live Issues that are closed, resolved, or confirmed** — split out of `DEVELOPMENT_LOG.md` to keep the main plan skimmable. Nothing here was deleted or edited; every entry below is moved verbatim, in its original numeric order, from that document's "Live issues" section.
 
-**This is an archive, not a second living document.** `DIVERGER_PLAN.md` remains the one place to look for current/open issues, the run log, and every other section. A "Live Issue N — closed, see archive" one-liner in `DIVERGER_PLAN.md`'s Live Issues section is the index back to each entry below; there is no reverse index maintained here beyond issue number order.
+**This is an archive, not a second living document.** `DEVELOPMENT_LOG.md` remains the one place to look for current/open issues, the run log, and every other section. A "Live Issue N — closed, see archive" one-liner in `DEVELOPMENT_LOG.md`'s Live Issues section is the index back to each entry below; there is no reverse index maintained here beyond issue number order.
 
 ---
 
