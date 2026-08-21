@@ -1,4 +1,4 @@
-# Sandbox image for cbias_config.py. The CBIAS Feedback data is CSV, not xlsx (converted during
+# Sandbox image for configs/cbias_config.py. The CBIAS Feedback data is CSV, not xlsx (converted during
 # anonymisation - see anonymize_cbias_data.py), so no openpyxl dependency is needed here.
 # scipy/scikit-learn/nltk/seaborn/textstat are DIVERGER_PLAN.md §10's interim provisioning fix -
 # Run 8 measured only 1/8 judged angles able to run on the prior numpy/pandas/matplotlib-only
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-install Python packages, versions PINNED (must match AVAILABLE_LIBRARIES in cbias_config.py,
+# Pre-install Python packages, versions PINNED (must match AVAILABLE_LIBRARIES in configs/cbias_config.py,
 # both the package list and the exact versions below). Live Issue 30: an unpinned image floats to
 # whatever is current on every rebuild, so the generated script targets an API generation nobody
 # told it about - matplotlib's boxplot `labels=` -> `tick_labels` rename (3.9) bit this twice
@@ -74,7 +74,7 @@ nltk.download('averaged_perceptron_tagger_eng', download_dir='$NLTK_DATA')" \
     && chmod -R a+rX "$NLTK_DATA"
 
 
-# Default sandbox image for bioimage_config.py.
+# Default sandbox image for configs/bioimage_config.py.
 # Build with: docker build -t bia-analysis:latest .
 FROM python:3.13-slim AS bia-analysis
 
@@ -83,7 +83,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-install Python packages (must match AVAILABLE_LIBRARIES in bioimage_config.py)
+# Pre-install Python packages (must match AVAILABLE_LIBRARIES in configs/bioimage_config.py)
 RUN pip install --no-cache-dir \
     numpy \
     scipy \
