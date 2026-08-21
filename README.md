@@ -34,14 +34,14 @@ you, doesn't.
 >
 >This tool doesn't discover truth on its own. It's only ever as good as two things you provide: how clearly your report states what you actually want to know, and how clean and well-organised your data is. A vague report paired with messy, disorganised, or inconsistent data is unlikely to produce anything useful - not because the tool failed, but because there wasn't enough real signal in the input for it to work with. The clearer and more specific your question, and the more consistent your data, the better a shot it has.
 >
->It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). Every one of these is recorded, in detail, in [`DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
+>It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). Every one of these is recorded, in detail, in [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
 
 ## Design influences
 
 The architecture started from two Anthropic sources: *Building effective agents* [1] (the
 orchestrator-worker and evaluator-optimizer patterns behind the code-building step) and the
 `claude-cookbooks` tutorials [2]. The fan-out → judge → selectively-build shape was later informed
-by two published multi-agent science systems [3, 4]. See `DEVELOPMENT_LOG.md` §1 for how this project
+by two published multi-agent science systems [3, 4]. See `docs/DEVELOPMENT_LOG.md` §1 for how this project
 grew out of an earlier "converger" design that worked the opposite way.
 
 1. Schluntz, E., & Zhang, B. (2024, December 19). *Building effective agents*. Anthropic.
@@ -67,7 +67,7 @@ idea about your data - deliberately never letting them see or build on each othe
 - then has two independent reviewers score every idea for how surprising it is and how well the
 data actually seems to support it, and only *then* picks the strongest handful to actually build
 and test. The result isn't one script - it's a spread of leads, ranked and explained, for you to
-read and judge for yourself. See [`DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md) §1 for the fuller
+read and judge for yourself. See [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) §1 for the fuller
 rationale, including the earlier "converger" design this project grew out of.
 
 ## How it works
@@ -95,7 +95,7 @@ rationale, including the earlier "converger" design this project grew out of.
 
 There is deliberately no automatic "quality" score standing between you and the ideas it
 generates - the AI's own numeric self-ratings turned out, across many runs, to be a poor guide to
-what's actually worth reading (see `DEVELOPMENT_LOG.md` §15, class E). The *written reasoning* behind
+what's actually worth reading (see `docs/DEVELOPMENT_LOG.md` §15, class E). The *written reasoning* behind
 each idea's score is far more trustworthy than any single number would be, so that's what's shown.
 
 ## What you'll actually get
@@ -214,7 +214,7 @@ more or fewer ideas explored.
 ```
 
 At the defaults, that's `2 × 12 = 24` candidate ideas generated and scored, with the top `4`
-actually built and tested - see `DEVELOPMENT_LOG.md` §12.4 for the full cost breakdown if you want to
+actually built and tested - see `docs/DEVELOPMENT_LOG.md` §12.4 for the full cost breakdown if you want to
 plan around it.
 
 ## Using this on your own data
@@ -268,7 +268,7 @@ domain does. Concretely, that file needs to:
 - There's no automated check for whether an idea is a *good* one - that's deliberate. The only
   automatic check is whether generated code actually runs correctly; judging whether a finding is
   worth pursuing is left to you, the reader.
-- [`DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md) is this project's running design and decision log - every
+- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) is this project's running design and decision log - every
   tuning choice and known limitation is written up there, in detail, if you want to understand *why*
   something works the way it does.
 

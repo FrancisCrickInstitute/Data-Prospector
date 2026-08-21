@@ -4,21 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Data Prospector** (internally, a "diverger" — see `DEVELOPMENT_LOG.md` for why that architectural term is
+**Data Prospector** (internally, a "diverger" — see `docs/DEVELOPMENT_LOG.md` for why that architectural term is
 still used throughout this codebase and design log even though the product-facing name is now Data
 Prospector; nothing else changed on account of the rename, it's prose-only): given a task report and a
 dataset, it fans out many independent, LLM-generated analytical
 **angles** (hypotheses about the data), judges each one for non-obviousness and soundness, selectively
 realises the top-ranked few into Docker-verified Python scripts, and writes the result up as a tiered
 markdown **gallery** — not a single "best" script. The goal is a skimmable spread of distinct, defensible,
-non-obvious leads for a human to evaluate, not one winning analysis (see `DEVELOPMENT_LOG.md` §1 for the
+non-obvious leads for a human to evaluate, not one winning analysis (see `docs/DEVELOPMENT_LOG.md` §1 for the
 full rationale — this fork inverted a converger that hill-climbed toward one script). The pipeline itself
 (`pipeline.py`) never changes per use case; only the domain config and input data do.
 
 **In practice this is primarily a CBIAS research instrument, with one early, real data point that it
 generalises.** `cbias_config.py` is still where every calibrated threshold, prompt, and piece of tuning
-in `DEVELOPMENT_LOG.md` comes from — over thirty runs of evidence. `trello_config.py` has one live run
-behind it (Run 37, DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely different domain
+in `docs/DEVELOPMENT_LOG.md` comes from — over thirty runs of evidence. `trello_config.py` has one live run
+behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely different domain
 (a Trello board JSON+CSV export, no anti-target list, a different rubric) with no infrastructure
 failures, which is real evidence the pipeline itself is domain-portable — but it is one run, and
 `trello_config.py` needed real per-domain configuration first (pinned library versions, data-structure
@@ -64,7 +64,7 @@ is no oracle for angle *quality* by design — that's the human reading the gall
 `cbias_config.py` routes its `worker_model`/`compiler_model` to DeepSeek, which additionally needs
 `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` — those two roles are mechanical/high-volume and
 oracle-protected by Docker, so they don't need a frontier model; ideation and judging do, and stay on
-Anthropic models (see `DEVELOPMENT_LOG.md` §5 for the full per-role tiering rationale).
+Anthropic models (see `docs/DEVELOPMENT_LOG.md` §5 for the full per-role tiering rationale).
 
 ## Architecture
 
@@ -109,7 +109,7 @@ criteria split (1 call, once) → ideate (fan-out, N angles/iteration × max_ite
   This is a deliberate interim, not an oversight: dedup's original justification (saving downstream
   judging cost) disappeared once judging moved before it, several merges have since been shown to be
   false positives that removed real coverage, and the measurement is being kept running to decide whether
-  to delete it outright or replace it with something semantic. See `DEVELOPMENT_LOG.md`'s Live Issue 24 for
+  to delete it outright or replace it with something semantic. See `docs/DEVELOPMENT_LOG.md`'s Live Issue 24 for
   the live decision and its evidence.
 - **Rank + select**: the full (undeduped) archive is sorted by `_judgment_sort_key` (soundness tier first,
   then insight). `--realize-top-k` (default 4) non-`unsupportable` angles get realised; everything else
@@ -186,7 +186,7 @@ are needed. A domain config module must provide:
   orchestrator prompts (all three need the real data layout to design/repair against; see the caching
   table below for which prefix each lands in). `domain_notes` is an interface, not a comment — a single
   wrong line in it can produce near-identical silent failures across multiple independently generated
-  scripts (`DEVELOPMENT_LOG.md` Live Issue 25). Prefer "inspect the actual data before assuming X" phrasing
+  scripts (`docs/DEVELOPMENT_LOG.md` Live Issue 25). Prefer "inspect the actual data before assuming X" phrasing
   over listing specific exceptions, which generalises to cases you haven't seen yet.
 - `extract_input_metadata(data_dir) -> str` — scans the input directory and returns a description fed to
   ideation and the orchestrator (e.g. `cbias_config.py` summarizes the CSV/text layout under `data_dir`).
@@ -197,7 +197,7 @@ are needed. A domain config module must provide:
   below), never ideation. `domain_notes` above stays hand-written for what a profile *can't* derive —
   semantics, provenance, absence, the anti-target list — while `data_profile` answers only "what is
   actually in the data": three straight `domain_notes` vocabulary patches each worked on their first
-  live run and were each found incomplete by the very next one (`DEVELOPMENT_LOG.md` Live Issue 31),
+  live run and were each found incomplete by the very next one (`docs/DEVELOPMENT_LOG.md` Live Issue 31),
   which is what this field exists to stop recurring. `cbias_config.py`'s `generate_data_profile` is the
   only implementation; `""` (its default when a config leaves this unset) formats cleanly into the
   prompt templates with no placeholder leakage.
@@ -218,12 +218,12 @@ All system/message prompt templates (`ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*`, `S
 them (`ideation.py`, `judging.py`, `realization.py`, `pipeline.py` itself for `CRITERIA_*`) — no
 `from prompts import *` anywhere. No module holds prompt text of its own; `pipeline.py` specifically
 holds only `generate_and_optimize`'s orchestration, not parsing (`parsing.py`) or any other stage's
-implementation — see `DEVELOPMENT_LOG.md`'s D-consolidate item 4 for the full module-by-module split
+implementation — see `docs/DEVELOPMENT_LOG.md`'s D-consolidate item 4 for the full module-by-module split
 (`llm.py`, `parsing.py`, `sandbox.py`, `ideation.py`, `judging.py`, `realization.py`, `output.py`).
 
 **`ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*`, and `SOUNDNESS_JUDGE_*` are human-owned.** Do not rewrite them
 directly — propose changes and let a human make them. Judge-prompt wording is the actual product here;
-the machinery around it is comparatively trivial (`DEVELOPMENT_LOG.md` §8).
+the machinery around it is comparatively trivial (`docs/DEVELOPMENT_LOG.md` §8).
 
 Most prompts that repeat across several calls are split into a prefix/suffix pair so the prefix can be
 cached via `llm_call`'s `cache_prefix` argument instead of repaying full price every call. **The rule:
@@ -266,6 +266,6 @@ which one and why — never emit a silent `NA` and continue).
 
 ## Where the project's history lives
 
-`DEVELOPMENT_LOG.md` is the living design/run/decision log for this fork — every calibrated threshold, live
+`docs/DEVELOPMENT_LOG.md` is the living design/run/decision log for this fork — every calibrated threshold, live
 issue, and run result is recorded there, not here. When debugging a specific behaviour (why a threshold is
 what it is, why a status exists, what a prior run showed), check there before re-deriving it from the code.
