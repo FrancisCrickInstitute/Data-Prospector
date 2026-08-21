@@ -91,9 +91,9 @@ criteria split (1 call, once) → ideate (fan-out, N angles/iteration × max_ite
   archive generated so far, fed back into the prompt suffix (it grows every iteration, so it must never be
   cached — see the caching table below). Angle schema (`_ANGLE_FIELDS`): `id`, `hypothesis`,
   `variables_involved`, `question_or_stakeholder_served`, `why_non_obvious`, `rough_method`, `requires`.
-  `requires` is **instrumentation only** — it tracks what libraries an angle reaches for and feeds §10's
-  provisioning decisions, but availability is a *realisation* constraint, never fed back to narrow
-  ideation itself.
+  `requires` is **instrumentation only** — it tracks what libraries an angle reaches for and feeds
+  `docs/BACKLOG.md` §2's provisioning decisions, but availability is a *realisation* constraint, never
+  fed back to narrow ideation itself.
 - **Judging** (`judge_insight`, `judge_soundness`, D5): every archived angle — not just a
   pre-filtered subset — is scored by two independent judges sharing one cached prefix. `judge_insight`
   returns a continuous `insight_score` (non-obviousness, grounded in the anti-target list, not the
@@ -269,3 +269,6 @@ which one and why — never emit a silent `NA` and continue).
 `docs/DEVELOPMENT_LOG.md` is the living design/run/decision log for this fork — every calibrated threshold, live
 issue, and run result is recorded there, not here. When debugging a specific behaviour (why a threshold is
 what it is, why a status exists, what a prior run showed), check there before re-deriving it from the code.
+Genuinely-deferred, nobody's-currently-working-on-it backlog items (not yet started, not an open bug) live
+in the sibling `docs/BACKLOG.md` instead — check there for parked feature ideas before assuming something
+was never proposed.
