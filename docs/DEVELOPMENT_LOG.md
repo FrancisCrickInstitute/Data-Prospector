@@ -1,4 +1,4 @@
-﻿# Data Prospector development log (rev. 70)
+﻿# Data Prospector development log (rev. 71)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
@@ -935,6 +935,9 @@ The documentation drift (§12.3) is orthogonal to this post and remains the high
 
 ## 14. Cross-project notes: `lyra` (rev. 28)
 
+> **See also:** `BACKLOG.md` §6 covers [`karpathy/autoresearch`](https://github.com/karpathy/autoresearch), read at rev. 71. It is the more instructive comparison of the two, because it is *the converger this project abandoned* — and it works, on the strength of a perfect oracle. §1's argument arriving from the opposite direction. It also supplies a concrete data point for §14.4's open question below, and one actionable item (a cumulative results ledger) bearing on the Run 34 curation finding in §8.
+
+
 [`FrancisCrickInstitute/lyra`](https://github.com/FrancisCrickInstitute/lyra) is an agentic-primitives repository from elsewhere in the Crick — reusable agents, skills and instruction files for GitHub Copilot, distributed via Microsoft's [APM](https://github.com/microsoft/apm) package manager. Read at commit `27d22fb` (70 commits). Recorded here as the evidence base for D-simplify items 5 and 6.
 
 **Why it is relevant despite solving a different problem.** Lyra automates *coding*; diverger automates *ideation over a fixed dataset*. But both are LLM pipelines with staged handoffs and gate conditions, both were built by small teams against real use, and they have converged on several of the same answers independently. Independent convergence is stronger evidence than either project's own reasoning.
@@ -965,6 +968,8 @@ Offered as findings, not advice — and all of it is dearly bought, in the sense
 ### 14.4 One structural observation, and an open question
 
 **Lyra puts its orchestration in the prompt; diverger puts it in code.** The conductor is an LLM instructed *"Execute all stages in this exact order. Do not skip, reorder, or merge stages"* and *"Never skip or reorder stages — the sequence is fixed."* Diverger's equivalent sequencing is Python.
+
+**`autoresearch` supplies the sharpest evidence on this (rev. 71, `BACKLOG.md` §6.4).** Its `program.md` — 114 lines of markdown that constitute the *entire* agent, with no orchestration code whatsoever — contains a shouted, self-repeating `NEVER STOP` paragraph forbidding the model from pausing to ask whether it should continue. **Prompt-level orchestration has a compliance failure mode severe enough to need capitals**; `while attempt < max_compile_attempts` does not.
 
 Neither is simply better, and the §13 workflow-versus-agent distinction says which fits when: **if the sequence should adapt, prompt-level orchestration is right; if it genuinely must never vary, a code path enforces what an instruction can only request.** Lyra's stated requirement is the second while its mechanism is the first. Worth raising with them rather than assuming it is an oversight — they may want the flexibility in practice.
 

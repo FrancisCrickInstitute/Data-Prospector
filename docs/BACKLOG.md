@@ -185,3 +185,61 @@ User-requested (rev. 67). Not started — nothing below is implemented; this is 
 - **Tokens only, or a cost estimate too?** A raw token count (by model, by stage) is cheap to keep accurate. A dollar figure needs a hardcoded $/token rate per model that goes stale the moment pricing changes and nobody notices — same "assumed vocabulary that goes stale" shape `DEVELOPMENT_LOG.md` §15.7 observation 2 already warns about, just applied to pricing instead of data. If cost is wanted, prefer deriving it from a small, clearly-dated rate table over hand-asserting it once and forgetting it.
 - **Where exactly in the gallery.** The gallery already opens with a one-line outcome-count summary (`_write_gallery`'s header, e.g. "8 candidate angle(s) surfaced this run: 2 realised...") — a token summary could sit right alongside that, or live in its own small section/file if it turns out to be too much detail for the top of a document meant to be skimmed in a few minutes (README's own framing).
 - **Parallel fan-out caveat carries over.** `CLAUDE.md`'s caching table already notes that parallel calls (ideation's fan-out, workers within one angle) defeat the cache on first use — N concurrent calls all miss before any of them has written the cache entry. A per-run summary needs to report this honestly (e.g. cache misses concentrated in iteration/design 1) rather than presenting an average that quietly launders a known, expected pattern.
+
+
+---
+
+## 6. Cross-project notes: `karpathy/autoresearch`
+
+[`karpathy/autoresearch`](https://github.com/karpathy/autoresearch) — an agent given a single-GPU LLM training setup and told to improve it overnight, unattended. Read at commit `228791f` (36 commits, **1,225 lines total across every file**). Recorded here as a counterpart to `DEVELOPMENT_LOG.md` §14's `lyra` notes.
+
+### 6.1 Why a converger is the right design *there*, and the argument this makes for here
+
+**autoresearch is precisely the converger this project abandoned in D1–D5**, and it works: mutate one file, train for a fixed 5 minutes, keep the commit if `val_bpb` improved, `git reset` if not, repeat. Try → measure → keep-or-revert, with no judges, no scoring, no dedup, no tiering, no diversity mechanism.
+
+It works because of the oracle:
+
+| | autoresearch | Data Prospector |
+|---|---|---|
+| Oracle | `val_bpb` — one scalar, unambiguous, ~5 min | Docker exit code (correctness only) + two LLM judges (quality) |
+| Iterations | ~100 overnight | 4 realisations per ~110-call run |
+| Evaluation machinery | none | insight + soundness judges, five-status vocabulary, tiered gallery |
+| Total size | ~1,225 lines, all files | ~2,300 lines of pipeline alone |
+
+**That size ratio is almost entirely oracle-driven, and it is `DEVELOPMENT_LOG.md` §1's founding argument arriving from the opposite direction:** the amount of evaluation machinery a system needs is inversely proportional to the quality of its oracle. A perfect oracle permits hill-climbing and needs nothing else; Co-Scientist has no oracle and spends everything on tournaments and debate; this project sits between and its machinery budget sits between. Three independent systems, one relationship.
+
+**The loop itself is therefore not borrowable, and the reason should be stated plainly so nobody re-proposes it:** hill-climbing needs cheap iterations and an instant verdict. Here an iteration costs ~110 LLM calls and the verdict is a human reading a gallery. Adopting the loop would buy roughly one hill-climb step per morning.
+
+### 6.2 The one item worth acting on: a cumulative results ledger
+
+autoresearch keeps `results.tsv` — five columns, machine-readable, append-only, written by the agent as part of its own loop, deliberately untracked by git:
+
+```
+commit	val_bpb	memory_gb	status	description
+a1b2c3d	0.997900	44.0	keep	baseline
+c3d4e5f	1.005000	44.0	discard	switch to GeLU activation
+d4e5f6g	0.000000	0.0	crash	double model width (OOM)
+```
+
+**This is the cheapest possible form of the thing Run 34 identified as this project's actual bottleneck.** That finding is worth restating because it is easy to mis-remember: **the repetition problem was never a diversity failure.** Diversity measured 0.07–0.12 throughout, comfortably inside the working band, while lead-time analysis reappeared across Runs 25, 26, 30, 31 and 33 — because nothing told ideation it had been answered. It stopped only once a *human* hand-copied the finding into the report's anti-target list, and Run 34 confirmed the mechanism works end to end.
+
+**Proposal.** A cumulative, machine-readable ledger appended at the end of every run — `run_ts`, `angle_id`, `insight`, `soundness`, `realization_status`, one-line finding — fed to ideation as structured prior art. **Every field already exists**; `surfaced_angles_<ts>.md` carries all of them. What is missing is only that it is per-run prose rather than cumulative and parseable. That makes this a genuinely small change, and it sits naturally alongside §5's token-usage work since both are "collect what the run already knows and put it somewhere durable".
+
+**The caveat is the important half, and it is why this must not auto-retire anything.** The sector question produced **four mutually inconsistent answers** across Runs 19, 22, 24 and 25 under four different operationalisations. An automatic "already explored — do not propose again" rule would have retired it after Run 19, and the actual finding — that the data does not identify the quantity — would never have surfaced. So: **the ledger informs judgement; the human still decides what is retired.** That preserves `DEVELOPMENT_LOG.md` §8's distinction between *this claim is settled* and *this topic has been touched*, which is the distinction the whole Already Explored mechanism turns on.
+
+### 6.3 Two smaller observations, both with reservations
+
+**The simplicity criterion is unusually well operationalised**, and is worth reading in full in `program.md`. Not "prefer simple code" but worked examples with signs and magnitudes: *a 0.001 improvement costing 20 lines of hacky code is probably not worth it; a 0.001 improvement from deleting code definitely is; a ~0 improvement that simplifies is a keep.*
+
+This project has the identical concern everywhere — §13's demonstrably-improves-outcomes rule, D-simplify's standing rule — but always addressed to the **human maintainer**, never to the pipeline. §15's C3 (a generated metric that could not fail, because hybridity was scored as "any domain outside the home domain" and respondents select 3–7) is arguably what its absence looks like in generated code. **Flagging, not proposing:** prompts are human-owned under §2, and a compiler-suffix change is exactly the kind of thing that should be decided deliberately rather than borrowed because it reads well elsewhere.
+
+**autoresearch's memory gap is instructive by contrast, and favours this project's design.** Its loop *writes* `results.tsv` but never says to *read* it. Over ~100 experiments the agent's context overflows long before the ledger does, and the only durable state is the git branch — which encodes accumulated wins but not discards, so a failed idea can be retried indefinitely with nothing to prevent it. **This project does not have that failure mode, because each run is stateless by construction and the anti-target list is explicit external memory.** Worth recording: the stateless design has occasionally looked like a limitation, and it is in fact protecting against a real one.
+
+### 6.4 A data point for `DEVELOPMENT_LOG.md` §14.4's open question
+
+§14.4 records that `lyra` puts orchestration in the prompt while this project puts it in code, and asks which fits when. **autoresearch is the extreme case** — 114 lines of markdown *is* the entire agent, with no orchestration code at all — and its `program.md` contains this:
+
+> **NEVER STOP**: … do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?" … You are autonomous.
+
+**That paragraph is in capitals and repeats itself because prompt-level orchestration has a compliance failure mode that needs shouting at.** `while attempt < max_compile_attempts` cannot decide to stop and ask permission. It is the clearest evidence yet for §14.4's framing: **prompt-level orchestration when the sequence should adapt; code when it genuinely must not vary.** Note the same document's D-simplify item 4 flags D8's saturation stopping as the point where this pipeline first acquires a decision that *should* adapt — so this distinction becomes live at exactly that step, not before.
+
