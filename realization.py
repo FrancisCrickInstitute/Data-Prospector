@@ -144,7 +144,8 @@ _PATTERN_OUTCOME_TO_STATUS = {
 async def validate_realization(compiled_script: str, report: str, deliverable_rubric: str,
                                 claimed_pattern: str, exec_output: str, config: PipelineConfig,
                                 angle_scope: str = "", artifacts: list[dict] = None,
-                                artifacts_dir: str = None) -> tuple[str, float, str, str]:
+                                artifacts_dir: str = None, question_or_stakeholder_served: str = "",
+                                soundness_caveat: str = "") -> tuple[str, float, str, str, str]:
     """D6: check whether a realized script's actual output legibly shows ONE angle's claimed
     pattern - the PRIMARY judgment, replacing the converger's "meets requirements" framing. The
     deliverable rubric's mechanical checklist (file counts, etc.) is still checked and reported,
@@ -159,14 +160,23 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     per-angle rubric (extra LLM call, breaks the prefix cache) or a blind mechanical cap. Varies
     per angle, so it lives in the suffix, not the cached prefix.
 
-    Returns (pattern_outcome, delivered_score, pattern_reasoning, feedback). pattern_outcome is
-    one of _PATTERN_OUTCOMES, or None if the validator emitted anything outside that vocabulary (a
-    warning is printed - _run_one_design treats None the same as "not_shown", the conservative
-    default, since an unparseable response gives no positive evidence the pattern WAS shown or
-    disconfirmed). delivered_score is met/total across every <criterion> tag the validator emitted
-    against the deliverable rubric (0.0 if it emitted none - treated as a full miss, not a free
-    pass). pattern_reasoning is the validator's own justification for the pattern_outcome verdict -
-    distinct from feedback, which covers the deliverable-rubric checklist.
+    question_or_stakeholder_served/soundness_caveat exist only to feed <plain_finding> - the
+    accessibility layer added to address the gallery-readability gap this pipeline's technical
+    fields (pattern_reasoning, hypothesis, soundness_caveat) were never written to solve on their
+    own: each is precise for verification purposes, but the gallery used to concatenate them
+    verbatim with no step written for the reader an angle actually names. Both default to "" so an
+    existing caller that hasn't been updated still gets a runnable (if under-specified) prompt.
+
+    Returns (pattern_outcome, delivered_score, pattern_reasoning, plain_finding, feedback).
+    pattern_outcome is one of _PATTERN_OUTCOMES, or None if the validator emitted anything outside
+    that vocabulary (a warning is printed - _run_one_design treats None the same as "not_shown",
+    the conservative default, since an unparseable response gives no positive evidence the pattern
+    WAS shown or disconfirmed). delivered_score is met/total across every <criterion> tag the
+    validator emitted against the deliverable rubric (0.0 if it emitted none - treated as a full
+    miss, not a free pass). pattern_reasoning is the validator's own technical justification for
+    the pattern_outcome verdict; plain_finding is the same finding rewritten for the angle's named
+    reader, jargon-light but still precise about which domain entities are involved - distinct
+    from feedback, which covers the deliverable-rubric checklist.
     """
     artifacts = artifacts or []
     artifacts_listing = _format_artifacts(artifacts)
@@ -179,6 +189,8 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
         content=compiled_script,
         claimed_pattern=claimed_pattern,
         angle_scope=angle_scope or "(not specified)",
+        question_or_stakeholder_served=question_or_stakeholder_served or "(not specified)",
+        soundness_caveat=soundness_caveat or "(none noted)",
         # Keep the TAIL: the script prints metrics then data-gap suggestions at the very end
         execution_result=f"Console output:\n{exec_output[-3000:]}\n\nFiles actually produced on disk:\n{artifacts_listing}"
     )
@@ -201,6 +213,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     verdicts = _CRITERION_PATTERN.findall(validator_response)
     feedback = extract_xml(validator_response, "feedback").strip()
     pattern_reasoning = extract_xml(validator_response, "pattern_reasoning").strip()
+    plain_finding = extract_xml(validator_response, "plain_finding").strip()
 
     if not verdicts:
         print(
@@ -212,7 +225,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     met = sum(1 for v in verdicts if v.lower() == "true")
     delivered_score = met / total if total else 0.0
 
-    return pattern_outcome, delivered_score, pattern_reasoning, feedback
+    return pattern_outcome, delivered_score, pattern_reasoning, plain_finding, feedback
 
 
 async def _call_worker(task_info: dict, task_index: int, report: str, input_metadata: str,
@@ -260,10 +273,12 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     "" (its default) when config.data_profile isn't set, so this degrades gracefully for domain
     configs that haven't defined one.
 
-    Returns {angle_id, realization_status, realization_feedback, pattern_reasoning, delivered_score,
-    artifacts, artifacts_dir, script}. pattern_reasoning is the validator's justification for the
-    pattern_outcome verdict - "" for the not_realisable early-returns below, since those never
-    reach validate_realization. realization_status is one of:
+    Returns {angle_id, realization_status, realization_feedback, pattern_reasoning, plain_finding,
+    delivered_score, artifacts, artifacts_dir, script}. pattern_reasoning is the validator's
+    technical justification for the pattern_outcome verdict; plain_finding is the same finding
+    rewritten for the angle's own named reader (jargon-light, still precise on domain entities) -
+    both "" for the not_realisable early-returns below and the realization_error except-branch,
+    since none of those ever reach validate_realization. realization_status is one of:
     - "realised": executed, and the claimed pattern was legibly shown.
     - "realised_null": executed and rendered legibly, but the data do NOT support the claimed
       pattern - a clean disconfirmation, not a failure. Ranks ALONGSIDE "realised" in D7's
@@ -414,7 +429,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             return {
                 "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
                 "realization_feedback": f"Execution failed after {len(attempt_feedbacks)} compile attempt(s){abort_note}:\n\n{attempt_summary}",
-                "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+                "pattern_reasoning": "", "plain_finding": "", "delivered_score": None, "artifacts": artifacts,
                 "artifacts_dir": artifacts_dir, "script": compiled_script,
             }
 
@@ -426,7 +441,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             return {
                 "angle_id": angle.get("id", "?"), "realization_status": "not_realisable",
                 "realization_feedback": f"Execution was not verified, so realization cannot be checked: {exec_feedback}",
-                "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+                "pattern_reasoning": "", "plain_finding": "", "delivered_score": None, "artifacts": artifacts,
                 "artifacts_dir": artifacts_dir, "script": compiled_script,
             }
 
@@ -443,9 +458,11 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             f"Method: {angle.get('rough_method', '')}"
         )
         stage = "validate"
-        pattern_outcome, delivered_score, pattern_reasoning, realization_feedback = await validate_realization(
+        pattern_outcome, delivered_score, pattern_reasoning, plain_finding, realization_feedback = await validate_realization(
             compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
-            angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir)
+            angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir,
+            question_or_stakeholder_served=angle.get("question_or_stakeholder_served", ""),
+            soundness_caveat=angle.get("soundness_caveat", ""))
         status = _PATTERN_OUTCOME_TO_STATUS.get(pattern_outcome, "pattern_not_shown")
         # pattern_reasoning is the whole point of the three-way split - without it, pattern_not_shown
         # and a plausible disconfirmation are indistinguishable from the console alone.
@@ -453,6 +470,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         return {
             "angle_id": angle.get("id", "?"), "realization_status": status,
             "realization_feedback": realization_feedback, "pattern_reasoning": pattern_reasoning,
+            "plain_finding": plain_finding,
             "delivered_score": delivered_score, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
             "script": compiled_script,
         }
@@ -469,7 +487,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         return {
             "angle_id": angle.get("id", "?"), "realization_status": "realization_error",
             "realization_feedback": f"Pipeline failed at stage '{stage}' for this angle: {exc!r}",
-            "pattern_reasoning": "", "delivered_score": None, "artifacts": artifacts,
+            "pattern_reasoning": "", "plain_finding": "", "delivered_score": None, "artifacts": artifacts,
             "artifacts_dir": artifacts_dir, "script": compiled_script,
             # Live Issue 28: the gallery's realization_error tier asserted a verified execution
             # unconditionally, which is only true when the break happened at "validate" - earlier

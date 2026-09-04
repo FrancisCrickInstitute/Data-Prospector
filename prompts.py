@@ -281,9 +281,11 @@ The <response> tags are METADATA MARKERS ONLY—do not include them in the Pytho
 
 # Split in two so validate_realization can cache the prefix: report + criteria (the
 # deliverable_rubric) are identical across every angle realized in a run, so cached; claimed_pattern
-# (the specific angle's hypothesis) and angle_scope (Live Issue 8 - variables/method, so the
-# validator can skip rubric bullets that are out of scope for this one angle by design) vary per
-# angle, same as script/execution output, so all three stay in the suffix - see the cache_prefix
+# (the specific angle's hypothesis), angle_scope (Live Issue 8 - variables/method, so the
+# validator can skip rubric bullets that are out of scope for this one angle by design),
+# question_or_stakeholder_served and soundness_caveat (both feed <plain_finding> - the reader this
+# angle names, and the independent caveat that reader should see folded into it) all vary per
+# angle, same as script/execution output, so all five stay in the suffix - see the cache_prefix
 # argument to llm_call.
 REALIZATION_VALIDATOR_PROMPT_PREFIX = """
 Check if this successfully-executed script's actual output satisfies the deliverable requirements
@@ -306,6 +308,8 @@ declared scope is:
 Its claimed pattern is:
 {claimed_pattern}
 
+This angle was proposed to serve: {question_or_stakeholder_served}
+
 If PNG images are attached to this message, they are the actual plots the script produced (up to a
 few, in the order listed above) — inspect them directly.
 
@@ -322,6 +326,8 @@ a clean disconfirmation are NOT the same thing, even though neither "shows the p
 
 <pattern_outcome>[shown, disconfirmed, or not_shown - exactly one of these three words, nothing else]</pattern_outcome>
 <pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show, and why that maps to the outcome chosen above. Also mention, as information alongside the finding rather than a reason to change the verdict above, whether the console output includes or omits a statistical test of the claim (e.g. a significance test, confidence interval) - a plausible four-point trend and a significance-tested one are both worth surfacing, but a reader should know which they're looking at]</pattern_reasoning>
+<plain_finding>[2-4 plain-language sentences summarizing this finding for the reader named above - assume real domain expertise but NO statistics background and no familiarity with this pipeline's own machinery. Name the actual domain entities involved precisely (real marker/gene/variable names, not "the marker" or "the variable") - that specificity is what makes a finding checkable - but explain any statistical method, threshold, or error in plain consequence rather than its technical name (e.g. say what a mismatched significance test means for whether the finding can be trusted, don't just name the mismatch). Fold in the independent caveat below wherever it changes what this reader should take away, in the same plain terms. State plainly whether the pattern held up, was disconfirmed, or came out illegible - do not hedge this the way the technical reasoning above is allowed to.
+Independent caveat to incorporate: {soundness_caveat}]</plain_finding>
 
 SECOND, judge EACH bullet in the Deliverable Requirements above, in the same order, against the
 ACTUAL output above (console output, the "Files actually produced on disk" listing, and any attached

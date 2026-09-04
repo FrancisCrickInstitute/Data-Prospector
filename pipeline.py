@@ -284,10 +284,12 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             angle["realization_status"] = "not_realisable"
             angle["realization_feedback"] = f"(realization call failed: {result!r})"
             angle["pattern_reasoning"] = ""
+            angle["plain_finding"] = ""
             continue
         angle["realization_status"] = result["realization_status"]
         angle["realization_feedback"] = result["realization_feedback"]
         angle["pattern_reasoning"] = result["pattern_reasoning"]
+        angle["plain_finding"] = result["plain_finding"]
         angle["delivered_score"] = result["delivered_score"]
         angle["artifacts"] = result["artifacts"]
         angle["artifacts_dir"] = result["artifacts_dir"]

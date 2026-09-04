@@ -9,8 +9,8 @@ from sandbox import _format_artifacts
 
 def _write_angle_dump(all_angles: list[dict], output_dir: str, timestamp: str) -> str:
     """Dump this run's ranked, judged AND realized angles to a human-readable file. Called after
-    D6's realize step so the dump carries realization_status/delivered_score/pattern_reasoning,
-    not just D5's soundness/insight judgments. Angles outside the realized top-k (skipped as
+    D6's realize step so the dump carries realization_status/delivered_score/pattern_reasoning/
+    plain_finding, not just D5's soundness/insight judgments. Angles outside the realized top-k (skipped as
     unsupportable, or ranked below --realize-top-k) simply have no realization_* keys - the
     per-angle rendering below is guarded accordingly.
 
@@ -58,6 +58,8 @@ def _write_angle_dump(all_angles: list[dict], output_dir: str, timestamp: str) -
                 lines.append(f"- delivered_score: {angle['delivered_score']:.2f}")
             if angle.get("pattern_reasoning"):
                 lines.append(f"- pattern_reasoning: {angle['pattern_reasoning']}")
+            if angle.get("plain_finding"):
+                lines.append(f"- plain_finding: {angle['plain_finding']}")
             if angle.get("artifacts"):
                 lines.append(f"- artifacts: {_format_artifacts(angle['artifacts'])}")
         lines.append("")
@@ -101,8 +103,16 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
     and the pattern_not_shown tier, just with a status label on the heading for the former.
     Deliberately omits delivered_score: even scoped to the angle, it can score a script that
     silently dropped half its data at 1.00, so displaying it as a quality number would mislead
-    exactly the reader this gallery is for. pattern_reasoning is the substance - shown prominently
-    as "Finding" instead.
+    exactly the reader this gallery is for.
+
+    plain_finding leads when present (a real user reported struggling to read a gallery whose
+    Hypothesis/Finding/Caveat fields are each written for technical precision, not for the reader
+    an angle actually names - see the realization validator's <plain_finding> tag). The technical
+    fields still follow underneath, unchanged and un-simplified, for a reader who wants to verify
+    the finding rather than take the plain summary on trust. plain_finding is "" for
+    realization_error angles (they never reach the validator that produces it), so those fall
+    straight through to the existing Note-based rendering with no "Technical detail" label added -
+    there is nothing to contrast it against.
     """
     angle_id = angle.get("id", "?")
     insight = angle.get("insight_score")
@@ -114,6 +124,10 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
     else:
         heading = f"### {angle_id}"
     lines = [heading, f"_insight: {insight_str}_", ""]
+    if angle.get("plain_finding"):
+        lines.append(f"**In plain terms:** {angle['plain_finding']}")
+        lines.append("")
+        lines.append("**Technical detail:**")
     if angle.get("hypothesis"):
         lines.append(f"- **Hypothesis:** {angle['hypothesis']}")
     if angle.get("question_or_stakeholder_served"):
