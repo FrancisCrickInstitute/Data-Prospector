@@ -61,8 +61,10 @@ cbias_config.py uses) - target these APIs specifically, not a version-agnostic "
   graph (the shipped `community` column used a hard distance-cutoff Delaunay graph - see DOMAIN_NOTES);
   scipy.stats for comparing marker-intensity or area distributions between groups.
 - scikit-learn 1.9.0: sklearn.cluster (KMeans/AgglomerativeClustering/DBSCAN/GaussianMixture) for an
-  alternative cell-grouping to compare against the shipped `kmeans_cluster`; sklearn.preprocessing for
-  any standardisation a distance-based method needs first.
+  alternative cell-grouping to compare against the shipped `kmeans_cluster`; sklearn.preprocessing
+  (StandardScaler/RobustScaler, or a manual per-marker z-score/log1p) for standardising raw marker
+  intensities BEFORE fitting a positivity threshold on them, not only before a distance-based method -
+  see DOMAIN_NOTES on why raw per-channel intensities are not comparable or threshold-ready as stored.
 No image-processing library (scikit-image, bioio, etc.) is available or needed - no raw microscopy
 image or cell-boundary polygon is present in this data, see DOMAIN_NOTES below.
 """
@@ -118,11 +120,13 @@ This is a PROCESSED, already-extracted derivative of one CellSurvey pipeline run
 docstring for the full provenance and the critical framing on `kmeans_cluster`/`community`). ONE file
 lives directly under the data directory (INPUT_FOLDER):
 
-- cells.csv - one row per segmented cell (362,736 rows), no plate/sample split (this is a single
-  tissue sample, unlike idr0028's multi-plate data - there is nothing to concatenate or join across
-  files here). Columns:
-    cell_id              - unique per-cell identifier string (not a bare integer - do not assume it
-                           parses as one).
+- cells.csv - one row per segmented NUCLEUS (362,736 rows; called "cell" throughout below because
+  that is the source pipeline's own terminology - see the SEGMENTATION REGION note right after this
+  column list for what that actually means and why it matters), no plate/sample split (this is a
+  single tissue sample, unlike idr0028's multi-plate data - there is nothing to concatenate or join
+  across files here). Columns:
+    cell_id              - unique identifier string for the segmented nucleus (not a bare integer -
+                           do not assume it parses as one).
     area                 - segmented nucleus area. UNIT IS NOT DOCUMENTED in the source data (likely
                            pixels^2 at the image's native resolution, but this was not confirmed
                            against a pixel-size calibration) - treat as a relative/comparative
@@ -148,20 +152,52 @@ lives directly under the data directory (INPUT_FOLDER):
                            neighbourhoods, clustering), do not present a raw coordinate difference as
                            a physical distance in a stated unit (e.g. microns) without independent
                            verification.
-    marker_* (32 columns) - per-cell MEAN INTENSITY for each acquisition channel, already
-                           background/DAPI-independent per-cell values (not raw pixel counts, and not
-                           normalised/log-transformed - inspect the actual value ranges before
-                           assuming any particular scale or applying a threshold). See the marker
-                           glossary below for each marker's typical biological role, and note the two
-                           channels that are NOT real markers.
+    marker_* (32 columns) - per-nucleus MEAN INTENSITY for each acquisition channel, stored RAW - no
+                           per-channel background subtraction, exposure/gain correction, or
+                           normalisation of any kind has been applied (the source pipeline's own
+                           documentation does not describe any such step, and this project's
+                           extraction adds none). Different channels were acquired with different
+                           exposure/gain settings - visible directly in the original acquisition
+                           channel names (see marker_channel_names.csv, e.g. "..._6000-..." vs
+                           "..._100-...") - so raw intensities are NOT on a comparable scale across
+                           markers. ANY script that fits a positivity threshold (GMM, Otsu, a
+                           percentile/valley cutoff) directly on a raw per-marker intensity histogram
+                           is fitting a cutpoint that partly reflects acquisition settings, not purely
+                           biology - normalise each marker first (see AVAILABLE_LIBRARIES'
+                           sklearn.preprocessing note) before treating a fitted cutpoint as a
+                           biological positivity call, and state explicitly in the script whether this
+                           was done. See the marker glossary below for each marker's typical
+                           biological role, and note the two channels that are NOT real markers.
+
+SEGMENTATION REGION - READ BEFORE TREATING ANY MARKER AS "POSITIVE" OR "NEGATIVE": every object in
+this table is a Stardist NUCLEAR segmentation (see this module's docstring) - there is no whole-cell
+or membrane boundary anywhere in this pipeline's output, only a nuclear one. Whether marker intensity
+was measured strictly within that nuclear polygon, or within some expanded/dilated region
+approximating a whole cell, is NOT documented by the source pipeline (checked directly - its own
+README does not say) and was not independently verified here - inspect this yourself (e.g. compare
+`area` against a plausible nuclear-vs-whole-cell size for this tissue) before assuming either way.
+This matters most for markers with a non-nuclear expected localisation - which is MOST of this panel:
+CD3, CD8, CD31, Collagen-I, Vimentin, E-cadherin, and most other lineage/structural markers are
+membrane, cytoplasmic, or extracellular, not nuclear. A "positive"/"negative" call for these measures
+signal in or immediately around the nucleus, not across the whole cell body, and may under- or
+over-represent true expression depending on how much of that marker's real signal actually falls
+within the measured region. Only marker_DAPI and (as a transcription factor) marker_FoxP3 have a
+genuinely nuclear expected localisation - treat every other marker's absolute intensity, and any
+threshold fitted to it, with this in mind.
 
 {_MARKER_GLOSSARY}
 
 WHAT IS NOT AVAILABLE, so as not to be assumed: no raw microscopy image is present locally (only the
-per-cell mean-intensity table survived extraction) - no pixel-level texture/morphology feature beyond
-`area` is computable. No cell-boundary polygon/shape is present either (only centroid + area) - a
-hypothesis needing true cell shape (elongation, boundary curvature, aspect ratio) is NOT answerable
-from this data. No raw Delaunay edge list is present - only the resulting `community` label survived
+per-nucleus mean-intensity table survived extraction) - no pixel-level texture/morphology feature
+beyond `area` is computable. No WHOLE-CELL boundary polygon/shape exists anywhere in this pipeline's
+output, not just in this extraction - only a Stardist NUCLEAR boundary was ever computed (see
+SEGMENTATION REGION above), and even that nuclear polygon was not extracted into this table (only its
+centroid + area survived - reading shapes/stardist_boundaries needs `pyarrow`, not in this project's
+pixi env; see preprocess_cellsurvey.py's docstring). A hypothesis needing true WHOLE-CELL shape
+(elongation, boundary curvature, aspect ratio) is not answerable from this data, or from this
+pipeline's output at all, in principle - a hypothesis about NUCLEAR shape specifically could in
+principle be answered by re-extracting shapes/stardist_boundaries, which this project currently does
+not do. No raw Delaunay edge list is present - only the resulting `community` label survived
 extraction, so a script wanting to inspect or rebuild the spatial graph must construct its own (e.g.
 via scipy.spatial.Delaunay or cKDTree on the x/y columns) rather than assume edges are available
 directly. There is only ONE sample/slide in this data - no cross-sample or cross-panel comparison is
