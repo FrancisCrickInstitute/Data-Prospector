@@ -194,6 +194,39 @@ per-marker (see AVAILABLE_LIBRARIES' sklearn.preprocessing note) AND consider a 
 correction before treating any fitted cutpoint as a biological positivity call, and state explicitly
 in the script which of these (if any) was actually done.
 
+CROSS-TALK AND SPECIFICITY - A THIRD REASON NO RAW INTENSITY IS PURE SIGNAL FOR ITS NAMED MARKER: this
+panel's own channel-naming metadata (marker_channel_names.csv) shows a CYCLIC imaging protocol - 19
+cycles (C1-C19), each imaging one CY3-channel target and (for 18 of them) one Cy5-channel target - and
+the source filename identifies the platform as COMET (Lunaphore), a sequential/cyclic multiplexed
+immunofluorescence technology (stain -> image -> remove signal -> restain, repeated per cycle). Two
+concrete, panel-specific cross-talk risks follow directly from that structure, distinct from the
+position-dependent ACQUISITION ARTEFACTS above:
+- CYCLE-TO-CYCLE CARRYOVER: the CY3 channel is reused across 10 different cycles/markers (CD45RA,
+  HLADR, CD45, CD20, TP73, LY75, Vimentin, FoxP3, BCAM, marker_SMA) and the Cy5 channel across 19 (see
+  marker_channel_names.csv for the full cycle-to-marker mapping). If signal removal between two cycles
+  was ever incomplete, a LATER cycle's channel reading can carry residual signal from an EARLIER
+  cycle's completely different antibody target - not the marker that channel is named for here. The
+  two non-biological channels already flagged in the marker glossary below (marker_TRITC_1_TRITC,
+  marker_Cy5_1_Cy5, sitting between cycles C4 and C5 in acquisition order) look like exactly this kind
+  of check - a channel imaged with no new antibody applied - and could in principle serve as a rough
+  per-fluorophore carryover/background reference for markers acquired near that point in the cycle
+  sequence, though this project has not verified that interpretation against the source pipeline's own
+  documentation (which does not describe one).
+- SPECTRAL BLEED-THROUGH: within a single cycle, the CY3 and Cy5 channels are imaged together, so any
+  spectral overlap between the two dyes could let signal from one channel's true target leak into the
+  other's reading.
+Independent of imaging technology, NON-SPECIFIC ANTIBODY BINDING is also possible - any antibody can
+bind off-target (e.g. Fc-receptor binding by immune cells, generic tissue "stickiness"), producing
+signal attributed to a marker the cell does not actually express. Nothing in this data (no isotype
+control, no secondary-only channel beyond the two already noted) can computationally distinguish this
+from true low-level expression.
+
+None of these three risks can be corrected from this data with confidence - there is no isotype
+control, no single-antibody titration series, and no documented cycle-order QC beyond the two channels
+noted above. State them as caveats on any single-marker "positive" claim, and treat a finding that
+depends on ONE marker's absolute intensity more cautiously than one supported by a MARKER COMBINATION
+or a spatial pattern that would be an unlikely coincidence if it were pure cross-talk.
+
 SEGMENTATION REGION - READ BEFORE TREATING ANY MARKER AS "POSITIVE" OR "NEGATIVE": every object in
 this table is a Stardist NUCLEAR segmentation (see this module's docstring) - there is no whole-cell
 or membrane boundary anywhere in this pipeline's output, only a nuclear one. Whether marker intensity
