@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         default="cbias",
-        choices=["bioimage", "trello", "cbias", "idr0028"],
+        choices=["bioimage", "trello", "cbias", "idr0028", "cellsurvey"],
         # cbias is the only config with sample data in this repo and an existing Docker image
         # target - bioimage_config's default paths don't exist here (docs/DEVELOPMENT_LOG.md
         # D-consolidate item 3). Was "bioimage" until that was flagged as a broken default.
@@ -139,6 +139,14 @@ if __name__ == "__main__":
         # this config's DOMAIN_NOTES doesn't describe and which the pipeline was never meant to join
         # itself. Run preprocess_idr0028.py first if this directory doesn't exist yet.
         data_dir_default = "./inputs/idr0028_processed"
+    elif args.config == "cellsurvey":
+        from configs.cellsurvey_config import CONFIG
+        report_default = "./inputs/cellsurvey_report/task_report.md"
+        # The PROCESSED derivative (see preprocess_cellsurvey.py) - not the source zarr on the
+        # remote Z: path, which this config's DOMAIN_NOTES doesn't describe and which the pipeline
+        # was never meant to read itself. Run preprocess_cellsurvey.py first if this directory
+        # doesn't exist yet (needs the Z: network path mounted and reachable).
+        data_dir_default = "./inputs/cellsurvey_processed"
     else:
         raise ValueError(f"Unknown config: {args.config}")
 

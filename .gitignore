@@ -12,3 +12,14 @@ inputs/cbias_data/
 # Real names found via manual review that anonymize_cbias_data.py should also redact - never
 # committed, since the whole point is these strings are PII.
 manual_redactions.txt
+
+# idr0028 raw data (2.4GB) and its processed derivative (247MB, regenerated from the raw data by
+# preprocess_idr0028.py - see that script's docstring) - a size concern, not a PII one (this is
+# public IDR data), but both are far too large for a normal git commit either way.
+inputs/idr0028/
+inputs/idr0028_processed/
+
+# cellsurvey processed derivative (232MB cells.csv, regenerated from the source zarr on a remote
+# Z: path by preprocess_cellsurvey.py - see that script's docstring) - a size concern only, not a
+# PII one (no patient/subject privacy or ethics constraint on this sample - confirmed).
+inputs/cellsurvey_processed/
