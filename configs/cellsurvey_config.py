@@ -58,8 +58,11 @@ cbias_config.py uses) - target these APIs specifically, not a version-agnostic "
   individually without overplotting/slow rendering - use alpha blending, hexbin/2D-histogram, or an
   explicit random subsample for any per-cell spatial scatter plot, and say in the plot which was used.
 - SciPy 1.18.0: scipy.spatial.Delaunay / scipy.spatial.cKDTree for building an alternative spatial
-  graph (the shipped `community` column used a hard distance-cutoff Delaunay graph - see DOMAIN_NOTES);
-  scipy.stats for comparing marker-intensity or area distributions between groups.
+  graph (the shipped `community` column used a hard distance-cutoff Delaunay graph - see DOMAIN_NOTES)
+  OR for estimating each cell's local k-nearest-neighbour intensity baseline (see DOMAIN_NOTES'
+  ACQUISITION ARTEFACTS note - tiled acquisition, non-uniform illumination/staining, no tile identity
+  to correct against directly); scipy.stats for comparing marker-intensity or area distributions
+  between groups.
 - scikit-learn 1.9.0: sklearn.cluster (KMeans/AgglomerativeClustering/DBSCAN/GaussianMixture) for an
   alternative cell-grouping to compare against the shipped `kmeans_cluster`; sklearn.preprocessing
   (StandardScaler/RobustScaler, or a manual per-marker z-score/log1p) for standardising raw marker
@@ -152,22 +155,44 @@ lives directly under the data directory (INPUT_FOLDER):
                            neighbourhoods, clustering), do not present a raw coordinate difference as
                            a physical distance in a stated unit (e.g. microns) without independent
                            verification.
-    marker_* (32 columns) - per-nucleus MEAN INTENSITY for each acquisition channel, stored RAW - no
-                           per-channel background subtraction, exposure/gain correction, or
-                           normalisation of any kind has been applied (the source pipeline's own
-                           documentation does not describe any such step, and this project's
-                           extraction adds none). Different channels were acquired with different
-                           exposure/gain settings - visible directly in the original acquisition
-                           channel names (see marker_channel_names.csv, e.g. "..._6000-..." vs
-                           "..._100-...") - so raw intensities are NOT on a comparable scale across
-                           markers. ANY script that fits a positivity threshold (GMM, Otsu, a
-                           percentile/valley cutoff) directly on a raw per-marker intensity histogram
-                           is fitting a cutpoint that partly reflects acquisition settings, not purely
-                           biology - normalise each marker first (see AVAILABLE_LIBRARIES'
-                           sklearn.preprocessing note) before treating a fitted cutpoint as a
-                           biological positivity call, and state explicitly in the script whether this
-                           was done. See the marker glossary below for each marker's typical
-                           biological role, and note the two channels that are NOT real markers.
+    marker_* (32 columns) - per-nucleus MEAN INTENSITY for each acquisition channel, stored RAW - see
+                           ACQUISITION ARTEFACTS below before comparing ANY two intensity values,
+                           whether across markers or across objects within the SAME marker. See the
+                           marker glossary below for each marker's typical biological role, and note
+                           the two channels that are NOT real markers.
+
+ACQUISITION ARTEFACTS - READ BEFORE COMPARING ANY TWO RAW INTENSITY VALUES, EVEN WITHIN ONE MARKER:
+this is a TILED acquisition of a large tissue section (COMET imaging stitches/fuses many individual
+fields of view into the single image this table's objects were segmented from), not one uniform
+exposure. That introduces technical variation beyond the cross-marker scale difference alone (no
+per-channel background subtraction, exposure/gain correction, or normalisation of any kind has been
+applied - the source pipeline's own documentation describes none, and this project's extraction adds
+none; different channels were acquired with visibly different exposure/gain settings - see
+marker_channel_names.csv, e.g. "..._6000-..." vs "..._100-..."):
+- Illumination is not uniform WITHIN a single tile (vignetting - typically dimmer toward tile edges).
+- Exposure/detector gain can drift slightly from one tile to the next.
+- Stitching/fusion between adjacent tiles can introduce seam artefacts at tile boundaries.
+- Antibody binding/staining/penetration is not guaranteed uniform across a large tissue section
+  either - a wet-lab/biological source of the same kind of position-dependent variation, not just an
+  imaging one.
+None of this is calibrated out anywhere in this data, and there is no tile/field-of-view identity
+column to correct against (checked directly against the source zarr's own per-cell metadata, not
+assumed - it has none). What IS available is each object's (x, y) centroid, which can support an
+approximate, honest mitigation: estimate a smoothed LOCAL baseline per marker (e.g. a coarse
+spatial-grid median, or each cell's k-nearest-neighbour median via scipy.spatial.cKDTree - already
+available, see AVAILABLE_LIBRARIES) and normalise each cell against its own local baseline rather
+than a single global one. This is NOT equivalent to a true calibrated flat-field correction (which
+would need per-tile identity or an illumination reference, neither of which exists here) - say so
+explicitly if used, rather than presenting it as a full correction.
+
+**Practical upshot: no single raw intensity value should be treated as "correct," and no two raw
+intensity values - even for the SAME marker - should be assumed directly comparable without
+accounting for this.** A positivity threshold fitted globally on one marker's raw histogram compounds
+BOTH problems at once: it assumes one global cutpoint is right for every object regardless of where in
+the tissue it sits, on top of assuming the marker's own raw scale is inherently meaningful. Normalise
+per-marker (see AVAILABLE_LIBRARIES' sklearn.preprocessing note) AND consider a local/spatial
+correction before treating any fitted cutpoint as a biological positivity call, and state explicitly
+in the script which of these (if any) was actually done.
 
 SEGMENTATION REGION - READ BEFORE TREATING ANY MARKER AS "POSITIVE" OR "NEGATIVE": every object in
 this table is a Stardist NUCLEAR segmentation (see this module's docstring) - there is no whole-cell
