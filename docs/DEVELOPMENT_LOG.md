@@ -1,10 +1,16 @@
-﻿# Data Prospector development log (rev. 71)
+﻿# Data Prospector development log (rev. 73)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 73: two changes carried out following Run 38 (`--config cellsurvey`) — Live Issue 24's dedup deletion, implemented rather than left as a recommendation, and an unrelated `.gitignore` hygiene fix caught in the same pass.**
+
+**(1) Dedup deleted.** Live Issue 24's entry below already argued the case from Run 38's counterfactual (dedup would have merged away the run's only `realised` finding plus one of its three disconfirmations) and closed with an explicit recommendation to delete `_dedup_angles` and its helpers rather than re-tune the threshold per domain. This rev carries that out. `config.py`: removed the `angle_similarity_threshold` field. `ideation.py`: removed `_dedup_angles`, `_angle_signature`, `_pick_representative`, and the now-unused `_judgment_sort_key` import — `_token_set`/`_jaccard` were kept, since `_log_iteration_diversity` (a separate, still-live measurement — it produced Run 38's own 0.20/0.16 diversity reading) depends on them; the module docstring was updated to stop describing dedup as something the module still does. `pipeline.py`: dropped the `_dedup_angles` import and the entire dedup block (the clustering call, the `[dedup]` summary print, and the per-cluster logging loop) — `all_angles` is now built directly from the judged archive with a comment pointing at this Live Issue for why the step is absent, and `generate_and_optimize`'s own docstring (both the stage-flow paragraph and the `"all_angles"` return-value description) no longer claims a dedup step exists. `CLAUDE.md`: the pipeline-flow diagram, the Dedup architecture bullet (now documents the deletion and the cellsurvey counterfactual instead of describing live measurement-only behaviour), the `angle_model` bullet's "dedup/judges" phrasing, and the `angle_similarity_threshold` config-field bullet (removed outright) were all updated to match. Verified offline: `ast.parse` clean and a real `import` across every core module (`app`, `config`, `pipeline`, `ideation`, `judging`, `realization`, `output`, `parsing`, `llm`, `sandbox`, `preflight`) together — not just each file in isolation, so a stale cross-import would have surfaced; confirmed none of the five domain configs set `angle_similarity_threshold` explicitly (so removing the field breaks nothing per-domain); a repository-wide `grep` for `angle_similarity_threshold`/`_dedup_angles`/`_angle_signature`/`_pick_representative` returns no hits outside this document and `DEVELOPMENT_LOG_ARCHIVE.md`, which are historical record, not live code. **Needs a live run to confirm** the pipeline still behaves correctly end-to-end with the step actually gone, not just that it imports — nothing in this rev exercised `generate_and_optimize` itself.
+
+**(2) `.gitignore` gained `__pycache__/` and `*.pyc`.** Caught while reviewing Run 38's `git status`: four `configs/__pycache__/*.pyc` files had been `git add`ed alongside that run's real deliverables, and `__pycache__` was not ignored at all — a gap that predates this run and could recur for any config. Fixed by unstaging the four files and adding both patterns to `.gitignore`; confirmed via `git status` that both `__pycache__/` directories present at the time no longer appear as untracked or staged.
 
 **Rev. 70: the three domain config modules moved into a new `configs/` package — `cbias_config.py`, `trello_config.py`, `bioimage_config.py` are now `configs/cbias_config.py`, `configs/trello_config.py`, `configs/bioimage_config.py`.** User-requested, the next root-tidying step after rev. 69's `docs/` move. Unlike the two doc moves, this one is a real code change, not a text move: `app.py`'s three `--config`-branch imports changed from `from cbias_config import CONFIG` etc. to `from configs.cbias_config import CONFIG` etc., and a new (empty) `configs/__init__.py` makes it an explicit regular package rather than relying on implicit namespace-package behaviour. Checked before moving, not assumed: none of the three configs does any `__file__`-relative path construction (their `Path(...)` calls are all built from the `directory`/`data_dir` argument passed in at call time, never from the module's own location), so the directory move carries no hidden path risk; and `from config import PipelineConfig` inside each moved file still resolves correctly with no change, since `config.py` stays at the repository root and the root stays on `sys.path` (added automatically as `app.py`'s own directory, the actual entrypoint) regardless of which subdirectory the *importing* module lives in. **`config.py` (the shared `PipelineConfig` base) and `pipeline.py`/`ideation.py`/`judging.py`/`llm.py`/`output.py`/`parsing.py`/`preflight.py`/`prompts.py`/`realization.py`/`sandbox.py` (the twelve-module pipeline core) were explicitly left at root** — this was the scope this session's discussion (before rev. 69) already flagged as the expensive, high-risk part of any reorganisation, and moving three self-contained domain configs with a single external caller (`app.py`) is a materially smaller, materially safer change than restructuring the pipeline's own dense flat cross-import graph. Cross-references updated in the same pass: `app.py`'s three import lines (the only functional change); comments/prose in `anonymize_cbias_data.py`, `CLAUDE.md`, `config.py`, `README.md`, `Dockerfile`, and this document and its archive, all now read `configs/<name>_config.py`. The three config files' **mutual** references to each other (`cbias_config.py`'s comment naming `trello_config.py`, and vice versa) were deliberately left bare — they're still siblings, now inside `configs/` rather than at root, exactly the same reasoning as rev. 69's docs. Verified: `ast.parse` clean on every touched file; a real `from configs.cbias_config import CONFIG` (and the other two) plus a real `import app` both succeed, confirming the actual import wiring works, not just that the text looks right; stale root-level `__pycache__` entries for the three old module locations removed so nothing stale lingers. `grep` confirms no un-prefixed external reference remains anywhere in the repository.
 
@@ -218,6 +224,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 38 | **0.20 / 0.16** | working | **`--config cellsurvey` — third demonstrated domain, and the hardest yet**: 362,736 cells, 32 marker channels, spatial coordinates, and a task framed as *interrogating an existing pipeline's output* rather than analysing raw data. **4/4 compiles passed on attempt 1/3**; 1 realised, 3 realised_null, 0 not-realisable, 0 unsupportable, 0 judge errors. **Live Issue 29 (preflight) confirmed live** — 3 models + Docker checked in four calls before any spend. **Live Issue 34's cluster logging confirmed live, and immediately decisive: 8 angles → 3, six of eight in a single cluster** spanning guiding questions 1, 2, 4 and 6. That counterfactual answers Live Issue 24 (see its entry). New §15 entry E4: the judge caught a hypothesis test computed on the wrong tail |
 | 37 | **0.17 / 0.19** | working | **FIRST RUN ON A NON-CBIAS CONFIG — `--config trello`.** Different domain (Trello JSON+CSV), 7 guiding questions, **no anti-target list at all**, different rubric. 2 realised, 1 realised_null, **1 `pattern_not_shown`**, 0 not-realisable, 0 unsupportable, 0 judge errors. **The judge's best catch in the log: it located a specific index error in generated source** (§15.7 obs 5). Worker resilience fired (`3/4 succeeded - failed: main`) and the design still passed. **Diversity is ~2× the cbias band** and dedup produced the first-ever chained + `within_iteration` merge — which exposed Live Issue 34, a self-inconsistent `[dedup]` log line |
 | 36 | — | — | Docker restored. 4/4 realised or disconfirmed, 0 not-realisable, 0 judge errors, 1 unsupportable. **Issue 33 confirmed live**: the `is_string_dtype` fix took the Likert item count from 1 (Run 34) to ~18. **First statistically-tested disconfirmation in the log** — `semantic-drift-abstract-embeddings` ran a 999-permutation PERMANOVA (pseudo-F=0.80, p=0.994) and the verdict rests on it. B1 correction: attempt 1 silent-exited, Issue 11's backstop caught it, attempt 2 produced a *declared* TF-IDF fallback |
 | 35 | 0.09 / 0.10 | working | **Docker unavailable — all 4 realisations `Execution: SKIPPED`, all binned `not_realisable`, zero verified output for a full ~110-call run.** Strongest motivating case for Live Issue 29's preflight (see that entry). Tier mislabelling recurs (Live Issue 28 pattern, 4th instance). Two `<task>` XML parse failures in one run, one a new error type — 5 total for D-simplify item 1. Dedup would-merge at 0.223, first plausible **true** positive |
@@ -247,7 +254,44 @@ The evidence base for every threshold in this document.
 
 #### Open
 
-**24. Dedup merged two angles serving different guiding questions, removing coverage (Run 23).** `8 → 5 after dedup`, three across-iteration merges:
+**24. RESOLVED (Run 38), IMPLEMENTED (rev. 73) — DELETE DEDUP. The demonstration this entry has been waiting for since rev. 24 arrived, and it points one way.**
+
+Run 38 (`--config cellsurvey`) produced the most aggressive dedup result in the log — **8 angles → 3, with six of eight in a single cluster** — and Live Issue 34's new cluster logging made it legible on its first outing:
+
+```
+cluster {[cluster-biological-coherence], [gating-vs-kmeans-disagreement-audit],
+         [local-canonical-lineage-niche-coherence], [lineage-nearest-neighbour-asymmetry],
+         [within-cluster-lineage-marker-dispersion], [equivocal-gating-band]}
+  -> would keep [equivocal-gating-band]
+```
+
+**Those six span guiding questions 1, 2, 4 and 6** — cluster coherence, gating-vs-clustering, neighbourhood niches, and lineage spatial organisation. They are not duplicates. They share vocabulary because the *domain* compels every angle to name markers, say "GMM threshold", and reference `kmeans_cluster`.
+
+**The counterfactual, which is the decision criterion this entry set out:**
+
+| Angle | Actually realised | Under dedup |
+|---|---|---|
+| `equivocal-gating-band` | realised_null | ✓ kept (the survivor) |
+| `residualized-pair-coexpression` | realised_null | ✓ (outside the cluster) |
+| `within-cluster-dispersion` | **realised_null** — dispersion and silhouette move *opposite* to the hypothesis | ✗ **merged away** |
+| `lineage-nearest-neighbour-asymmetry` | **realised** — the run's **only** confirmation | ✗ **merged away** |
+| `graph-definition-sensitivity` | below cutoff, never run | would have been realised in their place |
+
+**Dedup would have destroyed the run's only confirmed finding plus one of its three disconfirmations**, substituting one untested angle. Two of four realisations lost. This is the "would suppressing these have cost a realisation?" question the entry has been running as a measurement since rev. 29, answered unambiguously on its thirteenth data point.
+
+**The deeper reason, which matters more than the verdict.** Diversity ran at **0.20 / 0.16** on cellsurvey against **0.07–0.12** throughout cbias. The threshold is **0.22**. On cbias the mean pairwise similarity sits far below the merge threshold so almost nothing crosses it; on cellsurvey the mean is close enough that most pairs do. **The 0.22 constant was hand-calibrated on cbias vocabulary and does not transfer.**
+
+That is not a tuning problem — §3's "Known ceiling" already establishes why re-tuning fails, and this is the same lexical-versus-semantic gap amplified by a domain with a genuinely narrow vocabulary. **A per-config threshold is the wrong fix**: it adds one hand-set constant per domain, and the project now has five configs across survey data, project-management exports, spatial single-cell imaging, and a high-content siRNA screen. A single global lexical threshold across that spread is a category error, not a mis-set number.
+
+**Recommendation: delete `_dedup_angles` and its four helpers (~115 lines), the threshold constant, and the measurement-only logging.** §13's rule applies exactly — the original justification (saving judging cost) was removed when D6-fix moved judging first, no replacement was ever established, and the component has now been shown to remove useful output rather than noise. The `[dedup]` log line has been the measurement; with the measurement concluded, the instrument goes too.
+
+**IMPLEMENTED (rev. 73).** Done exactly as recommended: `_dedup_angles`/`_angle_signature`/`_pick_representative` removed from `ideation.py`, `angle_similarity_threshold` removed from `config.py`, the dedup block and `[dedup]` logging removed from `pipeline.py`, and `CLAUDE.md`'s architecture description updated to match. See the rev. 73 banner at the top of this document for the full change list and verification. `_log_iteration_diversity` (the `[diversity]` measurement) was kept — it is a separate, still-live instrument that does not filter anything, and it is what produced this very entry's 0.20/0.16 reading.
+
+**What is *not* being claimed:** near-duplicate angles do occur (Run 35's 0.223 pair looked like a genuine true positive). The claim is that a human skimming a gallery dismisses a near-duplicate in a second, while dedup silently removes angles it cannot distinguish from duplicates — and on cellsurvey that was 6 of 8.
+
+*Original entry follows.*
+
+**24 (original). Dedup merged two angles serving different guiding questions, removing coverage (Run 23).** `8 → 5 after dedup`, three across-iteration merges:
 
 ```
 [stakeholder-role-evaluative-separation] -> [closed-ended-covariance-themes]     (0.242)
@@ -349,7 +393,22 @@ Not urgent; the abort is still correct, it just did not help here. Two options, 
 
 **FIXED (rev. 39), option 2 only.** `_run_one_design`'s repeat-detection branch now computes `remaining = max_compile_attempts - 1 - attempt` before logging: with attempts genuinely left to skip, it logs `aborting the N remaining compile attempt(s)` (unchanged claim, still true); when the repeat lands on the last attempt — the case that actually happened in Run 27 — it logs `it was the last attempt available, so nothing was saved by detecting it` instead, and `aborted_on_repeat` (which drives the `(aborted early - the same error recurred verbatim)` note on the final `not_realisable` feedback) is only set `True` in the real-saving case. No change to when the loop breaks or to `max_compile_attempts` itself — this is wording only, exactly as scoped. Verified offline with a mocked `_run_one_design` run for both cases (repeat with 2 attempts remaining; repeat only on the final attempt of 3) — deleted after passing.
 
-**29. No preflight check that every configured model is reachable.** Run 28's `APIStatusError("Error code: 402 - Insufficient Balance")` was an account state, not a pipeline fault, and the pipeline handled it correctly. But it exposes that nothing verifies the configured models are usable before ~110 calls are committed.
+**29. CLOSED — CONFIRMED LIVE (Run 38).** The first run with `preflight.py` in place opens:
+
+```
+[preflight] checking 3 model(s) and Docker availability...
+  [OK] claude-opus-4-8: reachable
+  [OK] claude-sonnet-5: reachable
+  [OK] deepseek-v4-pro: reachable
+  [OK] docker: daemon reachable
+[preflight] all checks passed
+```
+
+Four calls before any spend. Run 35 discovered the same Docker fact at the *realisation* stage, after ideation, 16 Opus judge calls, four orchestrations, four worker fan-outs and four compiles — roughly the full ~110-call bill for zero verified output. Both halves of the entry (models and Docker) are covered, and the Docker half — argued as the stronger case — is the one that would have saved Run 38's predecessor entirely.
+
+*Original entry follows.*
+
+**29 (original). No preflight check that every configured model is reachable.** Run 28's `APIStatusError("Error code: 402 - Insufficient Balance")` was an account state, not a pipeline fault, and the pipeline handled it correctly. But it exposes that nothing verifies the configured models are usable before ~110 calls are committed.
 
 **Be honest about the scope: a preflight would NOT have caught Run 28.** DeepSeek worked for ideation and for three of four compiles, then ran out mid-run. Credit exhaustion partway through is out of scope for any startup check, and as noted when this was raised, it is obvious from the console anyway.
 
@@ -435,7 +494,22 @@ Deleted after passing, per convention. **Needs a live run to confirm** — the m
 - **Issue 33 (= §15 B5) — FIXED (rev. 56), CONFIRMED (Run 36). Closed.** A dtype gate (`is_object_dtype()`) is invisible to pandas 3.0's native `str` dtype, silently skipping all 21 Likert columns in a generated clustering script; `AVAILABLE_LIBRARIES` now documents the `str`/`object` split and points at `is_string_dtype()`. Run 36 confirmed it live — the Likert item count the affected angle-shape sees went from 1 (Run 34) to ~18.
 - **Live Issue 5 (caching) — MEASURED (rev. 51, Run 33), closed.** Anthropic shows the expected write-then-read cache pattern; DeepSeek's flat nonzero `cache_read` from call 1 is its own internal metric, not the explicit-breakpoint convention, and must not be read as the same number.
 
-**34. The `[dedup]` measurement log is self-inconsistent on chained merges (Run 37).** The trello run produced the first chained merge and the first `within_iteration` merge in the whole measurement, and the output does not survive it:
+**34. FIXED — CONFIRMED LIVE (Run 38), and it earned its keep immediately.** The new cluster format rendered a six-member chain on its first outing:
+
+```
+cluster {[a], [b], [c], [d], [e], [f]} -> would keep [f]
+    [b] -> [a] (similarity=0.255, within_iteration)
+    [c] -> [b] (similarity=0.301, within_iteration)
+    ...
+```
+
+Under the old per-pair format this would have printed five lines whose `would keep` fields all named `[f]` while each line's merge target named someone else — unreadable, and precisely the failure this entry described. **The fix is what made Live Issue 24 resolvable**: the counterfactual there depends on knowing which angles were in the cluster and which single one survived, and only the cluster form supplies that.
+
+**One correction to this entry's original diagnosis, recorded rather than edited away.** It called the old output "self-inconsistent" and the `would keep` field "wrong". It was neither: the survivor was correct and the pairwise similarity was correct. What the isolated per-pair line omitted was the *other cluster members and the later merge events that brought them in* — the output was **incomplete, not incorrect**. That is a §15 F-class miss: a logic bug inferred from an output shape without tracing how a chain actually forms.
+
+*Original entry follows.*
+
+**34 (original). The `[dedup]` measurement log is self-inconsistent on chained merges (Run 37).** The trello run produced the first chained merge and the first `within_iteration` merge in the whole measurement, and the output does not survive it:
 
 ```
 would merge [done-to-billed-leakage] -> [effective-activity-vs-formal-lead-mismatch]
@@ -644,6 +718,22 @@ Behind that is the identity question this fork has been deferring. Two honest op
 - **Worth noting as a signal in its own right:** diversity ran at **0.17 / 0.19**, roughly double the 0.07–0.12 cbias band, and dedup produced the first chained and first `within_iteration` merges ever seen. Plausibly because the trello report carries no anti-target list — nothing is being excluded, so angles cluster. That is a hypothesis, not a finding.
 
 **The decision below therefore stands but weakens.** Option (b) is no longer purely hypothetical: one of the two non-CBIAS configs now has a working run. Two or three more trello runs would settle it either way, and are cheap.
+
+**REVISED AGAIN (rev. 72, Run 38): with five configs and three demonstrated domains, the template reading is now the better-supported one.** Rev. 57 recorded trello as a single data point. The position has moved substantially since:
+
+| Config | Domain | Status |
+|---|---|---|
+| `cbias` | Symposium survey/abstract/programme data | 34 runs |
+| `trello` | Project-management board export (JSON + CSV) | Run 37, clean |
+| `cellsurvey` | Spatial single-cell imaging — 362,736 cells, 32 marker channels | **Run 38, 4/4 first-attempt compiles** |
+| `idr0028` | High-content siRNA screen — 1,536 wells, ~540k cells per plate file | Configured, not yet run |
+| `bioimage` | — | Untested |
+
+**What Run 38 adds beyond Run 37.** cellsurvey is a materially harder domain than trello: two orders of magnitude more rows, 32 continuous channels rather than categorical fields, and a task framed as *interrogating another pipeline's output* rather than analysing raw data. Every realisation compiled and executed on the first attempt, the judges produced domain-appropriate caveats (single-sample, unvalidated GMM thresholds, no ground-truth cell types), and one of them caught a subtle statistical error (E4). None of that is CBIAS-shaped.
+
+**The honest qualification, unchanged from rev. 57.** Each config required real per-domain work — `cellsurvey_config.py` is 263 lines, `idr0028_config.py` 237, `trello_config.py` 269. This is a template that works *after* configuration, which is what a template should be, but it is not zero-effort and should not be described as such anywhere user-facing.
+
+**And one thing the expansion has already cost, which strengthens the case for acting on Live Issue 24:** the dedup threshold was calibrated on cbias vocabulary and does not survive contact with a fourth domain. Any other hand-set constant in the pipeline is now suspect for the same reason, and should be checked against a non-cbias config before being trusted.
 
 - **(a) It is a CBIAS research instrument.** Make `cbias` the default config, delete or clearly mark `configs/bioimage_config.py` and `configs/trello_config.py` as untested examples, and amend §2's "keep it a template" guardrail to say what is actually being kept — a *simple, single-module, no-framework* pipeline, which is the property that has genuinely held.
 - **(b) It is still a template.** Then the bioimage and trello paths must actually run, which means shipping sample inputs for at least one of them and confirming the diverger's ideation/judging stages produce something sensible on a domain that is not a four-year survey dataset. Note that no such run has ever been done: **every one of the twenty runs in §3 is `cbias`.**
@@ -1067,7 +1157,12 @@ C1 is the class the pipeline defends against well and by design; C2 is the gap �
 |---|---|---|---|
 | E1 | **`delivered_score` is anti-correlated with worth.** Scored 1.00 for a noisy disconfirmation and 0.71 for the run's best result. | 5 runs (12, 16, 17, 19, 22) | Omitted from the gallery (D7); never gated on |
 | E2 | **`req_score` carried no information.** An LLM rubric judge over a real oracle's output. | D1–D5 | Deleted |
+| E4 | **A statistically valid computation answering the wrong question (Run 38).** `lineage-nearest-neighbour-asymmetry` printed `empirical p-value (observed <= null): 1.0000` from `np.sum(perm_medians <= obs_median)`. Observed median 142.25 against a null cluster at ~58–62, so every permutation lies below the observation and p = 1.0 — arithmetically correct, and the **wrong tail** for an exclusion hypothesis, which needs `P(perm >= obs)` ≈ 0. | 38 | Judge caught it and still ranked the angle `realised` — the visual evidence stands, the test does not. Read from the console alone the number says "not significant", the exact opposite of the finding |
 | E3 | **Lexical dedup conflates method with topic.** 6 false positives across Runs 23–26, all in the 0.22–0.36 band, all sharing topic vocabulary while differing in method. The highest-similarity merge in the whole log (0.360) is a false positive. | 23–26 | Reduced to measurement-only (Issue 24); fix, if any, must be semantic |
+
+**E4 is a new shape and worth separating from A3/A4 and Run 37's index error.** Those were code that computed the wrong thing. This is code that computes the *right* thing and attaches it to the *wrong claim* — the test is valid, correctly implemented against its own label, and answers a question nobody asked. **No deterministic check can catch this class**: the script runs, exits 0, prints a well-formed p-value with a truthful label. It is caught only by something that holds the hypothesis and the statistic in mind at once, which in this pipeline is the realisation judge and nothing else.
+
+Note the judge's handling was also correct in a way worth recording: it flagged the wrong-tail error *and still ranked the angle `realised`*, on the grounds that the histogram and hexbin map legitimately support the claim while the p-value does not. Downgrading the whole angle would have discarded a real finding over a reporting fault; ignoring it would have let a "not significant" number stand against a significant result. Grading rather than gating, exactly as §7 requires.
 
 **The pattern across E:** every model-produced *number* in this project has needed downgrading — from gate, to rank, to display, to nothing. The model-produced *prose* (`pattern_reasoning`, soundness caveats) has held up far better, including catching A3. **Trust the judges' reasoning; distrust their scores.**
 

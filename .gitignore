@@ -2,6 +2,11 @@
 .pixi/*
 !.pixi/config.toml
 
+# Compiled Python bytecode - interpreter/platform-specific build artifacts, never source. Caught
+# after configs/__pycache__/*.pyc was accidentally staged following a real run.
+__pycache__/
+*.pyc
+
 # Raw CBIAS attendee data contains personal data (names, emails, locations, abstracts) - never
 # commit until anonymised. Remove this line once inputs/cbias_data/ only holds anonymised data.
 inputs/cbias_data/

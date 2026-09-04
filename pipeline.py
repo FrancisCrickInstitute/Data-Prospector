@@ -1,8 +1,8 @@
-"""Data Prospector pipeline orchestration: criteria split -> ideate (fan-out) -> judge -> dedup
-(measurement only) -> rank -> realise top-k -> gallery. See CLAUDE.md for the architecture and
-docs/DEVELOPMENT_LOG.md for the full design/run/decision history. This module holds only
-generate_and_optimize - every stage's actual implementation lives in its own module (llm.py,
-parsing.py, sandbox.py, ideation.py, judging.py, realization.py, output.py).
+"""Data Prospector pipeline orchestration: criteria split -> ideate (fan-out) -> judge -> rank ->
+realise top-k -> gallery. See CLAUDE.md for the architecture and docs/DEVELOPMENT_LOG.md for the
+full design/run/decision history. This module holds only generate_and_optimize - every stage's
+actual implementation lives in its own module (llm.py, parsing.py, sandbox.py, ideation.py,
+judging.py, realization.py, output.py).
 """
 
 import asyncio
@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from config import PipelineConfig
-from ideation import _angle_record, _dedup_angles, _ensure_unique_id, _log_iteration_diversity, generate_angles
+from ideation import _angle_record, _ensure_unique_id, _log_iteration_diversity, generate_angles
 from judging import _judgment_sort_key, judge_insight, judge_soundness
 from llm import llm_call
 from output import _write_angle_dump, _write_gallery
@@ -22,24 +22,22 @@ from realization import _run_one_design
 async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: str = None,
                                 max_iterations: int = 2, output_dir: str = None,
                                 realize_top_k: int = 4, angles_per_iteration: int = 12) -> dict:
-    """Ideation loop, fanned out, then judged, then deduped (measurement only), then selectively
-    realized, then written up as a gallery. Each iteration fires angles_per_iteration independent
-    generate_angles calls (n=1 each) concurrently via asyncio.gather, cycling
-    config.design_stances and the parsed guiding questions across calls independently for
-    intra-iteration diversity - concurrent calls can't see each other, so these two cycling axes
-    are the only lever within an iteration. Cross-iteration diversity instead comes from
-    {existing_angles}: the accumulated archive of every angle proposed so far, fed back into the
-    angle-generation prompt suffix. Once ideation finishes, judging scores every archived angle
-    for non-obviousness (judge_insight) and soundness (judge_soundness), and dedup runs against
-    the judged archive but MEASUREMENT ONLY (see docs/DEVELOPMENT_LOG.md's Live Issue 24) - it logs what
-    it would have merged and is not acted on, so every judged angle is ranked. Realisation then
-    handles only the top realize_top_k non-unsupportable angles - code is written and run for that
-    small selection only, never for the whole archive.
+    """Ideation loop, fanned out, then judged, then selectively realized, then written up as a
+    gallery. Each iteration fires angles_per_iteration independent generate_angles calls (n=1
+    each) concurrently via asyncio.gather, cycling config.design_stances and the parsed guiding
+    questions across calls independently for intra-iteration diversity - concurrent calls can't
+    see each other, so these two cycling axes are the only lever within an iteration.
+    Cross-iteration diversity instead comes from {existing_angles}: the accumulated archive of
+    every angle proposed so far, fed back into the angle-generation prompt suffix. Once ideation
+    finishes, judging scores every archived angle for non-obviousness (judge_insight) and
+    soundness (judge_soundness); every judged angle is then ranked (no dedup step runs between
+    judging and ranking - see docs/DEVELOPMENT_LOG.md's Live Issue 24 for why it was deleted rather
+    than fixed). Realisation then handles only the top realize_top_k non-unsupportable angles -
+    code is written and run for that small selection only, never for the whole archive.
 
     Returns a dict:
-    - "all_angles": every judged angle dict (dedup does not remove any - see Live Issue 24),
-      ranked best-first by _judgment_sort_key, each carrying its judgment and (if realized) its
-      realisation result fields.
+    - "all_angles": every judged angle dict, ranked best-first by _judgment_sort_key, each
+      carrying its judgment and (if realized) its realisation result fields.
     - "gallery_path" / "dump_path": paths to the two files written to output_dir (_write_gallery,
       _write_angle_dump), or "" if output_dir wasn't given.
     - "scripts_dir": the directory each realized angle's compiled script was written into, or None.
@@ -220,32 +218,12 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
             continue
         angle.update(result)
 
-    # Dedup is MEASUREMENT ONLY, not acted on (docs/DEVELOPMENT_LOG.md Live Issue 24). _dedup_angles still
-    # clusters the whole run's archive (all iterations) exactly as before, but its result no longer
-    # filters all_angles - every judged angle proceeds to ranking regardless of what would have
-    # merged.
-    kept_records, merge_stats = _dedup_angles(archive, config.angle_similarity_threshold)
-    print(
-        f"[dedup] MEASUREMENT ONLY, not acted on - {len(archive)} angle(s), "
-        f"{len(kept_records)} would remain after dedup (threshold={config.angle_similarity_threshold}); "
-        f"would merge {merge_stats['within_iteration']} within-iteration, "
-        f"{merge_stats['across_iteration']} across-iteration duplicate(s)"
-    )
-    for cluster in merge_stats["clusters"]:
-        # One line per actual cluster, not per pairwise event (Live Issue 34): a cluster with 3+
-        # members forms from several pairwise merges, and printing those in isolation misled a
-        # reader on a chain - "merged A into B" then "would keep C" looked like a mismatched pair
-        # even though C simply joined the same cluster via a later event. Report what would
-        # actually happen instead: every member, the one representative, and the pairwise
-        # similarities that built the cluster. None of this is applied - see the comment above.
-        members = ", ".join(f"[{m}]" for m in cluster["members"])
-        print(f"    cluster {{{members}}} -> would keep [{cluster['representative']}]")
-        for pair in cluster["pairwise"]:
-            print(
-                f"        [{pair['record_id']}] -> [{pair['matched_id']}] "
-                f"(similarity={pair['similarity']:.3f}, {pair['type']})"
-            )
-    print()
+    # No dedup step here - see docs/DEVELOPMENT_LOG.md's Live Issue 24. It ran as a measurement-only
+    # clustering pass for several runs; on cellsurvey (Run 38) the counterfactual showed it would
+    # have merged away the run's only confirmed finding plus one of its three disconfirmations, in
+    # favour of an angle that was never realised. The lexical Jaccard threshold was calibrated on
+    # cbias vocabulary and does not transfer across the domains this pipeline now spans - deleted
+    # rather than re-tuned, per that entry's reasoning.
     all_angles = [rec["angle"] for rec in archive]
 
     if not all_angles:

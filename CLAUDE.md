@@ -72,8 +72,8 @@ Anthropic models (see `docs/DEVELOPMENT_LOG.md` §5 for the full per-role tierin
 
 ```
 criteria split (1 call, once) → ideate (fan-out, N angles/iteration × max_iterations)
-  → judge (insight + soundness, every angle) → dedup (measurement only, not acted on)
-  → rank → realise top-k (orchestrate → workers → compile/execute loop → realisation judge)
+  → judge (insight + soundness, every angle) → rank
+  → realise top-k (orchestrate → workers → compile/execute loop → realisation judge)
   → gallery
 ```
 
@@ -102,16 +102,19 @@ criteria split (1 call, once) → ideate (fan-out, N angles/iteration × max_ite
   the gallery. **Graded, not gated**: nothing is filtered out at this stage, and `solid` has been
   essentially unreachable on this dataset's sample sizes — treat that as a property of the data, not a
   prompt-tuning target.
-- **Dedup** (`_dedup_angles`, D4 — **currently measurement-only**, Live Issue 24): clusters the judged
-  archive by token-set Jaccard similarity over `hypothesis`/`variables_involved`/`rough_method`
-  (`angle_similarity_threshold`, calibrated to 0.22) and logs what it *would* merge — but
-  `generate_and_optimize` no longer acts on the result; `all_angles` is built from the full archive.
-  This is a deliberate interim, not an oversight: dedup's original justification (saving downstream
-  judging cost) disappeared once judging moved before it, several merges have since been shown to be
-  false positives that removed real coverage, and the measurement is being kept running to decide whether
-  to delete it outright or replace it with something semantic. See `docs/DEVELOPMENT_LOG.md`'s Live Issue 24 for
-  the live decision and its evidence.
-- **Rank + select**: the full (undeduped) archive is sorted by `_judgment_sort_key` (soundness tier first,
+- **Dedup — deleted (D4, Live Issue 24).** A token-set Jaccard clustering pass (`_dedup_angles`, over
+  `hypothesis`/`variables_involved`/`rough_method`) ran measurement-only for several runs, logging what
+  it *would* merge without `generate_and_optimize` acting on it. Its original justification (saving
+  downstream judging cost) had already disappeared once judging moved before it; the measurement was
+  kept running to decide whether to fix it or delete it. On `cellsurvey` (Run 38) the counterfactual
+  showed it would have merged away the run's only confirmed finding plus one of its three
+  disconfirmations, in favour of an angle that was never realised — and the threshold (0.22, calibrated
+  on cbias vocabulary) turned out not to transfer to a domain with a narrower vocabulary, where nearly
+  every pair crossed it. Deleted rather than re-tuned per-domain, since a single global lexical
+  threshold across CBIAS survey data, a Trello export, a siRNA screen, and spatial single-cell imaging
+  is a category error, not a mis-set number. See `docs/DEVELOPMENT_LOG.md`'s Live Issue 24 for the full
+  evidence trail.
+- **Rank + select**: the full archive is sorted by `_judgment_sort_key` (soundness tier first,
   then insight). `--realize-top-k` (default 4) non-`unsupportable` angles get realised; everything else
   appears one line each in the gallery's closing "also generated" section, with full detail in the
   sibling `surfaced_angles_<ts>.md` dump.
@@ -175,7 +178,7 @@ are needed. A domain config module must provide:
 - `worker_model`, `compiler_model` — mechanical/high-volume and Docker-oracle-protected, so a cheap tier
   is fine (`configs/cbias_config.py` routes these to DeepSeek — see Commands above for the extra env vars that
   needs).
-- `angle_model` — cheap tier; volume matters more than polish here, since dedup/judges filter downstream.
+- `angle_model` — cheap tier; volume matters more than polish here, since the judges filter downstream.
 - `requirements_evaluator_model` — used for the criteria-split call *and* `validate_realization`; **must
   be vision-capable**, since the realisation judge is passed the angle's actual PNG artifacts.
 - `docker_image` — must already exist locally (built from a `Dockerfile` target with the domain's
@@ -204,9 +207,6 @@ are needed. A domain config module must provide:
 - `design_stances: list[str]` (optional — defaults to `DEFAULT_DESIGN_STANCES` in `config.py`). Ideation
   call `m` within an iteration gets `design_stances[(m + iteration) % len(...)]` as a one-line
   "Approach for this design:" steer (e.g. conventional/robust, depth-first, contrarian).
-- `angle_similarity_threshold` (optional, defaults to the calibrated `0.22` in `config.py`) — the dedup
-  Jaccard cutoff. Currently measurement-only everywhere (see Dedup above), so changing it per-domain has
-  no behavioural effect until that interim is resolved.
 
 Then wire the new config into `app.py`'s `--config` choices.
 
