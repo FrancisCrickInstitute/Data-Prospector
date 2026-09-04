@@ -24,21 +24,26 @@ One file in the data directory (INPUT_FOLDER):
   is and is not available (no raw image, no cell-boundary polygon, no raw spatial-graph edge list, only
   one sample - no cross-sample comparison is possible).
 
-## About the Shipped Groupings - Read Before Proposing Metrics
+## About the Shipped Groupings - Context for Questions 1-3
 
 `kmeans_cluster` and `community` are NOT validated ground truth about this tissue's biology - they are
 one arbitrary parameterisation the pipeline happened to run with (KMeans at a fixed k=10, not chosen
 against any biological criterion; a Louvain spatial-community partition built on a Delaunay graph with a
 hard 1000-unit edge-distance cutoff and resolution=0.1, also pipeline defaults, not tuned or validated).
-A central objective of this analysis is proposing alternative, more biologically-grounded ways to define
-cell populations and spatial niches - using this panel's named markers, which (unlike an opaque
-expression cluster) have real, checkable biological meaning.
+This is important background for guiding questions 1-3 below, which are specifically about whether these
+two groupings hold up biologically - but it is ONE thread among six, not an overarching lens for the
+whole analysis.
 
-Proposed metrics/angles should treat `kmeans_cluster`/`community` as something to INTERROGATE, not
-build on top of uncritically. In particular, "which cluster/community has the highest mean X" is a weak
-angle on its own; "does this cluster's marker profile correspond to a coherent, named cell type" or "is
-this community's boundary better explained by the tissue's actual structure or by the graph's distance
-cutoff" are the kind of question this task wants.
+Where an angle does engage with `kmeans_cluster`/`community` (mainly questions 1-3), treat them as
+something to INTERROGATE, not build on top of uncritically - "which cluster/community has the highest
+mean X" is a weak angle on its own; "does this cluster's marker profile correspond to a coherent, named
+cell type" or "is this community's boundary better explained by the tissue's actual structure or by the
+graph's distance cutoff" are the kind of question that thread wants.
+
+Guiding questions 4-6 do NOT need to reference either grouping at all - they ask about niches, marker
+co-expression, and named-lineage spatial organisation as questions in their own right, answerable
+directly from markers and coordinates. Forcing a `kmeans_cluster`/`community` comparison into an angle
+that targets one of these three is not required, and often is not the strongest version of that angle.
 
 ## Guiding Questions for Analysis
 
@@ -107,8 +112,10 @@ The analysis should be independently implementable and:
 
 ## Success Criteria
 
-✅ Suggested metrics engage critically with `kmeans_cluster`/`community` rather than simply restating
-   them, and are grounded in the marker glossary's biological meaning where a cell-type or tissue-region
+✅ Where an angle engages with `kmeans_cluster`/`community` (typically questions 1-3), it does so
+   critically rather than simply restating them; angles addressing questions 4-6 are judged on their own
+   terms and are not required to reference either grouping
+✅ Metrics are grounded in the marker glossary's biological meaning where a cell-type or tissue-region
    claim is made
 ✅ Script runs without errors on the provided input data
 ✅ Visualisations are properly labelled (titles, axis labels, legends) and handle the cell count sensibly
