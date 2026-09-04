@@ -9,7 +9,9 @@ CRITICAL FRAMING - read before writing ideation/judging prompts against this dom
 and `community` are NOT validated ground truth about this tissue's biology. They are one arbitrary
 parameterisation the CellSurvey pipeline happened to run with (k=10 fixed, not chosen against any
 biological criterion; Louvain resolution=0.1 and a hard Delaunay edge-distance cutoff of 1000, also
-pipeline defaults, not tuned or validated). Unlike inputs/idr0028_report's `Published_*` columns
+pipeline defaults, not tuned or validated) - see DOMAIN_NOTES' KMEANS_CLUSTER PROVENANCE note for
+exactly what was and wasn't done before clustering, verified directly against the source pipeline's
+own code (not assumed). Unlike inputs/idr0028_report's `Published_*` columns
 (a genuine prior finding to avoid re-deriving), these two columns are a candidate to INTERROGATE, not
 a result to build on top of or avoid repeating. A central objective of this domain is proposing
 alternative, more biologically-grounded ways to define cell populations and spatial niches - e.g.
@@ -138,7 +140,9 @@ lives directly under the data directory (INPUT_FOLDER):
     kmeans_cluster        - integer 0-9, the shipped clustering (see this module's docstring - k=10
                            was a pipeline default, not a validated choice). Highly imbalanced: cluster
                            sizes range from ~400 to ~113,000 cells - inspect the actual sizes before
-                           assuming roughly-equal clusters.
+                           assuming roughly-equal clusters. See KMEANS_CLUSTER PROVENANCE below for
+                           exactly what data this was computed from - it is NOT the raw marker_*
+                           values in this table.
     kmeans_cluster_label  - "Cluster_<N>", a purely cosmetic re-labelling of kmeans_cluster with no
                            extra information - do not treat this as a separate variable.
     community             - integer id, the shipped Louvain spatial-community partition (49 distinct
@@ -226,6 +230,33 @@ control, no single-antibody titration series, and no documented cycle-order QC b
 noted above. State them as caveats on any single-marker "positive" claim, and treat a finding that
 depends on ONE marker's absolute intensity more cautiously than one supported by a MARKER COMBINATION
 or a spatial pattern that would be an unlikely coincidence if it were pure cross-talk.
+
+KMEANS_CLUSTER PROVENANCE - VERIFIED DIRECTLY AGAINST THE SOURCE PIPELINE'S OWN CODE (cellsurvey/
+utils.py's cluster_data function and cellsurvey/cli.py, not assumed): `kmeans_cluster` was NOT fit on
+raw intensities. `cluster_data` calls sklearn's StandardScaler.fit_transform() on the intensity matrix
+BEFORE KMeans.fit_predict() - so the clustering itself already used a per-marker z-score, addressing
+(for the clustering step only) the cross-marker scale problem described above. Two things this does
+NOT address, confirmed by the same source read: (1) StandardScaler is a single GLOBAL rescale per
+marker - it does nothing for the position-dependent ACQUISITION ARTEFACTS (tiling/illumination) or the
+CROSS-TALK issues described above, both of which a global z-score passes through unchanged; (2) ALL 32
+channels were used, completely unfiltered - DAPI (uniformly high by construction, near-zero
+biological discriminating power) and both non-biological background channels
+(marker_TRITC_1_TRITC, marker_Cy5_1_Cy5) went into the clustering as full-weight features alongside
+the 29 real markers, confirmed by reading cli.py directly (no channel is ever dropped or excluded
+before intensity_df is built). That is roughly 3 of 32 features (~9%) contributing noise rather than
+biological signal to every cluster assignment - a concrete, verifiable weakness in the shipped
+clustering, not just "k=10 was arbitrary."
+
+**This also means a script comparing `kmeans_cluster` against its own canonical-gating call is not
+necessarily comparing like with like**: `kmeans_cluster` reflects a z-scored, all-32-channel feature
+space (DAPI/background channels included); canonical gating in a realised script typically works from
+raw or per-marker-normalised values on a curated, biologically-meaningful marker subset. Some of the
+disagreement prior runs have found between the two may be a genuine clustering failure, but some may
+be this representational mismatch - a script proposing an alternative clustering (guiding question 7)
+should consider replicating `cluster_data`'s actual preprocessing (StandardScaler, all channels) as
+one baseline before concluding a DIFFERENT preprocessing/curation choice is what produced a better
+result, so the comparison being made is clear about which variable (algorithm vs. feature curation) is
+responsible for any improvement.
 
 SEGMENTATION REGION - READ BEFORE TREATING ANY MARKER AS "POSITIVE" OR "NEGATIVE": every object in
 this table is a Stardist NUCLEAR segmentation (see this module's docstring) - there is no whole-cell
