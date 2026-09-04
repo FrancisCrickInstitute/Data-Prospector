@@ -267,7 +267,16 @@ def _write_gallery(all_angles: list[dict], output_dir: str, timestamp: str) -> s
                 lines.append(f"- **Requires:** {angle['requires']}")
             feedback = (angle.get("realization_feedback") or "").strip()
             if feedback:
-                lines.append(f"- **Why blocked:** {feedback[:400]}")
+                # TAIL, not head: the actual exception lives at the end (validate_execution's own
+                # tail-slice - "Python puts the actual exception last, after the traceback frames" -
+                # preserved through attempt_summary above), so a head-slice here would show only
+                # early stack frames and never the exception itself, which is exactly what a reader
+                # deciding what to provision needs to see. Code-fenced so a multi-line traceback
+                # renders as preformatted text instead of mangled inline prose.
+                lines.append("- **Why blocked:**")
+                lines.append("```")
+                lines.append(feedback[-600:])
+                lines.append("```")
             lines.append("")
 
     if unsupportable:

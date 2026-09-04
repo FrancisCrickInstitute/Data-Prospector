@@ -393,7 +393,10 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             if exec_verdict in ("PASS", "SKIPPED"):
                 execution_passed = True
                 break
-            log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[:500]}")
+            # TAIL, not head: validate_execution already keeps the tail of the container's output
+            # (Python puts the actual exception after the traceback frames), so a head-slice here
+            # would show only stack frames and never the exception itself.
+            log(f"  Attempt {attempt + 1} FAIL reason: {exec_feedback[-500:]}")
             attempt_feedbacks.append(exec_feedback)
             # Live Issue 32: normalize before comparing - the compiler regenerates the WHOLE
             # script every attempt, so an identical bug at an identical call site still lands on
@@ -421,8 +424,11 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
                 compile_error = exec_feedback
 
         if not execution_passed:
+            # TAIL, not head - same reasoning as the per-attempt console log above: fb already ends
+            # with the actual exception (validate_execution's own tail-slice), so slicing its head
+            # here would silently discard it again, one level up.
             attempt_summary = "\n\n".join(
-                f"Attempt {i + 1}: {fb[:1000]}" for i, fb in enumerate(attempt_feedbacks)
+                f"Attempt {i + 1}: {fb[-1000:]}" for i, fb in enumerate(attempt_feedbacks)
             )
             abort_note = " (aborted early - the same error recurred verbatim)" if aborted_on_repeat else ""
             log(f"[not_realisable] Did not execute after {len(attempt_feedbacks)} attempt(s){abort_note}.")
