@@ -1,10 +1,12 @@
-﻿# Data Prospector development log (rev. 81)
+﻿# Data Prospector development log (rev. 82)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 82: new §15.8 - a consolidated retrospective of every incorrect assumption/oversight made during CellSurvey domain onboarding, user-requested.** Docs-only, no code touched. Pulls together eight items scattered across Live Issues 37-39 (rev. 76-81) into one list, in the order found, each cross-referenced rather than re-explained: a normalisation caveat too passive to change behaviour; "cell" language asserted where the pipeline only ever produces nuclear segmentations; an unverified claim stated as fact; cross-marker normalisation mistaken for the whole normalisation problem; cross-talk/antibody-specificity not considered despite the evidence (a cyclic C1-C19 acquisition protocol) already sitting in a file this project had itself written; `kmeans_cluster`'s actual computation never checked against source until directly told to; a report-authoring choice that skewed which guiding questions got realised across two runs; and the near-miss regression caught while fixing that. States the honest count plainly: seven of eight were user-caught, not self-caught, and the one exception was found by a mechanical check (re-running a parser) rather than by re-reading prose - the same lesson §15.7 already draws from the cbias retrospective, now confirmed on a second, independently-run domain. This is the first §15 retrospective not drawn from `cbias` - 15.1-15.6's taxonomy was built entirely from one domain's runs, and this section's closing note says so explicitly.
 
 **Rev. 81: `kmeans_cluster`'s actual provenance verified directly against the CellSurvey source code, correcting one assumption and surfacing a new, concrete methodological weakness (user-directed, same session, folded into Live Issue 39).** The user asked directly: check the source repo for how intensities were normalised (if at all) before clustering, rather than continuing to assume. Fetched `cellsurvey/cli.py` and `cellsurvey/utils.py` from https://github.com/FrancisCrickInstitute/CellSurvey directly (not the README, which doesn't cover this level of detail) and found `cluster_data()`'s exact implementation: `StandardScaler().fit_transform(data)` runs BEFORE `KMeans.fit_predict()` - so `kmeans_cluster` was NOT computed on raw intensities, correcting an implicit assumption in this domain's framing since rev. 39. Two things this scaling does NOT address, confirmed from the same read: it's a single global rescale per marker, so it does nothing for the position-dependent (Live Issue 39/rev. 79) or cross-talk (rev. 80) confounds; and `cli.py` confirms ALL 32 channels went into clustering completely unfiltered - DAPI (near-zero discriminating power by construction) and both non-biological background channels included as full-weight features alongside the 29 real markers, roughly 9% of the feature space contributing noise rather than signal. New "KMEANS_CLUSTER PROVENANCE" `DOMAIN_NOTES` section states all of this, and draws out its sharpest implication: a script comparing `kmeans_cluster` against its own canonical-gating call may not be comparing like with like (z-scored all-channel space vs. typically raw/curated-subset gating), so some of the disagreement Live Issues 37/38 already found could be this representational mismatch rather than (or alongside) a genuine clustering failure - flagged as a consideration for guiding question 7's constructive alternative, not asserted as overturning prior findings. Verified offline the same way as rev. 78-80: `ast.parse` + cross-module `import`, new section presence and the `{_MARKER_GLOSSARY}` f-string interpolation confirmed by printing the rendered `DOMAIN_NOTES`, `extract_input_metadata` unchanged. **Needs a live run to confirm** ideation actually picks this up when proposing a question-7 alternative - the fourth open item in this same running list.
 
@@ -1279,6 +1281,73 @@ Seven observations, each supported by at least two entries above.
 7. **Telling the model to "inspect the data first" is not enough on its own — and A5 is the proof, not a hypothesis.** `DOMAIN_NOTES` has instructed exactly this ("INSPECT A COLUMN'S ACTUAL UNIQUE VALUES before deciding it needs a text-to-ordinal mapping") since the A2/Issue 25 fix (rev. 32) — a general rule, not tied to one column, live for many runs before Run 29. A5 happened anyway, on a different column, in the identical shape: a hand-written value map built from what a Likert scale is *expected* to contain, not from what `.unique()` on the real column would have returned. The instruction asks the model to adopt a habit of mind at code-generation time, when there is no dataframe in front of it to actually inspect — it is writing code that will run against real values later, and nothing checks whether the code it wrote actually earns the "inspected first" claim. Enumerating the exact vocabulary in `DOMAIN_NOTES` (rev. 43) fixes *this* instance but is a hand-maintained description that goes stale the moment a new column, or a new year's export, adds a value nobody re-verified — the identical maintenance burden A1's structural fix was chosen specifically to avoid. **The structural alternative, not yet implemented:** extend the existing no-silent-failure convention (Issue 11's whole-script fail-fast, Issue 22's per-metric version) to value-mapping code specifically — require any script that maps free-text values to an ordinal/category scale to assert its map covers every value the column actually contains, raising and naming whichever ones don't rather than silently dropping the rows that fail to match. That converts "figure out the vocabulary" from a request the model must remember to honour into a property Docker's exit code enforces on every run, self-correcting against whatever the data actually is rather than whatever `DOMAIN_NOTES` last said it was — observation 3 above, applied to the model's own code shape instead of to the input data. Worth a dedicated review pass (a `WORKER_PROMPT_SUFFIX`/`COMPILER_PROMPT_SUFFIX` rule change, human-owned-prompt-adjacent even though those suffixes aren't formally in that guardrail), not folded into rev. 43's fix.
 
 **Scope note.** This section is about model limitations, not about what the CBIAS data says. Conclusions about the symposium belong in the report's Already Explored section, not here.
+
+### 15.8 CellSurvey domain onboarding — eight corrected assumptions, seven of them user-caught
+
+15.1-15.6's taxonomy was built entirely from `cbias` runs. This is the first retrospective drawn from
+a second domain, and it reads differently - every item below is a config-authoring mistake caught
+before or shortly after a live run, not a mid-run pipeline failure. User-requested (rev. 82): "document
+all the incorrect assumptions and oversights you've made so far on the CellSurvey data." Eight items,
+in the order found, each cross-referenced to its full write-up rather than repeated here:
+
+1. **Passive normalisation caveat, ignored in practice (user-caught).** Original `DOMAIN_NOTES` said
+   intensities were "not normalised... inspect before assuming a scale" - phrased as advice, not
+   instruction. Every realised script across four runs fitted a positivity threshold on raw intensity
+   anyway; the wording simply wasn't strong enough to change behaviour. Fixed as an active instruction,
+   Live Issue 39/rev. 78.
+2. **"Cell" language asserted where only "nucleus" was true (user-caught).** `area` was correctly
+   labelled "segmented nucleus area" from the first draft, but every surrounding reference
+   ("cells.csv", "per-cell", "cell-boundary") implied a whole-cell measurement region that does not
+   exist anywhere in this pipeline's output - Stardist segments nuclei only. The inconsistency sat
+   unnoticed within the same file. Fixed rev. 78.
+3. **An unverified claim stated as fact (self-corrected, only once forced to re-examine the passage).**
+   The original marker_* description asserted intensities were "already background/DAPI-independent" -
+   a claim never actually checked against anything, dropped once the wording was revisited for a
+   different reason (rev. 78's normalisation fix).
+4. **Cross-marker normalisation is not the whole normalisation problem (user-caught).** Rev. 78 fixed
+   comparability ACROSS markers and stopped there; it took the user pointing out that this is a tiled
+   acquisition of a large tissue section - illumination non-uniformity, tile-to-tile drift, stitching
+   seams, non-uniform staining - to surface that comparisons WITHIN one marker, across objects, are
+   independently unsafe. Fixed rev. 79 (Live Issue 39).
+5. **Cross-talk and antibody specificity not considered at all, despite the evidence already being on
+   hand (user-caught).** `marker_channel_names.csv` - extracted in this project's very first
+   preprocessing pass - already showed a cyclic C1-C19 protocol with the CY3/Cy5 fluorophores each
+   reused across 10-19 different cycles. That structure was sitting in a file this project had already
+   written before any of these caveats were drafted, and its QC implication (cycle-to-cycle carryover,
+   within-cycle spectral bleed-through) was never drawn out until the user named the general concern.
+   Fixed rev. 80.
+6. **`kmeans_cluster`'s actual computation was never checked against source, only inferred (user-
+   directed).** `DOMAIN_NOTES` called it "one arbitrary parameterisation" without ever reading
+   `cellsurvey/utils.py` to see what was actually done - a `WebFetch` of the README alone was treated
+   as sufficient. Reading the actual `cluster_data()` function, only once directly told to, corrected a
+   wrong implicit assumption (no normalisation was applied - `StandardScaler` was) and surfaced a real,
+   previously-unknown weakness in the same read (all 32 channels, including DAPI and two non-biological
+   channels, used unfiltered). Fixed rev. 81.
+7. **A report-authoring choice skewed which guiding questions got realised (user-caught across two
+   runs).** `task_report.md`'s "About the Shipped Groupings" section was worded as "a central objective
+   of this analysis," positioned before the six numbered guiding questions and reinforced by a
+   universal Success Criteria bullet - together pulling ideation and the realisation rubric toward the
+   clustering-critique theme regardless of which of the six questions a given call was actually steered
+   at. Not caught until two separate runs' top-3 realised angles all landed on the same theme. Fixed
+   Live Issues 37/38, rev. 76-77.
+8. **A near-miss while fixing #7, self-caught before a live run.** The first rewrite of that section's
+   heading included the phrase "Guiding Questions," colliding with `_parse_guiding_questions`'s
+   first-match heading regex and silently zeroing the parsed count from 6 to 0. Caught by re-running
+   the same offline parser check used to diagnose the original issue, not by inspection - the one item
+   on this list found before it reached a live run. Live Issue 37.
+
+**The honest count: seven of eight were caught by the user, not by this project's own verification
+habits, and #6 was corrected only once directly told to check source rather than infer from
+documentation.** The one item caught unprompted (#8) was caught by a MECHANICAL check (re-running a
+parser), not by re-reading the prose - the same lesson §15.7 draws from the cbias retrospective: a
+script that checks is more reliable than a re-read that doesn't. Every fix above was still verified
+offline once made (syntax, import, a real run against the real data) - that habit held throughout - but
+verifying a fix after the fact is a different thing from noticing the problem in the first place, and
+on this domain that noticing was almost entirely the user's, not this project's own.
+
+**Scope note.** Like §15.7, this is about where this project's own domain-config-authoring process got
+things wrong, not a conclusion about the CellSurvey tissue's actual biology - none of the eight items
+above changed any data, only how it is described to the pipeline's later stages.
 
 ---
 
