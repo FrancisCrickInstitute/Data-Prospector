@@ -1,10 +1,61 @@
-﻿# Data Prospector development log (rev. 82)
+﻿# Data Prospector development log (rev. 83)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 83: Run 42 (`--config cellsurvey`, post credit top-up) confirms three of the four rev. 78-81 QC
+fixes actually changed generated-script behaviour; the fourth is still unconfirmed, not disproven (user
+report — "rerun looks good", `outputs/gallery_20260905_114916.md`).** All four selected angles executed
+cleanly this time (2 `realised`, 1 `realised_null`/disconfirmed, 1 more `realised` — 0
+`not_realisable`, 0 `realization_error`), confirming Run 41's zero-confirmed outcome was purely the
+DeepSeek credit exhaustion diagnosed at the time, not a side-effect of the QC changes. Read all four
+generated scripts directly (not just the gallery prose) to check for the specific mechanisms each rev
+instructed, rather than inferring from plain-language summaries alone:
+- **Rev. 78 (per-marker normalisation before thresholding; nuclear-not-cell language) — confirmed.**
+  Every script that fits a positivity threshold does so on a transformed scale, not raw intensity —
+  `log1p` (`gating-kmeans-disagreement-spatial-patterning.py`, `pairwise-marker-coupling-states.py`) or
+  an explicit per-marker median/IQR robust normalisation
+  (`continuous-vascular-proximity-cd8-pd1-gradient.py`, whose own printed output states
+  "Markers robust-normalised per-marker (median/IQR)"). All four scripts correctly say "nuclear
+  segmentation" and explicitly name the whole-cell/membrane boundary as absent from the data, not
+  merely unextracted — no script asserted a cell boundary that doesn't exist.
+- **Rev. 79 (spatial/tiling confounds; local kNN baseline via `cKDTree`; no tile/FOV identity) —
+  confirmed.** All four scripts import and use `scipy.spatial.cKDTree` for a local spatial baseline —
+  exactly the mitigation `DOMAIN_NOTES` names as the only one this data supports. Three of the four
+  independently flag "no tile/field-of-view identity" as a data gap in their own Section-3 output
+  (`gating-kmeans-...`: "required to correct tiling, vignetting, and stitching artefacts before
+  per-marker thresholds"; near-identical wording in `pairwise-marker-coupling-states.py`), and the
+  vascular-proximity script's own console output states the kNN aggregate "is an approximate
+  mitigation, not a calibrated flat-field correction" — the exact distinction rev. 79 insisted on.
+- **Rev. 80 (cross-talk, non-specific binding, spectral bleed-through) — confirmed.** All four scripts'
+  data-gap/caveat sections name cross-talk, cycle carryover, and/or non-specific binding explicitly
+  (e.g. "isotype/cycle carryover controls: needed to quantify spectral bleed-through and cycle-to-cycle
+  channel contamination"), and the top-ranked angle's own `plain_finding` volunteers "marker intensities
+  used are not corrected for antibody background/spillover" as a caveat on its own confirmed result,
+  unprompted by the guiding questions — the judge, not just the worker, picked this up.
+- **Rev. 81 (`kmeans_cluster`'s all-channel/z-scored provenance vs. a typically-curated canonical-gating
+  comparison) — NOT confirmed this run.** `gating-kmeans-disagreement-spatial-patterning.py` is exactly
+  the angle this note was written for (it directly compares a canonical-gating call against
+  `kmeans_cluster`), and it does not mention the representational-mismatch point anywhere — no
+  reference to `StandardScaler`, all-channel vs. curated-subset framing, or DAPI/background channels'
+  presence in the clustering feature space. Not a regression (rev. 81 never claimed more than a
+  "needs a live run" hypothesis), but the one item of four that this run does not move from unconfirmed
+  to confirmed — leave open rather than closing on partial evidence.
+- **Live Issue 38 (constructive question 7) — generating relevant candidates, none realised yet.** The
+  "also generated" tier's four unrealised angles (insight 0.35 each, below `--realize-top-k`'s cutoff)
+  read as exactly the guiding-question-7 alternative the fix was meant to elicit — a gating-based
+  cell-type map, a niche-archetype map, a lineage-dependency-module analysis — but none of this run's
+  four *realised* angles serves question 7; all four serve 2/3/5/6. The fix is producing the right kind
+  of candidate; it just hasn't won the insight-ranking race against the vascular/gating/density angles
+  yet. Worth watching over further runs, not a fix that needs revisiting on this one data point.
+
+No code changed this rev — this is a verification-only entry confirming (mostly) rev. 78-81's
+hypotheses against real generated output, per those revs' own "needs a live run to confirm" flags.
+Live Issue 39 updated below with a `CONFIRMED (rev. 83, Run 42)` note rather than closed outright, since
+one of its four sub-fixes remains unconfirmed.
 
 **Rev. 82: new §15.8 - a consolidated retrospective of every incorrect assumption/oversight made during CellSurvey domain onboarding, user-requested.** Docs-only, no code touched. Pulls together eight items scattered across Live Issues 37-39 (rev. 76-81) into one list, in the order found, each cross-referenced rather than re-explained: a normalisation caveat too passive to change behaviour; "cell" language asserted where the pipeline only ever produces nuclear segmentations; an unverified claim stated as fact; cross-marker normalisation mistaken for the whole normalisation problem; cross-talk/antibody-specificity not considered despite the evidence (a cyclic C1-C19 acquisition protocol) already sitting in a file this project had itself written; `kmeans_cluster`'s actual computation never checked against source until directly told to; a report-authoring choice that skewed which guiding questions got realised across two runs; and the near-miss regression caught while fixing that. States the honest count plainly: seven of eight were user-caught, not self-caught, and the one exception was found by a mechanical check (re-running a parser) rather than by re-reading prose - the same lesson §15.7 already draws from the cbias retrospective, now confirmed on a second, independently-run domain. This is the first §15 retrospective not drawn from `cbias` - 15.1-15.6's taxonomy was built entirely from one domain's runs, and this section's closing note says so explicitly.
 
@@ -610,6 +661,8 @@ Verified offline: `ast.parse` + a real cross-module `import` (every core module 
 **VERIFIED AND EXTENDED (rev. 81) - checked against the source code this time, not left as an assumption.** The user asked directly whether `kmeans_cluster` was normalised before clustering. Fetched `cellsurvey/cli.py`/`cellsurvey/utils.py` from the source repo directly: `cluster_data()` does run `StandardScaler().fit_transform()` before `KMeans.fit_predict()` - correcting this domain's implicit framing that the shipped clustering used raw values. But the same read also surfaced a genuine, previously-unknown weakness: ALL 32 channels (including DAPI and both non-biological background channels) went into that clustering completely unfiltered, undiluted by any per-channel weighting or curation - roughly 9% of the feature space contributing noise rather than biological signal. New "KMEANS_CLUSTER PROVENANCE" section states both facts, and flags the sharpest consequence: comparing `kmeans_cluster` (z-scored, all-channel) against a script's own canonical-gating call (typically raw, curated-subset) may not be an apples-to-apples test of clustering quality - some of Live Issues 37/38's already-found disagreement could be this representational mismatch, not only a genuine clustering failure. Flagged as a consideration for guiding question 7, not a retraction of prior findings. See the rev. 81 banner at the top of this document for the full fix and verification.
 
 **Four rounds on this one domain config's DOMAIN_NOTES now** (rev. 78 cross-marker scale, 79 spatial/tiling, 80 cross-talk, 81 clustering provenance) - all still awaiting the same live-run confirmation that the compiler/orchestrator actually pick any of this up.
+
+**CONFIRMED (rev. 83, Run 42) - three of four sub-fixes verified directly in generated code, not just gallery prose.** Read all four Run 42 scripts directly. Rev. 78 (per-marker normalisation, `log1p`/robust-scale before thresholding; correct nuclear-not-cell language) confirmed in all four. Rev. 79 (`cKDTree` local-baseline mitigation; "no tile/FOV identity" named as a data gap) confirmed in all four. Rev. 80 (cross-talk/non-specific-binding/bleed-through named explicitly, including unprompted in the top-ranked angle's own `plain_finding` caveat) confirmed in all four. Rev. 81 (the `kmeans_cluster` all-channel/z-scored-vs-curated representational-mismatch point) did NOT surface even in the one script best positioned to use it (`gating-kmeans-disagreement-spatial-patterning.py`, which directly compares gating against `kmeans_cluster`) - left open rather than closed, since three-of-four confirmed is not the same claim as four-of-four. See the rev. 83 banner at the top of this document for the full per-script evidence trail. Also noted: Live Issue 38's question-7 fix is generating relevant unrealised candidates (insight 0.35, below the realise cutoff) but none of Run 42's four realised angles serves question 7 yet - a ranking-competition observation, not a defect in the fix itself.
 
 
 ### Known ceiling: dedup is lexical
