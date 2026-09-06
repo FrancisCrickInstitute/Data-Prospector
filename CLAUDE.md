@@ -271,4 +271,7 @@ issue, and run result is recorded there, not here. When debugging a specific beh
 what it is, why a status exists, what a prior run showed), check there before re-deriving it from the code.
 Genuinely-deferred, nobody's-currently-working-on-it backlog items (not yet started, not an open bug) live
 in the sibling `docs/BACKLOG.md` instead — check there for parked feature ideas before assuming something
-was never proposed.
+was never proposed. External papers relevant to the project — CellSurvey domain literature, prior art on
+multi-agent hypothesis-generation architectures — are tracked separately in `docs/LITERATURE.md`, a
+reading list rather than a decision or work-item log; check there before assuming a relevant paper hasn't
+already been noted.
