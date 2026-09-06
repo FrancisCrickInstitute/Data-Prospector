@@ -12,7 +12,7 @@ Trello board exported as two files: a JSON export (full board — cards, lists, 
 
 Your analysis should help answer these exploratory questions:
 
-1. **Workflow Bottlenecks**: Where do cards get stuck? Which lists do cards spend the most time in? Are there significant delays between creation and completion? Do cards from certain labs go stale more often than others?
+1. **Workflow Bottlenecks**: Where do cards get stuck? Which lists do cards spend the most time in? Are there significant delays between creation and completion? Do cards from certain labs go stale more often than others? On Hold and Ongoing are now known to be ~95% dormant (no activity in 30+ days) — what distinguishes a dormant card that's genuinely blocked on someone else from one that's simply been neglected?
 
 2. **Team Workload Distribution**: How is work distributed across team members? Are some members overloaded while others have capacity? Which members handle which types of work?
 
@@ -22,7 +22,7 @@ Your analysis should help answer these exploratory questions:
 
 5. **Client Relationship Management**: Do specific labs or users have a preference for specific team members? Do people in the same lab open projects with multiple team members?
 
-6. **Lab workload distribution**: Which labs do the team spend most time working with? How has this evolved over time? Are projects with certain labs more productive than others?
+6. **Lab workload distribution**: Which labs do the team spend most time working with? How has this evolved over time? Are projects with certain labs more productive than others? Only 7.3% of completed (Done) cards ever reach Billed — does that gap concentrate in specific labs, sources, or time periods, or does it mostly reflect a large share of legitimately non-billable work (Training/Wishlist/internal)?
 
 7. **Think outside the box**: What would surprise the team leadership? What would a funder not already know?
 
@@ -35,6 +35,37 @@ Analyse the Trello board JSON export and suggest **5-7 key metrics** that help a
 - More insightful than just raw counts
 - Pay particular attention here to the custom fields and labels used in the Trello board – any insights derived from these are of particular interest.
 - Consider other metrics that might typically be included in an analysis of Trello board activity, or project management in general.
+
+### Already Explored — Do Not Repeat
+
+The analyses below have already been done on this data (Run 37, `outputs/gallery_20260819_173843.md`, plus a direct
+follow-up computed against the real export in `explorations/trello/group_management_review.py`). Proposed metrics
+must be materially different in kind - not a refinement, re-implementation, or alternative-library version of
+anything here.
+
+**Workload**
+- Per-member assignment counts vs. actual board-activity (action) counts, summarised as Gini/HHI concentration plus
+  a per-member divergence (action share − assignment share) — established that workload is heavily concentrated on
+  2-3 members, and that the concentration is materially different (and higher) when measured by realised activity
+  than by nominal assignment.
+
+**Workflow health**
+- Backward/rework transitions through the list sequence (e.g. Done → To Do) as a bottleneck signal — tested
+  directly and disconfirmed: only 1 of 42 tracked cards ever moved backward, and it was not stale. Do not
+  re-propose "rework loops" as a bottleneck angle without a specific reason the capped 1000-action window would
+  newly reveal it.
+- Per-list staleness (share of cards with no activity in 30+ days) — established directly: On Hold (95.6% stale,
+  68 cards - the single largest list on the board) and Ongoing (95.2% stale) are overwhelmingly dormant; Done is
+  also mostly stale (92.1%) but that's expected for a terminal state, not a finding on its own.
+- Terminal-state conversion (Done → Billed) — established directly: only 3 of 41 terminal cards (7.3%) ever reach
+  Billed.
+
+In short: raw workload-concentration metrics, backward-transition/rework counts, per-list staleness counts, and
+the overall Done-vs-Billed conversion rate are exhausted. What's NOT yet known, and is the more valuable next
+step: WHY the billing gap exists (concentrated in specific labs/sources/time periods, or mostly a reflection of
+genuinely non-billable work?), and WHY On Hold/Ongoing cards go dormant (blocked on an external party vs. simply
+neglected) — a card-level or time-series angle that gets at causes, not a re-measurement of the three numbers
+above, is what's actually needed now.
 
 ### 2. Create Visualizations (PNG files)
 Create **at least five visualizations** that illustrate the metrics chosen in section 1. Pick visualizations that help answer the guiding questions:

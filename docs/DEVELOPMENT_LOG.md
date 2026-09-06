@@ -1,10 +1,46 @@
-﻿# Data Prospector development log (rev. 84)
+﻿# Data Prospector development log (rev. 85)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 85: `inputs/trello_reports/task_report.md` gained its first "Already Explored — Do Not Repeat"
+section, mirroring `inputs/cbias_report/task_report.md`'s established convention — user-requested,
+following a direct hand-analysis of Run 37's data** (`explorations/trello/group_management_review.py`,
+written the same session to answer a real "how should we manage this team better" question the
+gallery's own top-k=4 cutoff didn't reach). Per `docs/BACKLOG.md` §6.2's own finding — a repeated
+result (lead-time analysis, Runs 25/26/30/31/33) stopped recurring only once a human hand-copied it
+into cbias's anti-target list — this is the established, and only working, mechanism for carrying a
+finding forward between stateless runs; the trello report had never had one.
+
+**Four things folded in, split correctly across the two prompts they actually reach** (`CLAUDE.md`'s
+own ideation-vs-realisation boundary): workload concentration (Gini/HHI + per-member divergence,
+established), backward/rework transitions (tested and disconfirmed — only 1/42 tracked cards looped,
+and it wasn't stale), per-list staleness (On Hold 95.6%/68 cards, Ongoing 95.2% — both overwhelmingly
+dormant), and the Done→Billed conversion rate (7.3%, 3/41 terminal cards). All four went into the new
+"Already Explored" section (feeds ideation via the criteria split) with an explicit closing steer
+toward the two genuinely open follow-ups — *why* the billing gap exists and *why* On Hold/Ongoing
+cards go dormant — rather than letting a future run re-spend a realisation slot re-measuring the same
+four numbers. Guiding questions 1 and 6 got one added sentence each pointing at those same two open
+follow-ups, without renumbering or restructuring the existing seven.
+
+**A fifth, unrelated finding from the same exploration went to `configs/trello_config.py`'s
+`DOMAIN_NOTES` instead, not the report** — the `Source` custom field has a value in the anonymised
+export that doesn't match any of `DOMAIN_NOTES`' documented five (reads like an anonymised person
+label, not a channel), and it can't be resolved further since the raw export it would need to be
+checked against is the one rev. 84 just removed. This is a data-shape/provenance fact a script must
+handle while *building* an angle, not something that should steer *which* angles get proposed, so per
+the caching table it belongs in `DOMAIN_NOTES` (reaches orchestrator/worker/compiler), not the report
+(reaches ideation only) — phrased as "inspect the actual values, don't trust this list blindly" per
+`CLAUDE.md`'s stated preference for that framing over hand-listing the one exception.
+
+Verified: `ast.parse` clean on `configs/trello_config.py`, a real `from configs.trello_config import
+CONFIG` succeeds and `CONFIG.domain_notes` renders the new caveat, and the report's heading structure
+(`##`/`###`) is intact end to end. **Needs a live trello run to confirm** ideation actually treats the
+new section as an anti-target list rather than inert prose — not yet exercised, same bar every other
+report/`DOMAIN_NOTES` change in this log has been held to.
 
 **Rev. 84: the raw (un-anonymised) Trello export removed from the repo — and `app.py`'s `--config
 trello` default was pointing at it, not at the anonymised one, this whole time (user-noticed).** The
@@ -13,15 +49,21 @@ board itself is public, so this isn't the same PII-exposure severity as the cbia
 alongside `inputs/trello_data_anonymised/` (rev. ~57's output of `_anonymise_trello.py`) since Run 37,
 and never removed. Worse than a leftover file: `app.py`'s `data_dir_default` for `--config trello` was
 literally `"./inputs/trello_data"` — the raw directory — while `cbias`'s equivalent branch has always
-correctly pointed at `inputs/cbias_data_anon`. That means **Run 37, the one full successful trello run
-this whole domain's evidence rests on (rev. 57/62's "clean" verdict, the trello row in the domain
-status table), ran against the raw export, not the anonymised one** — rev. 62 says so explicitly
-("Verified directly against the real export (`inputs/trello_data/`, ...)"). Recorded here plainly
-rather than quietly reinterpreted: nothing about Run 37's *pipeline-behaviour* findings (zero
-`not_realisable`, correct domain-specific soundness reasoning, the `reverse-transition-rework-loops`
-index-error catch) depended on which copy of the data it read, since both copies are structurally
-identical — only names differ — but the anonymisation work done back then had, until now, never
-actually been exercised as the pipeline's live input.
+correctly pointed at `inputs/cbias_data_anon`.
+
+**Correction, same rev: an initial version of this entry claimed Run 37 itself ran against the raw
+export, reasoning from rev. 62's "Verified directly against the real export (`inputs/trello_data/`,
+...)" line. That line is about a narrower, separate check — testing `generate_data_profile` in
+isolation — not the full Run 37 pipeline invocation, and the claim was wrong.** Caught by actually
+opening Run 37's own output artifacts while working the next request in this session: every
+person/lab label in `outputs/artifacts/assignment-vs-activity-workload-gap/*.png` reads `Person U`,
+`Lab AF`, etc. — the anonymisation script's output vocabulary, not real names — so **Run 37 was in
+fact run with an explicit `--data-dir` override pointing at the anonymised export**, sidestepping the
+buggy default rather than being caught by it. The default bug was still real (confirmed by reading
+`app.py` directly) and still worth fixing — it's one invocation away from silently reading raw data on
+the next person who runs `--config trello` without remembering to override it — but Run 37's own
+evidence was never actually affected by it. Recorded here rather than silently corrected, per this
+project's own practice of not quietly reinterpreting a prior claim.
 
 **Fixed:** `inputs/trello_data/` removed from git (`git rm -r --cached`) and from disk; added to
 `.gitignore` (mirroring the existing `inputs/cbias_data/` entry — regenerate locally from a fresh

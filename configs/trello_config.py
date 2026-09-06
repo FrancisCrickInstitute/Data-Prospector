@@ -41,7 +41,12 @@ fields look empty when they are not. Lab/lead/source analyses are limited to non
     - "Lab" (list): ~98 non-archived cards in the CSV. ~50 lab-name options (e.g. Anastasiou, Bauer,
       Bentley, Boulton, Devine, Downward, Heard, Hill, Kohl, Sahai, Swanton...).
     - "Lead" (list): ~99 cards. Values: Dave, Ken, Rocco, Sara, Stefania.
-    - "Source" (list): ~83 cards. Values: Email, Help Desk, Slack, Training Workshop, Other STP.
+    - "Source" (list): ~83 cards. Values: Email, Help Desk, Slack, Training Workshop, Other STP - but
+      inspect the actual values present before trusting this list: the anonymised export has at least
+      one value that doesn't match any of these five (reads like an anonymised person label, not a
+      channel). Never silently fold an unexpected value into a "channel" bucket - report it as its own
+      category or flag it, since it may mean a specific requester's identity ended up in this field
+      rather than a channel type.
     - "Lab Name" (text): free-text lab identifier, ~60 (CSV) / ~72 (JSON) cards, ~46 distinct
       spellings - inconsistent, so normalise before grouping by lab. Overlaps with "Lab" but is free
       text; the list "Lab" is the cleaner categorical signal.
