@@ -1,10 +1,54 @@
-﻿# Data Prospector development log (rev. 86)
+﻿# Data Prospector development log (rev. 87)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 87: a trello run (`outputs/gallery_20260906_174106.md`) realised 0 of its top-4 angles - not a
+judging problem, a missing retry path for transport failures, now fixed in `llm.py`.** User asked
+"perhaps we're being too restrictive?" after seeing a gallery with 0 realised/disconfirmed and 4
+`realization_error`. Checked before assuming either way: the 4 angles that reached realisation scored
+0.75-0.85 insight - among the highest of any run logged here - so the judges did their job; nothing
+was rejected as unsupportable. All 4 failed identically: `ReadTimeout('')` at the compile stage
+(`compiler_model="deepseek-v4-pro"` in `configs/trello_config.py`).
+
+**Root cause, traced to the actual code path, not inferred:** `_run_one_design` (`realization.py`)
+wraps its entire body - orchestrator, workers, the `max_compile_attempts`-bounded compile loop,
+validator - in one `try`/`except` (by design, so a late failure still returns whatever real output
+exists - see "The five realisation outcomes" in `CLAUDE.md`). But `llm_call` (`llm.py`) had ZERO
+retry logic for transport-level failures - its only retry loop handled content-shaped problems
+(truncated/empty model responses), doubling `max_tokens`. A raw `ReadTimeout` from any single
+`llm_call` inside the compile loop therefore unwound straight past `max_compile_attempts=3` - which
+only ever retries content/logic errors fed back as `error_feedback` - to the outer handler, killing
+the whole angle on the FIRST network blip. The compile loop's "3 attempts" never actually got a
+chance to run. All 4 top-k angles realise concurrently via `asyncio.gather` (`pipeline.py`), so one
+slow window on DeepSeek's endpoint plausibly hit all four compile calls near-simultaneously - explaining
+why every failure was identical rather than one angle succeeding by chance.
+
+**Fixed at the one chokepoint every stage shares, not per call-site.** New `_stream_with_retry` in
+`llm.py` wraps `client.messages.stream(...)` with up to 3 attempts and exponential backoff
+(2s/4s), catching `anthropic.APIConnectionError` (covers `APITimeoutError`, the SDK's usual wrapping)
+plus `httpx.TimeoutException`/`httpx.TransportError` as a fallback - the live failure surfaced as a
+bare `ReadTimeout('')`, not an `APITimeoutError`, meaning something escaped the SDK's own wrapping
+inside the streaming context manager, so both layers are caught defensively. Deliberately a SEPARATE
+retry loop from the existing token-budget one (different failure class - network vs. content - and
+conflating them would retry a transport error at double `max_tokens` for no reason). Non-transport
+exceptions are not caught and propagate on the first attempt, same as before - this only changes
+behaviour for the specific failure class that previously had no recovery path at all. Protects every
+stage through the shared `llm_call` chokepoint (ideation, judging, orchestrator, worker, compiler,
+validator, the one-off criteria split) with one change, rather than teaching each caller its own
+retry policy.
+
+Verified offline (not yet re-run live): `ast.parse` clean, `import llm` succeeds, and a mocked
+`AsyncAnthropic`-shaped client confirms three cases - (1) two transport failures then success:
+retries and returns the eventual result, 3 calls made; (2) all attempts fail: raises the LAST
+transport exception, not the first; (3) a non-transport exception (e.g. `ValueError`) is not caught
+and propagates immediately on the first attempt, confirming this doesn't accidentally widen retry
+scope to unrelated failures. **Needs a live run to confirm** - ideally one that hits a real transport
+blip, which by nature isn't reproducible on demand; absent that, the next trello run re-realising
+these same 4 high-insight angles cleanly is itself indirect confirmation.
 
 **Rev. 86: a second, heuristic exploration folded into `inputs/trello_reports/task_report.md` -
 technology and scientific domain as completion-speed drivers, user-requested.** Follow-up to rev. 85
