@@ -250,7 +250,7 @@ only from iteration 2 onward. Expect this in cost figures; it isn't a caching bu
 
 All LLM prompts/responses use XML tags (`<angle>`, `<analysis>`, `<tasks>`, `<task>`, `<criteria>`,
 `<ideation_criteria>`, `<deliverable_rubric>`, `<score>`, `<verdict>`, `<pattern_outcome>`,
-`<pattern_reasoning>`, `<criterion met="...">`) parsed via `extract_xml()` / `_parse_xml_items()` in
+`<pattern_reasoning>`, `<data_gaps>`, `<criterion met="...">`) parsed via `extract_xml()` / `_parse_xml_items()` in
 `parsing.py`, with regex/markdown-heading-based fallbacks if strict XML parsing fails (tolerating minor
 formatting drift from the model). When editing prompts, preserve these tags — downstream parsing depends
 on them.

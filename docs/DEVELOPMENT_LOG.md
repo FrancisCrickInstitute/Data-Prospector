@@ -1,10 +1,57 @@
-﻿# Data Prospector development log (rev. 87)
+﻿# Data Prospector development log (rev. 88)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 88: rev. 87's fix confirmed live (`outputs/gallery_20260906_194551.md` - 3 realised/
+disconfirmed, 1 pattern_not_shown, 1 unsupportable, 0 `realization_error` - the same DeepSeek
+transport blip did not recur), and a second, unrelated gap fixed the same session: the gallery has
+never actually surfaced "what data would have helped", despite every domain report requiring the
+generated script to compute exactly that (user-noticed, "consistently... missing").**
+
+**Traced to two compounding gaps, not one.** (1) `REALIZATION_VALIDATOR_PROMPT_SUFFIX` only ever
+asked for data-gap suggestions inside the free-text `<feedback>` tag, and only in the narrowest case
+- every deliverable-rubric criterion met AND `pattern_outcome == "shown"` - so a `disconfirmed` or
+`not_shown` angle (the majority of what actually gets realised, per CLAUDE.md's own "solid has been
+essentially unreachable" note about the sibling soundness judge) never had this asked of it at all.
+(2) Even in that narrow case, `output.py`'s `_gallery_entry` never rendered `realization_feedback`
+for a normal top-tier or `pattern_not_shown` angle in the first place - it's only ever shown,
+truncated, inside the `realization_error` branch's "Note" line. So the two gaps compounded: even a
+run lucky enough to hit the one case that asked the question would still never have shown the answer.
+Confirmed this wasn't a hypothetical - every realised script in `outputs/scripts/` already prints its
+own "Data Gap Suggestions" to console per the report's own "Identify Data Gaps" requirement
+(`realization.py`'s `validate_realization` docstring already noted "the script prints metrics then
+data-gap suggestions at the very end" when building the validator's prompt) - the data has been
+sitting in the console output the validator reads on every single call, just never asked to be
+relayed unconditionally, and never rendered when it was.
+
+**Fixed with a new, always-requested `<data_gaps>` tag, not a conditional add-on to `<feedback>`.**
+`REALIZATION_VALIDATOR_PROMPT_SUFFIX` (prompts.py - NOT on the human-owned list; `ANGLE_GENERATION_*`/
+`INSIGHT_JUDGE_*`/`SOUNDNESS_JUDGE_*` are, this isn't) now asks for 1-3 sentences on what additional
+data would let THIS angle's specific claim be tested more conclusively, regardless of
+`pattern_outcome` - instructed to relay the script's own already-printed data-gap suggestions
+filtered to relevance, not dump its whole generic list verbatim, plus anything angle-specific the
+script's own list missed. The old "if shown and met: mention data gaps" line inside `<feedback>` was
+removed (redundant with, and narrower than, the new tag - keeping both would ask the same thing
+twice in two places, which is its own source of drift). `validate_realization`'s return tuple grew a
+6th element (`data_gaps`), threaded through `_run_one_design`'s result dict, and `output.py`'s
+`_gallery_entry` (shared by the top realised/disconfirmed tier and `pattern_not_shown`) now renders
+it as a new "Additional data that would help" bullet after Caveat - suppressed when the validator's
+own answer is "none" (starts-with check), so a genuine no-gap-found case doesn't clutter every entry
+with the same boilerplate line. `not_realisable`/`realization_error`/`unsupportable` tiers are
+untouched - none of them ever reach the validator that produces this field, so there's nothing to add
+there. `CLAUDE.md`'s XML-tag list updated to include `<data_gaps>`.
+
+Verified offline: `ast.parse` clean on all three touched files (`prompts.py`, `realization.py`,
+`output.py`); a real `extract_xml` call against a synthetic validator response correctly pulls the
+new tag's content; `output._gallery_entry` given a synthetic angle dict renders the new bullet when
+`data_gaps` is populated and correctly suppresses it when the value starts with "None". **Needs a
+live run to confirm** the validator actually engages with the new tag's instruction (relaying
+something genuinely angle-specific, not a copy-pasted generic list) rather than treating it as
+inert - not yet exercised against a real script's console output.
 
 **Rev. 87: a trello run (`outputs/gallery_20260906_174106.md`) realised 0 of its top-4 angles - not a
 judging problem, a missing retry path for transport failures, now fixed in `llm.py`.** User asked

@@ -328,6 +328,7 @@ a clean disconfirmation are NOT the same thing, even though neither "shows the p
 <pattern_reasoning>[1-2 sentences on what the actual output does or doesn't show, and why that maps to the outcome chosen above. Also mention, as information alongside the finding rather than a reason to change the verdict above, whether the console output includes or omits a statistical test of the claim (e.g. a significance test, confidence interval) - a plausible four-point trend and a significance-tested one are both worth surfacing, but a reader should know which they're looking at]</pattern_reasoning>
 <plain_finding>[2-4 plain-language sentences summarizing this finding for the reader named above - assume real domain expertise but NO statistics background and no familiarity with this pipeline's own machinery. Name the actual domain entities involved precisely (real marker/gene/variable names, not "the marker" or "the variable") - that specificity is what makes a finding checkable - but explain any statistical method, threshold, or error in plain consequence rather than its technical name (e.g. say what a mismatched significance test means for whether the finding can be trusted, don't just name the mismatch). Fold in the independent caveat below wherever it changes what this reader should take away, in the same plain terms. State plainly whether the pattern held up, was disconfirmed, or came out illegible - do not hedge this the way the technical reasoning above is allowed to.
 Independent caveat to incorporate: {soundness_caveat}]</plain_finding>
+<data_gaps>[1-3 sentences: what additional data or fields, if collected, would let THIS SPECIFIC angle's claim be tested more conclusively or dug into further - not a restatement of the caveat above, genuinely additional data that isn't available now. Answer this regardless of pattern_outcome - a disconfirmed or illegible result often points at a data gap just as clearly as a shown one, and the reader benefits from knowing what to collect next in every case, not only the clean-success case. If the script's own console output already prints data-gap suggestions (this report requires it), relay only the ones actually relevant to THIS angle's specific claim, in your own words - not its whole generic list verbatim - and add anything else specific to this angle's test that the script's list missed. Write "None beyond the caveat above" only if genuinely nothing more would help.]</data_gaps>
 
 SECOND, judge EACH bullet in the Deliverable Requirements above, in the same order, against the
 ACTUAL output above (console output, the "Files actually produced on disk" listing, and any attached
@@ -357,8 +358,7 @@ specifically what's missing/broken and what needs to change. Also note, without 
 above, if the script adds outputs/metrics/files beyond what's needed, or if the code is not clean
 (one-line docstrings, no bloat). If pattern_outcome is "disconfirmed", do NOT describe this as
 something to fix - state plainly what the data actually showed instead of the claim. If everything is
-met and the pattern is shown: "Realized successfully. Data gaps for future analysis: [list 2-3 things
-that would help, if applicable]"
+met and the pattern is shown: "Realized successfully."
 </feedback>
 """
 

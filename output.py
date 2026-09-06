@@ -167,6 +167,12 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
             )
     if angle.get("soundness_caveat"):
         lines.append(f"- **Caveat:** {angle['soundness_caveat']}")
+    data_gaps = (angle.get("data_gaps") or "").strip()
+    # Filter the validator's own "nothing more would help" answer - printing that verbatim every
+    # time it's genuinely true would be noise, not signal; a reader can infer "no gap noted" from
+    # the line's absence just as easily.
+    if data_gaps and not data_gaps.lower().startswith("none"):
+        lines.append(f"- **Additional data that would help:** {data_gaps}")
     for img in _gallery_entry_images(angle):
         lines.append(f"\n![{angle_id}]({img})")
     if angle.get("script_path"):

@@ -167,7 +167,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     verbatim with no step written for the reader an angle actually names. Both default to "" so an
     existing caller that hasn't been updated still gets a runnable (if under-specified) prompt.
 
-    Returns (pattern_outcome, delivered_score, pattern_reasoning, plain_finding, feedback).
+    Returns (pattern_outcome, delivered_score, pattern_reasoning, plain_finding, feedback, data_gaps).
     pattern_outcome is one of _PATTERN_OUTCOMES, or None if the validator emitted anything outside
     that vocabulary (a warning is printed - _run_one_design treats None the same as "not_shown",
     the conservative default, since an unparseable response gives no positive evidence the pattern
@@ -176,7 +176,13 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     miss, not a free pass). pattern_reasoning is the validator's own technical justification for
     the pattern_outcome verdict; plain_finding is the same finding rewritten for the angle's named
     reader, jargon-light but still precise about which domain entities are involved - distinct
-    from feedback, which covers the deliverable-rubric checklist.
+    from feedback, which covers the deliverable-rubric checklist. data_gaps is requested
+    unconditionally, regardless of pattern_outcome (user-requested - previously only asked for
+    inside feedback's free text, and only in the narrow all-criteria-met-and-shown case, which is
+    why it never showed up in a gallery in practice) - what additional data would let THIS angle's
+    claim specifically be tested more conclusively, relayed from the script's own printed data-gap
+    suggestions (which the report already requires every script to compute) filtered to what's
+    actually relevant here, not a verbatim dump of the script's whole generic list.
     """
     artifacts = artifacts or []
     artifacts_listing = _format_artifacts(artifacts)
@@ -214,6 +220,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     feedback = extract_xml(validator_response, "feedback").strip()
     pattern_reasoning = extract_xml(validator_response, "pattern_reasoning").strip()
     plain_finding = extract_xml(validator_response, "plain_finding").strip()
+    data_gaps = extract_xml(validator_response, "data_gaps").strip()
 
     if not verdicts:
         print(
@@ -225,7 +232,7 @@ async def validate_realization(compiled_script: str, report: str, deliverable_ru
     met = sum(1 for v in verdicts if v.lower() == "true")
     delivered_score = met / total if total else 0.0
 
-    return pattern_outcome, delivered_score, pattern_reasoning, plain_finding, feedback
+    return pattern_outcome, delivered_score, pattern_reasoning, plain_finding, feedback, data_gaps
 
 
 async def _call_worker(task_info: dict, task_index: int, report: str, input_metadata: str,
@@ -274,7 +281,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
     configs that haven't defined one.
 
     Returns {angle_id, realization_status, realization_feedback, pattern_reasoning, plain_finding,
-    delivered_score, artifacts, artifacts_dir, script}. pattern_reasoning is the validator's
+    data_gaps, delivered_score, artifacts, artifacts_dir, script}. pattern_reasoning is the validator's
     technical justification for the pattern_outcome verdict; plain_finding is the same finding
     rewritten for the angle's own named reader (jargon-light, still precise on domain entities) -
     both "" for the not_realisable early-returns below and the realization_error except-branch,
@@ -464,7 +471,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
             f"Method: {angle.get('rough_method', '')}"
         )
         stage = "validate"
-        pattern_outcome, delivered_score, pattern_reasoning, plain_finding, realization_feedback = await validate_realization(
+        pattern_outcome, delivered_score, pattern_reasoning, plain_finding, realization_feedback, data_gaps = await validate_realization(
             compiled_script, report, deliverable_rubric, angle.get("hypothesis", ""), exec_output, config,
             angle_scope=angle_scope, artifacts=artifacts, artifacts_dir=artifacts_dir,
             question_or_stakeholder_served=angle.get("question_or_stakeholder_served", ""),
@@ -476,7 +483,7 @@ async def _run_one_design(angle: dict, report: str, deliverable_rubric: str, inp
         return {
             "angle_id": angle.get("id", "?"), "realization_status": status,
             "realization_feedback": realization_feedback, "pattern_reasoning": pattern_reasoning,
-            "plain_finding": plain_finding,
+            "plain_finding": plain_finding, "data_gaps": data_gaps,
             "delivered_score": delivered_score, "artifacts": artifacts, "artifacts_dir": artifacts_dir,
             "script": compiled_script,
         }
