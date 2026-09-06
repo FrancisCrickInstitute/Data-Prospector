@@ -11,6 +11,13 @@ __pycache__/
 # commit until anonymised. Remove this line once inputs/cbias_data/ only holds anonymised data.
 inputs/cbias_data/
 
+# Raw Trello export contains real names/usernames (board members, card assignees) - the board
+# itself is public, but the un-anonymised export was committed by mistake (removed 2026-09-06,
+# see docs/DEVELOPMENT_LOG.md) and should regenerate locally from a fresh export, not get
+# re-committed. _anonymise_trello.py reads this directory and writes inputs/trello_data_anonymised/,
+# which the pipeline actually uses (app.py's --config trello default) and stays committed.
+inputs/trello_data/
+
 # Quotes flagged raw text for manual PII review - never committed, regardless of where it's written.
 *_REVIEW_FLAGGED.txt
 

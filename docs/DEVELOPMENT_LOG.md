@@ -1,10 +1,43 @@
-﻿# Data Prospector development log (rev. 83)
+﻿# Data Prospector development log (rev. 84)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 84: the raw (un-anonymised) Trello export removed from the repo — and `app.py`'s `--config
+trello` default was pointing at it, not at the anonymised one, this whole time (user-noticed).** The
+board itself is public, so this isn't the same PII-exposure severity as the cbias raw-data case, but
+`inputs/trello_data/` (the raw JSON+CSV, real member usernames/assignee names) had been committed
+alongside `inputs/trello_data_anonymised/` (rev. ~57's output of `_anonymise_trello.py`) since Run 37,
+and never removed. Worse than a leftover file: `app.py`'s `data_dir_default` for `--config trello` was
+literally `"./inputs/trello_data"` — the raw directory — while `cbias`'s equivalent branch has always
+correctly pointed at `inputs/cbias_data_anon`. That means **Run 37, the one full successful trello run
+this whole domain's evidence rests on (rev. 57/62's "clean" verdict, the trello row in the domain
+status table), ran against the raw export, not the anonymised one** — rev. 62 says so explicitly
+("Verified directly against the real export (`inputs/trello_data/`, ...)"). Recorded here plainly
+rather than quietly reinterpreted: nothing about Run 37's *pipeline-behaviour* findings (zero
+`not_realisable`, correct domain-specific soundness reasoning, the `reverse-transition-rework-loops`
+index-error catch) depended on which copy of the data it read, since both copies are structurally
+identical — only names differ — but the anonymisation work done back then had, until now, never
+actually been exercised as the pipeline's live input.
+
+**Fixed:** `inputs/trello_data/` removed from git (`git rm -r --cached`) and from disk; added to
+`.gitignore` (mirroring the existing `inputs/cbias_data/` entry — regenerate locally from a fresh
+Trello export via `_anonymise_trello.py` if needed, never re-commit). `app.py`'s trello branch now
+defaults `data_dir_default` to `"./inputs/trello_data_anonymised"`, matching the `cbias` branch's
+pattern. Verified: `ast.parse` clean on `app.py`, a real `import app` succeeds, and
+`trello_config.CONFIG.extract_input_metadata()` runs correctly against the anonymised directory
+(335 cards, 23 members, 10 lists — same structure as the raw export, as expected).
+
+**One unrelated gap surfaced while checking this, not fixed here:** spot-checking the anonymised CSV's
+"Lead" custom-field column found `_anonymise_trello.py` missed at least one first name ("Ken" survives
+un-redacted in that column; others render as "Person X"). Low severity given the board is public and
+first names alone were already partially retained by design in `DOMAIN_NOTES`'s "Lead: Dave, Ken,
+Rocco, Sara, Stefania" line — but worth a follow-up pass on `_anonymise_trello.py`'s custom-field
+handling if this domain gets used again, now that its output is the actual default input rather than
+an unused-by-default side artifact.
 
 **Rev. 83: Run 42 (`--config cellsurvey`, post credit top-up) confirms three of the four rev. 78-81 QC
 fixes actually changed generated-script behaviour; the fourth is still unconfirmed, not disproven (user

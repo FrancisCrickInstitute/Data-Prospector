@@ -127,7 +127,10 @@ if __name__ == "__main__":
     elif args.config == "trello":
         from configs.trello_config import CONFIG
         report_default = "./inputs/trello_reports/task_report.md"
-        data_dir_default = "./inputs/trello_data"
+        # The ANONYMISED export (see _anonymise_trello.py) - not the raw inputs/trello_data/, which
+        # was removed from the repo (docs/DEVELOPMENT_LOG.md) and is now gitignored, matching the
+        # cbias branch below.
+        data_dir_default = "./inputs/trello_data_anonymised"
     elif args.config == "cbias":
         from configs.cbias_config import CONFIG
         report_default = "./inputs/cbias_report/task_report.md"
