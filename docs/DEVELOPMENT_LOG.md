@@ -1,10 +1,37 @@
-﻿# Data Prospector development log (rev. 85)
+﻿# Data Prospector development log (rev. 86)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 86: a second, heuristic exploration folded into `inputs/trello_reports/task_report.md` -
+technology and scientific domain as completion-speed drivers, user-requested.** Follow-up to rev. 85
+in the same session: neither dimension is a Trello field (the ~10 labels describe engagement type, not
+science or tool), so `explorations/trello/domain_technology_review.py` recovered both via hand-written,
+fully-visible keyword lists over `Card Name`/`Card Description`, joined against a Trello-card-ID-derived
+creation timestamp (Mongo ObjectId's leading 4 bytes) for a rough time-to-terminal-state proxy. Real
+split found: QuPath (24 cards, 10-day median to Done/Billed) and OMERO (15 cards, 12 days) resolve far
+faster than Ilastik (126 days), DL segmentation tools (126.5 days), or Imaris (136 days); Napari and
+Visiopharm have never reached a terminal state. By domain, spatial/multiplex imaging work (17 cards)
+stands out - only 1 has ever reached Done/Billed, at 187 days.
+
+**Written into the report differently from rev. 85's three findings, deliberately.** Rev. 85's
+workload/rework/staleness/billing numbers were computed directly and are stated as established. This
+one is explicitly flagged lower-confidence in its own subsection heading ("heuristic pass only -
+confirm/refute properly, don't just repeat the same shallow approach") because the keyword lists only
+matched 43.5%/30.6% of cards (technology/domain) and several standout categories have single-digit n
+(Napari, Visiopharm, Organoid, Vasculature) - a real methodological difference from rev. 85's findings
+that the report text now preserves rather than flattening into the same confident register. Guiding
+question 3 (Velocity & Timing Patterns) got one added sentence naming the lead and asking for a
+materially better categorisation, not a repeat of this keyword approach - same non-renumbering
+convention rev. 85 used for questions 1 and 6.
+
+Verified: the report's heading structure (`##`/`###`) is unchanged end to end. **Needs a live trello
+run to confirm** ideation engages with the new subsection's explicitly-hedged framing appropriately
+(building a better categorisation) rather than either ignoring it or, worse, treating a heuristic lead
+as if it were rev. 85's settled findings - not yet exercised.
 
 **Rev. 85: `inputs/trello_reports/task_report.md` gained its first "Already Explored — Do Not Repeat"
 section, mirroring `inputs/cbias_report/task_report.md`'s established convention — user-requested,

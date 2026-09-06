@@ -16,7 +16,7 @@ Your analysis should help answer these exploratory questions:
 
 2. **Team Workload Distribution**: How is work distributed across team members? Are some members overloaded while others have capacity? Which members handle which types of work?
 
-3. **Velocity & Timing Patterns**: How long does it typically take for cards to move through the workflow? Is the process getting faster or slower? Are there patterns in how often cards are updated?
+3. **Velocity & Timing Patterns**: How long does it typically take for cards to move through the workflow? Is the process getting faster or slower? Are there patterns in how often cards are updated? A first-cut keyword pass over card text suggests requests naming established tools (QuPath, OMERO) resolve roughly 10x faster than ones naming more specialised tools (Ilastik, deep-learning segmentation, Imaris) or spatial/multiplex imaging work, which rarely reach a terminal state at all — a materially better (not keyword-based) categorisation of card text by technology and scientific domain, checked against completion speed and stuck-rate, would confirm or refute this properly.
 
 4. **Process Health**: How many cards are in progress vs. completed? Are there inactive cards that should be archived? How is the board being used—is activity even or bursty?
 
@@ -66,6 +66,27 @@ step: WHY the billing gap exists (concentrated in specific labs/sources/time per
 genuinely non-billable work?), and WHY On Hold/Ongoing cards go dormant (blocked on an external party vs. simply
 neglected) — a card-level or time-series angle that gets at causes, not a re-measurement of the three numbers
 above, is what's actually needed now.
+
+**Technology & scientific domain (heuristic pass only — confirm/refute properly, don't just repeat the same
+shallow approach)**
+
+Neither "technology used" nor "scientific domain/model system" is a Trello field — the ~10 labels describe
+engagement type (Training, Development, User Support...), not the science or tool involved. A hand-written
+keyword pass over `Card Name`/`Card Description` (`explorations/trello/domain_technology_review.py`) found a
+striking split worth taking seriously but NOT worth treating as settled:
+
+- **Technology**: QuPath (24 cards, median 10 days to Done/Billed) and OMERO (15 cards, 12 days) resolve far
+  faster than Ilastik (11 cards, 126 days), DL segmentation tools like Cellpose/StarDist (10 cards, 126.5 days),
+  or Imaris (5 cards, 136 days). Napari (4 cards) and Visiopharm (2 cards) have never reached a terminal state.
+- **Domain**: Spatial/multiplex imaging work (17 cards) stands out - only 1 has ever reached Done/Billed, taking
+  187 days, versus e.g. tissue histology (20 cards, 12 days median).
+- **Why this is only a lead, not a finding**: the keyword lists only matched 43.5% of cards for technology and
+  30.6% for domain - most of the board is uncategorised by this pass - and several of the categories above have
+  single-digit n (Napari, Visiopharm, Organoid, Vasculature), so their 0%/100% figures are anecdotes. A proper
+  angle should categorise card text by technology and domain in a materially better way (not this same keyword
+  list) and check whether the fast-vs-stuck split survives - if it does, the natural follow-up is WHY (genuine
+  task difficulty vs. a capacity/expertise bottleneck on the newer/less common tools, which would also connect
+  to the workload-concentration finding above).
 
 ### 2. Create Visualizations (PNG files)
 Create **at least five visualizations** that illustrate the metrics chosen in section 1. Pick visualizations that help answer the guiding questions:
