@@ -36,6 +36,37 @@ you, doesn't.
 >
 >It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). Every one of these is recorded, in detail, in [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
 
+## A few practical notes
+
+- Generated code can only use the software libraries each example explicitly allows - see
+  `AVAILABLE_LIBRARIES` near the top of the relevant `*_config.py` file if you're curious exactly
+  what's available for the bundled CBIAS example.
+- The pipeline itself runs on Python 3.14 (set up for you by pixi), but the AI-generated code runs
+  inside Docker images built on Python 3.13 - so the scripts it writes target 3.13, not your host
+  Python.
+- By default, the pipeline checks that Docker and the AI services it needs are actually reachable
+  *before* doing any real work, and stops with a clear message if something's wrong - rather than
+  running for several minutes and discovering the problem only at the end. If you deliberately skip
+  that check (`--skip-preflight`) and Docker turns out to be unavailable partway through, ideas are
+  still generated and scored as normal, but nothing gets built or tested as real code - every idea
+  that would have been tested is reported honestly as "couldn't be built," never silently marked as
+  a pass.
+- There's no automated check for whether an idea is a *good* one - that's deliberate. The only
+  automatic check is whether generated code actually runs correctly; judging whether a finding is
+  worth pursuing is left to you, the reader.
+- The generated code won't always follow instructions, even ones stated clearly and repeated -
+  a script will occasionally invent its own (plausible-sounding) way of finding or reading your
+  data instead of using the layout it was told about, and the automatic repair step can loop back
+  onto the same wrong approach several times rather than converging on the right one. When that
+  happens the idea is honestly reported as "couldn't be built," but its "why" (e.g. a listed
+  missing library) can be misleading - treat that reason as a starting point for debugging, not a
+  verdict, and glance at the generated script itself if one was saved. This is a known property of
+  the underlying models, not a fixable bug - the Docker run-and-check step is the safety net that
+  catches it.
+- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) is this project's running design and decision log - every
+  tuning choice and known limitation is written up there, in detail, if you want to understand *why*
+  something works the way it does.
+
 ## Design influences
 
 The architecture started from two Anthropic sources: *Building effective agents* [1] (the
@@ -254,37 +285,6 @@ domain does. Concretely, that file needs to:
 | `configs/bioimage_config.py` | A template only - nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data.                                                                                           |
 
 </details>
-
-## A few practical notes
-
-- Generated code can only use the software libraries each example explicitly allows - see
-  `AVAILABLE_LIBRARIES` near the top of the relevant `*_config.py` file if you're curious exactly
-  what's available for the bundled CBIAS example.
-- The pipeline itself runs on Python 3.14 (set up for you by pixi), but the AI-generated code runs
-  inside Docker images built on Python 3.13 - so the scripts it writes target 3.13, not your host
-  Python.
-- By default, the pipeline checks that Docker and the AI services it needs are actually reachable
-  *before* doing any real work, and stops with a clear message if something's wrong - rather than
-  running for several minutes and discovering the problem only at the end. If you deliberately skip
-  that check (`--skip-preflight`) and Docker turns out to be unavailable partway through, ideas are
-  still generated and scored as normal, but nothing gets built or tested as real code - every idea
-  that would have been tested is reported honestly as "couldn't be built," never silently marked as
-  a pass.
-- There's no automated check for whether an idea is a *good* one - that's deliberate. The only
-  automatic check is whether generated code actually runs correctly; judging whether a finding is
-  worth pursuing is left to you, the reader.
-- The generated code won't always follow instructions, even ones stated clearly and repeated -
-  a script will occasionally invent its own (plausible-sounding) way of finding or reading your
-  data instead of using the layout it was told about, and the automatic repair step can loop back
-  onto the same wrong approach several times rather than converging on the right one. When that
-  happens the idea is honestly reported as "couldn't be built," but its "why" (e.g. a listed
-  missing library) can be misleading - treat that reason as a starting point for debugging, not a
-  verdict, and glance at the generated script itself if one was saved. This is a known property of
-  the underlying models, not a fixable bug - the Docker run-and-check step is the safety net that
-  catches it.
-- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) is this project's running design and decision log - every
-  tuning choice and known limitation is written up there, in detail, if you want to understand *why*
-  something works the way it does.
 
 ## License
 
