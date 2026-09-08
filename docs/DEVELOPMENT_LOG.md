@@ -1,4 +1,4 @@
-﻿# Data Prospector development log (rev. 88)
+﻿# Data Prospector development log (rev. 89)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
@@ -52,6 +52,45 @@ new tag's content; `output._gallery_entry` given a synthetic angle dict renders 
 live run to confirm** the validator actually engages with the new tag's instruction (relaying
 something genuinely angle-specific, not a copy-pasted generic list) rather than treating it as
 inert - not yet exercised against a real script's console output.
+
+**Rev. 89: rev. 88's `<data_gaps>` work, first exercised live (`--config cellsurvey`,
+`outputs/gallery_20260908_144826.md`), surfaced two things - one a real merge bug now fixed, the
+other a reminder that generated scripts sometimes disregard instructions, no matter how clear.**
+
+**(1) `data_gaps` was computed and returned end-to-end, but never rendered - a missing copy in the
+realisation merge.** Rev. 88's edit threaded `data_gaps` out of `validate_realization`
+(`realization.py`, 6th tuple element) and into `_run_one_design`'s result dict, and `output.py`'s
+`_gallery_entry` already read `angle.get("data_gaps")` - but `pipeline.py`'s
+`generate_and_optimize` realisation merge block copied `realization_status`, `realization_feedback`,
+`pattern_reasoning`, `plain_finding`, and `delivered_score` onto each angle while omitting
+`data_gaps`. Every downstream reader saw an empty string; the gallery line never appeared. (Not caught
+by rev. 88's offline check, which tested `extract_xml` and `_gallery_entry` in isolation against a
+synthetic angle dict - the angle dict was built with `data_gaps` already populated, so the one link
+that actually drops the value, `pipeline.py`'s manual field-by-field copy, wasn't exercised.) Fixed by
+adding `angle["data_gaps"] = result["data_gaps"]` alongside the `plain_finding` copy. This is the
+fourth time a newly-added realisation field has been dropped at this same manual copy site (the prior
+three: `plain_finding`, `delivered_score`, `error_stage` - each added in its own rev, each forgotten
+at this merge once) - worth folding these into a single `angle.update(result)` guarded to the fields
+`_gallery_entry`/`_write_angle_dump` actually read, rather than the growing per-field list, if anyone
+touches this block again.
+
+**(2) A generated script ignored `INPUT_FOLDER` outright, across all three compile attempts**
+(`paired-marker-spatial-state-fields`, `not_realisable`). `DOMAIN_NOTES` (fed to worker, compiler,
+and orchestrator prefixes) states the single `cells.csv` lives at `INPUT_FOLDER`; `sandbox.py` mounts
+the data dir read-only at `/data` with `INPUT_FOLDER=/data`; and the other three realised scripts this
+run all read `cells.csv` from there correctly. That one script instead wrote its own
+`_find_cells_csv()` searching `Path.cwd()` and `Path(__file__).parent` (`/work`), so it always raised
+`FileNotFoundError: No cells.csv found recursively under /work`. The compiler's repair loop kept
+regenerating the same wrong-location search rather than converging on `INPUT_FOLDER`, exhausting
+`max_compile_attempts`. No pipeline or data bug: the `cells.csv` was mounted correctly, and the
+`requires` field shown for this `not_realisable` angle ("scipy, scikit-learn", both already
+provisioned) is a misleading provisioning signal for what was actually a script bug - a known
+conflation of this tier, not new. Worth recording as a general fact rather than a fix: even an
+unambiguous, thrice-repeated instruction that every sibling script followed can still be silently
+replaced by a model generating a plausible-but-wrong alternative, and the compile/retry loop will
+happily regenerate that same wrong pattern each time rather than converge. The defence is the
+Docker oracle catching it as a `FAIL` and binning it `not_realisable`; a prompt-side wording change
+is unlikely to eliminate a failure mode this generic, and none was attempted here.
 
 **Rev. 87: a trello run (`outputs/gallery_20260906_174106.md`) realised 0 of its top-4 angles - not a
 judging problem, a missing retry path for transport failures, now fixed in `llm.py`.** User asked
