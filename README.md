@@ -198,8 +198,10 @@ You won't need most of these on a first run - they're here for once you're comfo
 more or fewer ideas explored.
 
 ```
---config {bioimage,trello,cbias}   Which example/domain to run (default: cbias). cbias and trello
-                                    both ship sample data and a ready-to-use setup; bioimage is a template only
+--config {cbias,trello,idr0028,cellsurvey,bioimage}   Which example/domain to run (default: cbias).
+                                    cbias and trello ship sample data and a ready-to-use setup;
+                                    idr0028 and cellsurvey need their data prepared first (see
+                                    their `scripts/preprocess_*.py`); bioimage is a template only
 --report PATH                      Your own report file, if not using the bundled example
 --data-dir PATH                    Your own data folder, if not using the bundled example
 --output-dir PATH                  Where to write the report (default: ./outputs)
@@ -219,8 +221,9 @@ plan around it.
 
 ## Using this on your own data
 
-This currently ships with one fully worked example (CBIAS, above) and one further domain
-(`trello`) that has run successfully once but is still early days - see the table below. Pointing
+This currently ships with one fully worked, sample-data example (CBIAS, above) and several further
+domains (`trello`, `idr0028`, `cellsurvey`) that have each run at least once but are at varying
+stages of maturity - see the table below. Pointing
 this at a genuinely new dataset and question is possible, but it's a task for whoever on your team
 is comfortable editing Python and reading a bit of existing example code, not a config file you
 fill in - expect to sit down with a collaborator for this part if that's not you.
@@ -246,6 +249,8 @@ domain does. Concretely, that file needs to:
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `configs/cbias_config.py`    | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box.                                                                                  |
 | `configs/trello_config.py`   | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) - real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
+| `configs/idr0028_config.py`  | A public imaging dataset (IDR idr0028). Needs its data prepared by `scripts/preprocess_idr0028.py` first (the raw download is ~2.4 GB).                                                                                                  |
+| `configs/cellsurvey_config.py` | A single-tissue-section 32-plex multiplexed-immunofluorescence sample (CellSurvey output). Needs its data extracted from a source zarr by `scripts/preprocess_cellsurvey.py` first.                                                      |
 | `configs/bioimage_config.py` | A template only - nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data.                                                                                           |
 
 </details>
@@ -268,6 +273,15 @@ domain does. Concretely, that file needs to:
 - There's no automated check for whether an idea is a *good* one - that's deliberate. The only
   automatic check is whether generated code actually runs correctly; judging whether a finding is
   worth pursuing is left to you, the reader.
+- The generated code won't always follow instructions, even ones stated clearly and repeated -
+  a script will occasionally invent its own (plausible-sounding) way of finding or reading your
+  data instead of using the layout it was told about, and the automatic repair step can loop back
+  onto the same wrong approach several times rather than converging on the right one. When that
+  happens the idea is honestly reported as "couldn't be built," but its "why" (e.g. a listed
+  missing library) can be misleading - treat that reason as a starting point for debugging, not a
+  verdict, and glance at the generated script itself if one was saved. This is a known property of
+  the underlying models, not a fixable bug - the Docker run-and-check step is the safety net that
+  catches it.
 - [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) is this project's running design and decision log - every
   tuning choice and known limitation is written up there, in detail, if you want to understand *why*
   something works the way it does.
