@@ -290,6 +290,7 @@ async def generate_and_optimize(report: str, config: PipelineConfig, data_dir: s
         angle["realization_feedback"] = result["realization_feedback"]
         angle["pattern_reasoning"] = result["pattern_reasoning"]
         angle["plain_finding"] = result["plain_finding"]
+        angle["data_gaps"] = result["data_gaps"]
         angle["delivered_score"] = result["delivered_score"]
         angle["artifacts"] = result["artifacts"]
         angle["artifacts_dir"] = result["artifacts_dir"]
