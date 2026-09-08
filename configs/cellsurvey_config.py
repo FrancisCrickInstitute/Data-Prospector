@@ -22,18 +22,18 @@ cell's local marker/cluster mix within a radius) rather than a single global par
 inputs/cellsurvey_report/task_report.md's guiding questions for how this is put to the ideation stage.
 
 The source data (a SpatialData Zarr store, `*_seg.zarr`, on a remote/network path) is genuinely
-awkward for this pipeline to read directly - see preprocess_cellsurvey.py's module docstring for the
+awkward for this pipeline to read directly - see scripts/preprocess_cellsurvey.py's module docstring for the
 full account of why (needs `zarr` at minimum, would normally want `anndata`/`spatialdata`, neither of
 which is in this project's pixi env or needed for a purely tabular per-cell analysis).
-preprocess_cellsurvey.py (run ONCE, already done - see its docstring) extracts exactly the per-cell
+scripts/preprocess_cellsurvey.py (run ONCE, already done - see its docstring) extracts exactly the per-cell
 table this config's `extract_input_metadata`/`data_profile` below actually read:
 inputs/cellsurvey_processed/cells.csv (+ a marker_channel_names.csv sidecar mapping sanitised column
 names back to the original acquisition channel names, for traceability only - not meant to be read by
-generated scripts). Re-run preprocess_cellsurvey.py only if the source zarr changes.
+generated scripts). Re-run scripts/preprocess_cellsurvey.py only if the source zarr changes.
 
 NOTE: `docker_image` below reuses the cbias-analysis:latest image (see cbias_config.py's own note on
 why trello_config.py/idr0028_config.py do the same) - the realised scripts here only ever touch the
-flat CSV (all zarr/network-path handling already happened in preprocess_cellsurvey.py, outside
+flat CSV (all zarr/network-path handling already happened in scripts/preprocess_cellsurvey.py, outside
 Docker), and this domain's AVAILABLE_LIBRARIES is a subset of what that image already has pinned
 (numpy/pandas/matplotlib/scipy/scikit-learn - no NLTK/text-processing or image-processing libraries
 are needed). No data-sensitivity reason to keep worker/compiler off DeepSeek: this sample carries no
@@ -282,7 +282,7 @@ beyond `area` is computable. No WHOLE-CELL boundary polygon/shape exists anywher
 output, not just in this extraction - only a Stardist NUCLEAR boundary was ever computed (see
 SEGMENTATION REGION above), and even that nuclear polygon was not extracted into this table (only its
 centroid + area survived - reading shapes/stardist_boundaries needs `pyarrow`, not in this project's
-pixi env; see preprocess_cellsurvey.py's docstring). A hypothesis needing true WHOLE-CELL shape
+pixi env; see scripts/preprocess_cellsurvey.py's docstring). A hypothesis needing true WHOLE-CELL shape
 (elongation, boundary curvature, aspect ratio) is not answerable from this data, or from this
 pipeline's output at all, in principle - a hypothesis about NUCLEAR shape specifically could in
 principle be answered by re-extracting shapes/stardist_boundaries, which this project currently does
@@ -302,7 +302,7 @@ def extract_input_metadata(directory: str) -> str:
     base = Path(directory)
     cells_path = base / "cells.csv"
     if not cells_path.exists():
-        return f"cells.csv not found under {directory} - has preprocess_cellsurvey.py been run?"
+        return f"cells.csv not found under {directory} - has scripts/preprocess_cellsurvey.py been run?"
 
     cols = pd.read_csv(
         cells_path,

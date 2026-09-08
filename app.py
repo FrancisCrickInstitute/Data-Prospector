@@ -145,9 +145,9 @@ if __name__ == "__main__":
     elif args.config == "cellsurvey":
         from configs.cellsurvey_config import CONFIG
         report_default = "./inputs/cellsurvey_report/task_report.md"
-        # The PROCESSED derivative (see preprocess_cellsurvey.py) - not the source zarr on the
+        # The PROCESSED derivative (see scripts/preprocess_cellsurvey.py) - not the source zarr on the
         # remote Z: path, which this config's DOMAIN_NOTES doesn't describe and which the pipeline
-        # was never meant to read itself. Run preprocess_cellsurvey.py first if this directory
+        # was never meant to read itself. Run scripts/preprocess_cellsurvey.py first if this directory
         # doesn't exist yet (needs the Z: network path mounted and reachable).
         data_dir_default = "./inputs/cellsurvey_processed"
     else:
