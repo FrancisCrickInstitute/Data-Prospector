@@ -16,7 +16,7 @@ PerkinElmer Columbus acquisition index, and gene/siRNA/control identity from a t
 own published screen annotation. preprocess_idr0028.py (run ONCE, already done - see its docstring)
 joins all three into the two clean files this config's `extract_input_metadata`/`data_profile` below
 actually read: inputs/idr0028_processed/wells.csv and inputs/idr0028_processed/<plate>_cells.csv.
-Re-run it (`pixi run python preprocess_idr0028.py`) only if the raw inputs/idr0028/ data changes.
+Re-run it (`pixi run python scripts/preprocess_idr0028.py`) only if the raw inputs/idr0028/ data changes.
 
 NOTE: `docker_image` below reuses the cbias-analysis:latest image (see cbias_config.py's own note on
 why trello_config.py does the same) - this domain's AVAILABLE_LIBRARIES is a subset of what that

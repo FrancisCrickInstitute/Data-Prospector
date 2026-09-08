@@ -138,9 +138,9 @@ if __name__ == "__main__":
     elif args.config == "idr0028":
         from configs.idr0028_config import CONFIG
         report_default = "./inputs/idr0028_report/task_report.md"
-        # The PROCESSED derivative (see preprocess_idr0028.py) - not the raw inputs/idr0028/, which
-        # this config's DOMAIN_NOTES doesn't describe and which the pipeline was never meant to join
-        # itself. Run preprocess_idr0028.py first if this directory doesn't exist yet.
+        # The PROCESSED derivative (see scripts/preprocess_idr0028.py) - not the raw inputs/idr0028/,
+        # which this config's DOMAIN_NOTES doesn't describe and which the pipeline was never meant to
+        # join itself. Run scripts/preprocess_idr0028.py first if this directory doesn't exist yet.
         data_dir_default = "./inputs/idr0028_processed"
     elif args.config == "cellsurvey":
         from configs.cellsurvey_config import CONFIG
