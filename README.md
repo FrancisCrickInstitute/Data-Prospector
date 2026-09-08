@@ -85,23 +85,14 @@ grew out of an earlier "converger" design that worked the opposite way.
    end-to-end automation of AI research *(known informally as "The AI Scientist")*. *Nature*, *651*,
    914–919. https://doi.org/10.1038/s41586-026-10265-5
 
-## Why "diverge" instead of "converge"?
-
-Most automated-analysis tools work like a single very persistent analyst: try something, look at
-the result, refine it, try again, and hand you one final, polished script. That process is good at
-producing something that *works* - but it tends to settle on the same conventional, unsurprising
-analysis a competent analyst would reach for first, because "keep refining the same idea" is
-exactly the process that rewards convention.
-
-Data Prospector does the opposite. It asks many independent "reasoners" to each propose a *different*
-idea about your data - deliberately never letting them see or build on each other's proposals mid-thought
-- then has two independent reviewers score every idea for how surprising it is and how well the
-data actually seems to support it, and only *then* picks the strongest handful to actually build
-and test. The result isn't one script - it's a spread of leads, ranked and explained, for you to
-read and judge for yourself. See [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) §1 for the fuller
-rationale, including the earlier "converger" design this project grew out of.
-
 ## How it works
+
+Most automated-analysis tools work like a single persistent analyst: try something, refine it,
+and hand you one final, polished script - which tends to settle on the conventional, unsurprising
+idea a competent analyst would reach for first. Data Prospector does the opposite: it fans out many
+independent ideas, scores each for how surprising and how well-supported it is, and only builds the
+strongest handful. (The full rationale, including the earlier "converger" design this grew out of,
+is in `docs/DEVELOPMENT_LOG.md` §1.) The steps:
 
 1. **Your inputs.** A short written report describing your research question (what you want to
    find out, and anything you already know or want to rule out), plus your actual dataset - CSVs,
