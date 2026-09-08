@@ -20,7 +20,7 @@ async def main(report_path: str, data_dir: str, output_dir: str, max_iterations:
     # than warning-and-continuing, on the same "fail loudly, not silently degrade" convention the
     # generated scripts themselves are held to - --skip-preflight is the deliberate opt-out for
     # e.g. testing ideation/judging only with Docker known to be unavailable.
-    if not skip_preflight and not await run_preflight(CONFIG):
+    if not skip_preflight and not await run_preflight(CONFIG, report_path, data_dir):
         sys.exit(
             "Preflight check failed - see the [preflight] report above for which check(s) and "
             "why. Fix the problem, or pass --skip-preflight to run anyway (e.g. deliberately "
@@ -119,39 +119,49 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Load config module
-    if args.config == "bioimage":
-        from configs.bioimage_config import CONFIG
-        report_default = "./inputs/report/report_20260710_202254.md"
-        data_dir_default = "./inputs/images"
-    elif args.config == "trello":
-        from configs.trello_config import CONFIG
-        report_default = "./inputs/trello_reports/task_report.md"
-        # The ANONYMISED export (see _anonymise_trello.py) - not the raw inputs/trello_data/, which
-        # was removed from the repo (docs/DEVELOPMENT_LOG.md) and is now gitignored, matching the
-        # cbias branch below.
-        data_dir_default = "./inputs/trello_data_anonymised"
-    elif args.config == "cbias":
-        from configs.cbias_config import CONFIG
-        report_default = "./inputs/cbias_report/task_report.md"
-        data_dir_default = "./inputs/cbias_data_anon"
-    elif args.config == "idr0028":
-        from configs.idr0028_config import CONFIG
-        report_default = "./inputs/idr0028_report/task_report.md"
-        # The PROCESSED derivative (see scripts/preprocess_idr0028.py) - not the raw inputs/idr0028/,
-        # which this config's DOMAIN_NOTES doesn't describe and which the pipeline was never meant to
-        # join itself. Run scripts/preprocess_idr0028.py first if this directory doesn't exist yet.
-        data_dir_default = "./inputs/idr0028_processed"
-    elif args.config == "cellsurvey":
-        from configs.cellsurvey_config import CONFIG
-        report_default = "./inputs/cellsurvey_report/task_report.md"
-        # The PROCESSED derivative (see scripts/preprocess_cellsurvey.py) - not the source zarr on the
-        # remote Z: path, which this config's DOMAIN_NOTES doesn't describe and which the pipeline
-        # was never meant to read itself. Run scripts/preprocess_cellsurvey.py first if this directory
-        # doesn't exist yet (needs the Z: network path mounted and reachable).
-        data_dir_default = "./inputs/cellsurvey_processed"
-    else:
-        raise ValueError(f"Unknown config: {args.config}")
+    # Load config module. Wrapped in try/except: --config's choices=[...] above already catches a
+    # typo'd config name before this point, but not a listed config whose module file is itself
+    # missing or broken (e.g. renamed/deleted configs/*.py) - without this, that fails here with a
+    # raw ImportError traceback instead of a clear, actionable message.
+    try:
+        if args.config == "bioimage":
+            from configs.bioimage_config import CONFIG
+            report_default = "./inputs/report/report_20260710_202254.md"
+            data_dir_default = "./inputs/images"
+        elif args.config == "trello":
+            from configs.trello_config import CONFIG
+            report_default = "./inputs/trello_reports/task_report.md"
+            # The ANONYMISED export (see _anonymise_trello.py) - not the raw inputs/trello_data/,
+            # which was removed from the repo (docs/DEVELOPMENT_LOG.md) and is now gitignored,
+            # matching the cbias branch below.
+            data_dir_default = "./inputs/trello_data_anonymised"
+        elif args.config == "cbias":
+            from configs.cbias_config import CONFIG
+            report_default = "./inputs/cbias_report/task_report.md"
+            data_dir_default = "./inputs/cbias_data_anon"
+        elif args.config == "idr0028":
+            from configs.idr0028_config import CONFIG
+            report_default = "./inputs/idr0028_report/task_report.md"
+            # The PROCESSED derivative (see scripts/preprocess_idr0028.py) - not the raw
+            # inputs/idr0028/, which this config's DOMAIN_NOTES doesn't describe and which the
+            # pipeline was never meant to join itself. Run scripts/preprocess_idr0028.py first if
+            # this directory doesn't exist yet.
+            data_dir_default = "./inputs/idr0028_processed"
+        elif args.config == "cellsurvey":
+            from configs.cellsurvey_config import CONFIG
+            report_default = "./inputs/cellsurvey_report/task_report.md"
+            # The PROCESSED derivative (see scripts/preprocess_cellsurvey.py) - not the source zarr
+            # on the remote Z: path, which this config's DOMAIN_NOTES doesn't describe and which the
+            # pipeline was never meant to read itself. Run scripts/preprocess_cellsurvey.py first if
+            # this directory doesn't exist yet (needs the Z: network path mounted and reachable).
+            data_dir_default = "./inputs/cellsurvey_processed"
+        else:
+            raise ValueError(f"Unknown config: {args.config}")
+    except ImportError as e:
+        sys.exit(
+            f"Could not load config '{args.config}': {e}. Check that "
+            f"configs/{args.config}_config.py exists and imports cleanly."
+        )
 
     # Use defaults if not specified
     report_path = args.report or report_default
