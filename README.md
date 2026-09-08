@@ -34,7 +34,7 @@ you, doesn't.
 >
 >This tool doesn't discover truth on its own. It's only ever as good as two things you provide: how clearly your report states what you actually want to know, and how clean and well-organised your data is. A vague report paired with messy, disorganised, or inconsistent data is unlikely to produce anything useful - not because the tool failed, but because there wasn't enough real signal in the input for it to work with. The clearer and more specific your question, and the more consistent your data, the better a shot it has.
 >
->It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). Every one of these is recorded, in detail, in [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
+>It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). The generated code will also sometimes disregard instructions outright, no matter how clearly they're stated - it can invent its own plausible way of finding your data rather than using the layout it was told about, and its automatic repair step can loop back onto the same wrong approach several times rather than converge. Every one of these is recorded, in detail, in [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
 
 ## A few practical notes
 
@@ -54,18 +54,6 @@ you, doesn't.
 - There's no automated check for whether an idea is a *good* one - that's deliberate. The only
   automatic check is whether generated code actually runs correctly; judging whether a finding is
   worth pursuing is left to you, the reader.
-- The generated code won't always follow instructions, even ones stated clearly and repeated -
-  a script will occasionally invent its own (plausible-sounding) way of finding or reading your
-  data instead of using the layout it was told about, and the automatic repair step can loop back
-  onto the same wrong approach several times rather than converging on the right one. When that
-  happens the idea is honestly reported as "couldn't be built," but its "why" (e.g. a listed
-  missing library) can be misleading - treat that reason as a starting point for debugging, not a
-  verdict, and glance at the generated script itself if one was saved. This is a known property of
-  the underlying models, not a fixable bug - the Docker run-and-check step is the safety net that
-  catches it.
-- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) is this project's running design and decision log - every
-  tuning choice and known limitation is written up there, in detail, if you want to understand *why*
-  something works the way it does.
 
 ## Design influences
 
