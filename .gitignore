@@ -1,3 +1,6 @@
+# Local secrets (ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL) - never commit.
+.env
+
 # pixi environments
 .pixi/*
 !.pixi/config.toml
