@@ -32,7 +32,7 @@ names back to the original acquisition channel names, for traceability only - no
 generated scripts). Re-run scripts/preprocess_cellsurvey.py only if the source zarr changes.
 
 NOTE: `docker_image` below reuses the cbias-analysis:latest image (see cbias_config.py's own note on
-why trello_config.py/idr0028_config.py do the same) - the realised scripts here only ever touch the
+why trello_config.py/cellprofiler_config.py do the same) - the realised scripts here only ever touch the
 flat CSV (all zarr/network-path handling already happened in scripts/preprocess_cellsurvey.py, outside
 Docker), and this domain's AVAILABLE_LIBRARIES is a subset of what that image already has pinned
 (numpy/pandas/matplotlib/scipy/scikit-learn - no NLTK/text-processing or image-processing libraries
@@ -334,7 +334,7 @@ def extract_input_metadata(directory: str) -> str:
     })
 
 
-# Live Issue 31 pattern, ported from cbias_config.py/idr0028_config.py: distinguish genuinely
+# Live Issue 31 pattern, ported from cbias_config.py/cellprofiler_config.py: distinguish genuinely
 # categorical columns from continuous measurements before deciding whether to enumerate values.
 _PROFILE_CARDINALITY_CUTOFF = 25
 
@@ -368,14 +368,14 @@ def generate_data_profile(directory: str) -> str:
 
 CONFIG = PipelineConfig(
     orchestrator_model="claude-opus-4-8",
-    # worker/compiler: DeepSeek, matching cbias_config.py/idr0028_config.py's routing for these two
+    # worker/compiler: DeepSeek, matching cbias_config.py/cellprofiler_config.py's routing for these two
     # mechanical/high-volume, Docker-oracle-protected roles - no data-sensitivity carve-out applies
     # here (confirmed: no patient/subject privacy or ethics constraint on this sample).
     worker_model="deepseek-v4-pro",
     compiler_model="deepseek-v4-pro",
     requirements_evaluator_model="claude-sonnet-5",
     angle_model="deepseek-v4-pro",
-    # D5 judging: frontier Anthropic tier, same reasoning as cbias_config.py/idr0028_config.py -
+    # D5 judging: frontier Anthropic tier, same reasoning as cbias_config.py/cellprofiler_config.py -
     # judge_insight/judge_soundness are the entire quality bar once req_score is gone (docs/
     # DEVELOPMENT_LOG.md Section 5).
     judge_model="claude-opus-4-8",

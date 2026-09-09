@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         default="cbias",
-        choices=["bioimage", "trello", "cbias", "idr0028", "cellsurvey"],
+        choices=["bioimage", "trello", "cbias", "cellprofiler", "cellsurvey"],
         # cbias is the only config with sample data in this repo and an existing Docker image
         # target - bioimage_config's default paths don't exist here (docs/DEVELOPMENT_LOG.md
         # D-consolidate item 3). Was "bioimage" until that was flagged as a broken default.
@@ -139,8 +139,8 @@ if __name__ == "__main__":
             from configs.cbias_config import CONFIG
             report_default = "./inputs/cbias_report/task_report.md"
             data_dir_default = "./inputs/cbias_data_anon"
-        elif args.config == "idr0028":
-            from configs.idr0028_config import CONFIG
+        elif args.config == "cellprofiler":
+            from configs.cellprofiler_config import CONFIG
             report_default = "./inputs/idr0028_report/task_report.md"
             # The PROCESSED derivative (see scripts/preprocess_idr0028.py) - not the raw
             # inputs/idr0028/, which this config's DOMAIN_NOTES doesn't describe and which the

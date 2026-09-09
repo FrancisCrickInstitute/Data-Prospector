@@ -1,13 +1,14 @@
-"""IDR0028 GEF/GAP siRNA screen domain configuration for the pipeline.
+"""CellProfiler high-content screen domain configuration for the pipeline.
 
-An LM2 (metastatic breast cancer, derived from MDA-MB-231) high-content siRNA screen: 170 Rho-family
-GEF/GAP genes knocked down individually (Dharmacon ON-TARGETplus pools), cells fixed and stained for
-YAP/TAZ, alpha-tubulin, F-actin and DNA, imaged, and segmented in CellProfiler. The biological
-question the screen was built to answer: which GEF/GAP genes - regulators of Rho-GTPase activity, and
-therefore of actomyosin/cytoskeletal tension - shift YAP/TAZ between the nucleus and cytoplasm when
-knocked down. This matters because YAP/TAZ nuclear localisation is controlled by cytoskeletal tension
-via a mechanotransduction route that acts independently of the canonical Hippo/LATS kinase cascade;
-a GEF/GAP hit here is a candidate node in that route.
+A worked example of downstream analysis of a CellProfiler pipeline's output: an LM2 (metastatic
+breast cancer, derived from MDA-MB-231) high-content siRNA screen (the IDR idr0028 dataset), in which
+170 Rho-family GEF/GAP genes were knocked down individually (Dharmacon ON-TARGETplus pools), cells
+fixed and stained for YAP/TAZ, alpha-tubulin, F-actin and DNA, imaged, and segmented in CellProfiler.
+The biological question the screen was built to answer: which GEF/GAP genes - regulators of
+Rho-GTPase activity, and therefore of actomyosin/cytoskeletal tension - shift YAP/TAZ between the
+nucleus and cytoplasm when knocked down. This matters because YAP/TAZ nuclear localisation is
+controlled by cytoskeletal tension via a mechanotransduction route that acts independently of the
+canonical Hippo/LATS kinase cascade; a GEF/GAP hit here is a candidate node in that route.
 
 The raw data (inputs/idr0028/) is genuinely messy - see preprocess_idr0028.py's module docstring for
 the full account - CellProfiler's own well/plate/site metadata columns are empty in every row (a
@@ -130,7 +131,7 @@ def extract_input_metadata(directory: str) -> str:
     base = Path(directory)
     wells_path = base / "wells.csv"
     if not wells_path.exists():
-        return f"wells.csv not found under {directory} - has preprocess_idr0028.py been run?"
+        return f"wells.csv not found under {directory} - has scripts/preprocess_idr0028.py been run?"
 
     wells = pd.read_csv(wells_path)
     gene_wells = wells[wells["Gene_Symbol"].notna()]
