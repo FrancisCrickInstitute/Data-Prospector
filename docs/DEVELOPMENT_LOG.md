@@ -1,10 +1,55 @@
-﻿# Data Prospector development log (rev. 91)
+﻿# Data Prospector development log (rev. 92)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 92: first use of the `explorations/` convention on the `cellsurvey` domain, following up a
+realised angle from an 09-Sep run (`outputs/gallery_20260909_090339.md`) — a threshold-robustness
+audit of the PD-L1-lineage-compartment finding.** `explorations/cellsurvey/pd1pdl1_threshold_sensitivity.py`
+(reproduces the angle's exact positivity thresholds, then re-runs its odds-ratio + spatial-enrichment
+metrics under a sweep of cutpoints and 9 normalisation×positivity-rule combinations) plus a
+biologist-facing write-up (`pd1pdl1_threshold_sensitivity_report.md`) with four figures. This is the
+pattern `BACKLOG.md` §7 described as the stop-gap for human-directed deepening: a hand-written,
+one-off follow-up script, no Docker/judge/gallery.
+
+**The finding, which is a real result in its own right:** the most striking claim in the original
+angle — that CD8⁺ cytotoxic T cells are *specifically excluded* from epithelial/PD-L1⁺ regions (an
+"immune-exclusion" pocket) — does not survive re-analysis. Three concrete things were established:
+
+1. **There is no real bimodality behind the positivity thresholds.** For 7 of 10 markers the
+   "2-component Gaussian mixture" simply split one near-unimodal distribution in half (CD4's two
+   components had means −0.18 and +0.07; the degenerate-fallback guard never fired), so the GMM-vs-Otsu
+   choice was close to arbitrary. FoxP3/CD4 end up flagged positive in 57%/97% of cells — clearly not
+   biological single markers.
+2. **The direction of the main claim survives, the magnitude and the differential sub-claim do not.**
+   "PD-L1 is spread across macrophage/epithelial/endothelial/stromal compartments" holds under every
+   method; but the odds ratios move up to ~14× (and ~900× for the CD68 compartment) from nudging one
+   cutoff, and the "epithelial exclusion" dip-below-1.0 appears in only some threshold regimes and
+   *none* of the DAPI-ratio ones.
+3. **The enrichment ratio's baseline is itself a threshold artefact.** The metric is local-density ÷
+   a global target fraction that equals `fraction(CD3⁺) × fraction(CD8⁺) × fraction(PD-1⁺)` — a product
+   of three fragility-compounding positivity rates that spans **1.2% → 17.2%** across methods (a ~14×
+   spread in the very quantity that defines "no enrichment = 1.0"). The DAPI-normalisation inflates
+   this baseline to ~15–17% (it collapses the CD3/CD8 dim-bright separation), which is precisely why
+   its enrichment curves are flat, high, and never near 1.0 — the "3–4× enrichment" there is largely a
+   readout of the broken baseline, not of biology. The exploration script now prints this baseline
+   decomposition per method so the artefact is computed, not inferred.
+
+**A second, method-level observation worth recording beyond this one domain.** The realised angle's
+`normalize_and_threshold` used an `arcsinh → 25×25 spatial-grid local-median subtraction → robust
+scale → GMM-with-Otsu-fallback` chain, and its "degenerate" guard only bailed on non-finite/zero-variance
+cases — never on the "two Gaussians split one mode" case that actually dominates. This is a §15
+class-A-shaped failure (a plausible-but-wrong cutoff computed from a distribution with no real "on/"
+off"), and the DAPI-ratio alternative the user proposed as a more biologically-grounded normalisation
+turned out to have its own failure mode (over-normalising co-varying markers, inflating positivity to
+implausible levels). Net: **neither a fixed GMM/Otsu nor a DAPI ratio is a safe default for this
+dataset; treat marker positivity as a continuous measure or justify thresholds biologically.** This is
+directly relevant to the `cellsurvey` config's `DOMAIN_NOTES`, which currently instructs
+"normalise per-marker and consider a local correction" but does not warn that a simple binary
+positivity call is under-determined on these near-unimodal distributions.
 
 **Rev. 91: the long-dangling "human-directed deepening" item moved out of §2's out-of-scope list into
 `BACKLOG.md` §7 as a proper backlog entry.** The original line read "Human-directed deepening ('go deep
