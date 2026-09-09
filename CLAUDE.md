@@ -15,18 +15,24 @@ non-obvious leads for a human to evaluate, not one winning analysis (see `docs/D
 full rationale — this fork inverted a converger that hill-climbed toward one script). The pipeline itself
 (`pipeline.py`) never changes per use case; only the domain config and input data do.
 
-**In practice this is primarily a CBIAS research instrument, with one early, real data point that it
-generalises.** `configs/cbias_config.py` is still where every calibrated threshold, prompt, and piece of tuning
-in `docs/DEVELOPMENT_LOG.md` comes from — over thirty runs of evidence. `configs/trello_config.py` has one live run
-behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely different domain
-(a Trello board JSON+CSV export, no anti-target list, a different rubric) with no infrastructure
-failures, which is real evidence the pipeline itself is domain-portable — but it is one run, and
-`configs/trello_config.py` needed real per-domain configuration first (pinned library versions, data-structure
-notes, a ported `data_profile` — Live Issue 31/rev. 62), not a zero-effort drop-in. `configs/bioimage_config.py`
-still satisfies `PipelineConfig` and imports cleanly but has never produced a real run. `app.py`'s
-bare-default invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing
-`--config bioimage` selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this
-repository.
+**In practice this started as a CBIAS research instrument, and has since accumulated real evidence that it
+generalises — three demonstrated domains across five configs, not one.** `configs/cbias_config.py` is still
+where every calibrated threshold, prompt, and piece of tuning in `docs/DEVELOPMENT_LOG.md` comes from — over
+thirty runs of evidence. `configs/cellsurvey_config.py` (spatial single-cell imaging, a 32-plex multiplexed-
+immunofluorescence sample) now has the deepest run history of any domain besides cbias itself — Runs
+38/39/41/42, plus ongoing hand-follow-up exploration work through rev. 92 — see `docs/DEVELOPMENT_LOG.md`
+rev. 72's "five configs, three demonstrated domains" revision of this exact framing. `configs/trello_config.py`
+has one live run behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely
+different domain (a Trello board JSON+CSV export, no anti-target list, a different rubric) with no
+infrastructure failures — real evidence the pipeline itself is domain-portable. `configs/cellprofiler_config.py`
+(downstream analysis of a CellProfiler high-content siRNA screen, the public IDR idr0028 dataset) is
+configured but has not yet produced a real run. None of `trello_config.py`/`cellsurvey_config.py`/
+`cellprofiler_config.py` were zero-effort drop-ins — each needed real per-domain configuration first (pinned
+library versions, data-structure notes, a ported `data_profile` — Live Issue 31/rev. 62; `cellsurvey_config.py`
+is 263 lines, `cellprofiler_config.py` 237, `trello_config.py` 269). `configs/bioimage_config.py` still
+satisfies `PipelineConfig` and imports cleanly but has never produced a real run. `app.py`'s bare-default
+invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing `--config bioimage`
+selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
 
 ## Commands
 
@@ -263,6 +269,18 @@ and have `main()` call `sys.stdout.reconfigure(encoding='utf-8')` as its first l
 rather than silently degrade — both for a whole-script no-op (missing data found and printed, then a
 clean exit) and for a single dropped metric among several (compute it, or raise/warn unmissably naming
 which one and why — never emit a silent `NA` and continue).
+
+### Human-directed follow-ups (`explorations/`)
+
+Separate from the pipeline's own realised-angle scripts: a one-off, hand-written follow-up script under
+`explorations/<domain>/<name>.py` is the deliberate stop-gap for "go deep on angle N" (`docs/BACKLOG.md`
+§7) — a human decides what's worth pursuing further from a gallery result, writes the script, reads the
+answer. No seeded re-ideation, no judge, no Docker-oracle loop; that's what keeps a follow-up cheap and
+fully human-controlled, at the cost of the pipeline's own breadth. In use for
+`explorations/trello/group_management_review.py` (rev. 85), `explorations/trello/domain_technology_review.py`
+(rev. 86), and `explorations/cellsurvey/pd1pdl1_threshold_sensitivity.py` (rev. 92). See `docs/BACKLOG.md`
+§7 before proposing a pipeline "deepening" mode of its own — that backlog item is explicit that this stays
+the answer until hand-follow-ups demonstrably stop scaling.
 
 ## Where the project's history lives
 

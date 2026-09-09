@@ -232,8 +232,9 @@ plan around it.
 ## Using this on your own data
 
 This currently ships with one fully worked, sample-data example (CBIAS, above) and several further
-domains (`trello`, `cellprofiler`, `cellsurvey`) that have each run at least once but are at varying
-stages of maturity - see the table below. Pointing
+domains (`trello`, `cellprofiler`, `cellsurvey`) at varying stages of maturity - `trello` and
+`cellsurvey` have each completed real runs, `cellprofiler` is configured but not yet run - see the
+table below. Pointing
 this at a genuinely new dataset and question is possible, but it's a task for whoever on your team
 is comfortable editing Python and reading a bit of existing example code, not a config file you
 fill in - expect to sit down with a collaborator for this part if that's not you.
