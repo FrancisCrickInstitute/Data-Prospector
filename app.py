@@ -65,12 +65,15 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--config",
-        default="cbias",
+        default="cellsurvey",
         choices=["bioimage", "trello", "cbias", "cellprofiler", "cellsurvey"],
-        # cbias is the only config with sample data in this repo and an existing Docker image
-        # target - bioimage_config's default paths don't exist here (docs/DEVELOPMENT_LOG.md
-        # D-consolidate item 3). Was "bioimage" until that was flagged as a broken default.
-        help="Domain configuration to use (default: cbias)"
+        # cellsurvey is the most-evidenced domain still in the *public* repo (see CLAUDE.md's "What
+        # this is") - was "cbias" until cbias_config.py/trello_config.py and their sample data were
+        # gitignored (2026-09-09, data-privacy) and stopped shipping with a fresh clone. "cbias" and
+        # "trello" stay valid choices here since their config files still work in a local checkout
+        # that has them; bioimage_config's default paths don't exist here either way
+        # (docs/DEVELOPMENT_LOG.md D-consolidate item 3).
+        help="Domain configuration to use (default: cellsurvey)"
     )
     parser.add_argument(
         "--report",

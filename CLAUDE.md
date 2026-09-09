@@ -18,21 +18,31 @@ full rationale — this fork inverted a converger that hill-climbed toward one s
 **In practice this started as a CBIAS research instrument, and has since accumulated real evidence that it
 generalises — three demonstrated domains across five configs, not one.** `configs/cbias_config.py` is still
 where every calibrated threshold, prompt, and piece of tuning in `docs/DEVELOPMENT_LOG.md` comes from — over
-thirty runs of evidence. `configs/cellsurvey_config.py` (spatial single-cell imaging, a 32-plex multiplexed-
-immunofluorescence sample) now has the deepest run history of any domain besides cbias itself — Runs
-38/39/41/42, plus ongoing hand-follow-up exploration work through rev. 92 — see `docs/DEVELOPMENT_LOG.md`
-rev. 72's "five configs, three demonstrated domains" revision of this exact framing. `configs/trello_config.py`
-has one live run behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely
-different domain (a Trello board JSON+CSV export, no anti-target list, a different rubric) with no
-infrastructure failures — real evidence the pipeline itself is domain-portable. `configs/cellprofiler_config.py`
-(downstream analysis of a CellProfiler high-content siRNA screen, the public IDR idr0028 dataset) is
-configured but has not yet produced a real run. None of `trello_config.py`/`cellsurvey_config.py`/
-`cellprofiler_config.py` were zero-effort drop-ins — each needed real per-domain configuration first (pinned
-library versions, data-structure notes, a ported `data_profile` — Live Issue 31/rev. 62; `cellsurvey_config.py`
-is 263 lines, `cellprofiler_config.py` 237, `trello_config.py` 269). `configs/bioimage_config.py` still
-satisfies `PipelineConfig` and imports cleanly but has never produced a real run. `app.py`'s bare-default
-invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing `--config bioimage`
-selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
+thirty runs of evidence — but as of a 2026-09-09 data-privacy cleanup, it and `configs/trello_config.py` (plus
+their anonymisation scripts and sample data) exist only in this local checkout: both were gitignored and
+removed from the public GitHub repo, since even anonymised, real organisational data (CBIAS conference
+records; a Trello board export) was judged too likely to be recognised by someone at the organisation who
+came across the public repo. `docs/DEVELOPMENT_LOG.md`'s narrative discussion of both domains is unaffected
+and stays public — only the underlying data and config files were pulled, forward-only (see that removal's
+own log entry for why a full git-history purge wasn't done). `configs/cellsurvey_config.py` (spatial
+single-cell imaging, a 32-plex multiplexed-immunofluorescence sample) now has the deepest *public* run
+history of any domain — Runs 38/39/41/42, plus ongoing hand-follow-up exploration work through rev. 92 — see
+`docs/DEVELOPMENT_LOG.md` rev. 72's "five configs, three demonstrated domains" revision of this exact framing.
+`configs/trello_config.py` has one live run behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed
+end to end on a genuinely different domain (a Trello board JSON+CSV export, no anti-target list, a different
+rubric) with no infrastructure failures — real evidence the pipeline itself is domain-portable, even though
+the config itself is no longer public. `configs/cellprofiler_config.py` (downstream analysis of a CellProfiler
+high-content siRNA screen, the public IDR idr0028 dataset) is configured but has not yet produced a real run.
+None of `trello_config.py`/`cellsurvey_config.py`/`cellprofiler_config.py` were zero-effort drop-ins — each
+needed real per-domain configuration first (pinned library versions, data-structure notes, a ported
+`data_profile` — Live Issue 31/rev. 62; `cellsurvey_config.py` is 263 lines, `cellprofiler_config.py` 237,
+`trello_config.py` 269). `configs/bioimage_config.py` still satisfies `PipelineConfig` and imports cleanly but
+has never produced a real run. `app.py`'s bare-default invocation (no `--config`) now selects
+`cellsurvey_config` (changed from `cbias_config`, which stopped shipping with a fresh clone) — though even
+`cellsurvey`'s sample data needs a local preprocessing step (`scripts/preprocess_cellsurvey.py`) first, so
+nothing in the public repo runs truly out of the box anymore. `cbias`/`trello` remain valid `--config` values
+since their config files still work in a local checkout that has them. Passing `--config bioimage` selects
+paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
 
 ## Commands
 
@@ -40,16 +50,19 @@ Dependency management is via **pixi**, not pip/requirements.txt (the README's `p
 requirements.txt` is aspirational — no requirements.txt exists in the repo).
 
 ```bash
-pixi install                              # install/sync the environment from pixi.toml/pixi.lock
-pixi run python app.py --config cbias     # run the pipeline against the CBIAS domain config
-pixi run python app.py --config cbias --report <path> --data-dir <path> --output-dir ./outputs \
+pixi install                                  # install/sync the environment from pixi.toml/pixi.lock
+pixi run python app.py --config cellsurvey    # run the pipeline against the cellsurvey domain config
+pixi run python app.py --config cellsurvey --report <path> --data-dir <path> --output-dir ./outputs \
     --max-iterations 2 --angles-per-iteration 12 --realize-top-k 4   # explicit defaults, for reference
 ```
 
 Docker is required for the execution-validation step of the pipeline (not for running `app.py` itself):
 
 ```bash
-docker build --target cbias-analysis -t cbias-analysis:latest .   # the image configs/cbias_config.py uses
+docker build --target cbias-analysis -t cbias-analysis:latest .   # shared image: cellprofiler_config.py,
+                                                                    # cellsurvey_config.py, and (locally
+                                                                    # only) cbias_config.py/trello_config.py
+                                                                    # all point their docker_image here
 ```
 
 Without a running Docker daemon, `execute_script_in_docker` returns `None`, `validate_execution` reports

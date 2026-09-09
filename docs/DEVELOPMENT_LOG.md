@@ -1,10 +1,38 @@
-﻿# Data Prospector development log (rev. 92)
+﻿# Data Prospector development log (rev. 93)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 93: `cbias`/`trello` — configs, sample data, and anonymisation scripts — untracked from the
+public GitHub repo (`FrancisCrickInstitute/Data-Prospector`) and gitignored, kept locally only.**
+User-directed, on a plain privacy judgment call: both datasets were already anonymised, but both are
+real organisational data (CBIAS conference registration/feedback/programme records; a Trello board
+export), and the risk that a colleague browsing the public repo could recognise something in it —
+though assessed as low — wasn't worth taking. `git rm --cached` on `configs/cbias_config.py`,
+`configs/trello_config.py`, `anonymize_cbias_data.py`, `_anonymise_trello.py`,
+`inputs/cbias_data_anon/`, `inputs/cbias_report/`, `inputs/trello_data_anonymised/`,
+`inputs/trello_report/`, with matching `.gitignore` entries added so they stay on disk and don't
+resurface as untracked. **Deliberately forward-only, not a git-history purge**: `origin/main` almost
+certainly already has every one of these files across many prior commits (`git status` showed local
+`main` only one commit ahead of the last-synced `origin/main`), so this alone does not remove them
+from the GitHub-hosted history — that would need a `git filter-repo` rewrite + force-push, assessed
+as disproportionate to a low-risk, already-anonymised dataset, and was explicitly declined in favour
+of the simpler option. Revisit if that risk assessment changes.
+
+Knock-on changes, since removing the two configs that shipped ready-to-run sample data meant nothing
+in the public repo runs out of the box any more: `app.py`'s bare-default `--config` changed from
+`cbias` to `cellsurvey` (the most-evidenced domain still public) — `cbias`/`trello` stay valid
+`--config` choices, since the config files still work in a local checkout that has them, they just
+aren't what a fresh clone gets. `README.md`'s quickstart, flag reference, Docker/API-key setup notes,
+and "Using this on your own data" table were all rewritten to stop presenting `cbias`/`trello` as
+public ready-to-run examples, while saying plainly that they existed and why they were removed.
+`CLAUDE.md`'s domain-maturity paragraph and example commands were updated the same way. This log's
+own narrative discussion of both domains (everything above this entry) is unaffected and stays
+public — only the underlying data and config files were pulled, not the design history built on
+them.
 
 **Rev. 92: first use of the `explorations/` convention on the `cellsurvey` domain, following up a
 realised angle from an 09-Sep run (`outputs/gallery_20260909_090339.md`) — a threshold-robustness

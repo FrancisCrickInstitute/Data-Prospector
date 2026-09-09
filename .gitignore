@@ -28,6 +28,21 @@ inputs/trello_data/
 # committed, since the whole point is these strings are PII.
 manual_redactions.txt
 
+# cbias and trello configs + sample data + anonymisation scripts, untracked (2026-09-09): even
+# anonymised, both are real organisational data (a real academic symposium's registration/feedback/
+# programme records; a real Trello board export) that someone at the organisation could plausibly
+# recognise if they came across the public repo. Removed from GitHub for that reason (forward-only -
+# see docs/DEVELOPMENT_LOG.md for the reasoning and for git history containing prior commits) but
+# kept on disk here; nothing below this line is deleted, only untracked.
+anonymize_cbias_data.py
+configs/cbias_config.py
+inputs/cbias_data_anon/
+inputs/cbias_report/
+_anonymise_trello.py
+configs/trello_config.py
+inputs/trello_data_anonymised/
+inputs/trello_report/
+
 # idr0028 raw data (2.4GB) and its processed derivative (247MB, regenerated from the raw data by
 # preprocess_idr0028.py - see that script's docstring) - a size concern, not a PII one (this is
 # public IDR data), but both are far too large for a normal git commit either way.
