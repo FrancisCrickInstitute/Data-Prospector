@@ -1,10 +1,34 @@
-﻿# Data Prospector development log (rev. 89)
+﻿# Data Prospector development log (rev. 90)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 90: rev. 87/88's `data_gaps` work confirmed live end-to-end, plus one rendering wrinkle fixed
+in the same pass (`--config cellsurvey`, `outputs/gallery_20260909_090339.md`).**
+
+**(1) `data_gaps` now actually appears in the gallery.** All four realised angles in that run carry
+the "Additional data that would help" bullet, and every one is genuinely angle-specific (raw image
+tiles for the flagged cells, whole-cell boundaries for spillover checks, a second sample for
+reproducibility, etc.) rather than a copy-pasted generic list — rev. 88's "needs a live run to
+confirm" flag closes in the positive direction: the validator is engaging with the tag's instruction
+and the value survives the whole chain, not just the isolated links rev. 88/89 verified in isolation.
+
+**(2) A rendering wrinkle, and its fix.** The fourth angle (`lineage-discordance-spatial-localization-
+in-kmeans-clusters`) returned `<data_gaps>` as a bulleted list, and the XML round-trip collapsed the
+markers onto a single line — so `output.py` emitted one "Additional data that would help:" bullet
+with the list's literal " - " markers glued into it (`- **Additional data that would help:** - Per-
+cluster ... - Cell-boundary ... - Tissue ...`). `_gallery_entry` now normalises both shapes: a
+prose answer stays one line, and a value that starts with a list marker is split into sub-bullets
+(handling both newline-separated and inline-collapsed " - " markers, the latter by splitting only on
+markers after a line start or sentence-ending `.`/`;` so an em-dash-style " - " inside ordinary prose
+isn't wrongly split). Verified offline with all four shapes (single prose line, collapsed list,
+newline list, prose containing " - "). This is the second time a newly-plumbed realisation field has
+needed its renderer polished after first contact with real validator output — `plain_finding`
+(Live Issue 35) and now `data_gaps`; the pattern is that the validator's free-text shape is under-
+constrained until a live run supplies the first real example.
 
 **Rev. 88: rev. 87's fix confirmed live (`outputs/gallery_20260906_194551.md` - 3 realised/
 disconfirmed, 1 pattern_not_shown, 1 unsupportable, 0 `realization_error` - the same DeepSeek

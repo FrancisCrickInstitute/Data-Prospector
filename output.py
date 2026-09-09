@@ -2,6 +2,7 @@
 per-run surfaced-angles dump used for cross-run curation.
 """
 
+import re
 from pathlib import Path
 
 from sandbox import _format_artifacts
@@ -172,7 +173,21 @@ def _gallery_entry(angle: dict, top_tier: bool) -> list[str]:
     # time it's genuinely true would be noise, not signal; a reader can infer "no gap noted" from
     # the line's absence just as easily.
     if data_gaps and not data_gaps.lower().startswith("none"):
-        lines.append(f"- **Additional data that would help:** {data_gaps}")
+        # The validator sometimes returns a bulleted list rather than prose, and the markers can
+        # arrive either as real newline-separated items ("- a\n- b") or collapsed onto a single
+        # line ("- a - b") by the XML round-trip. Normalise both to a clean parent bullet + sub-
+        # bullets so the markers don't leak into one inline line. Only treat it as a list when the
+        # value actually starts with a list marker; a prose answer containing " - " stays one line.
+        if data_gaps[:1] in ("-", "*"):
+            # Split on list markers wherever they appear (start of a line or after a sentence end),
+            # then drop the leading marker and any blank fragment.
+            fragments = re.split(r"(?:^|\n|(?<=[.;]))\s*[-*]\s+", data_gaps)
+            items = [f.strip() for f in fragments if f and f.strip()]
+            lines.append("- **Additional data that would help:**")
+            for item in items:
+                lines.append(f"  - {item}")
+        else:
+            lines.append(f"- **Additional data that would help:** {data_gaps}")
     for img in _gallery_entry_images(angle):
         lines.append(f"\n![{angle_id}]({img})")
     if angle.get("script_path"):
