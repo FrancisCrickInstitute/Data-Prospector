@@ -1,10 +1,20 @@
-﻿# Data Prospector development log (rev. 90)
+﻿# Data Prospector development log (rev. 91)
 
 Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 91: the long-dangling "human-directed deepening" item moved out of §2's out-of-scope list into
+`BACKLOG.md` §7 as a proper backlog entry.** The original line read "Human-directed deepening ('go deep
+on angle 3') — deferred until after D8" — but D8's own items (saturation stopping, economy
+instrumentation) were moved to `BACKLOG.md` back in rev. 68, so the "after D8" precondition has been
+pointing at a milestone that is itself parked, with nothing ever tracking the deepening idea itself.
+The new §7 entry records what deepening actually is, names the `explorations/<domain>/<name>.py`
+hand-script convention as the honest stop-gap already covering the recurring case (rev. 85/86's trello
+reviews, the cellsurvey vascular-proximity follow-up), and sets two explicit reopen triggers rather
+than leaving "after D8" as a dead reference. Docs-only, no code touched.
 
 **Rev. 90: rev. 87/88's `data_gaps` work confirmed live end-to-end, plus one rendering wrinkle fixed
 in the same pass (`--config cellsurvey`, `outputs/gallery_20260909_090339.md`).**
@@ -459,7 +469,7 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 - **External retrieval / literature enrichment** — see `BACKLOG.md`.
 - **Dynamic library provisioning** — see `BACKLOG.md`. Do not solve this by narrowing ideation.
 - The "team capability & horizon scanning" variant (a later, separate fork).
-- Human-directed deepening ("go deep on angle 3") — deferred until after D8.
+- Human-directed deepening ("go deep on angle 3") — see `BACKLOG.md` §7.
 
 ---
 
