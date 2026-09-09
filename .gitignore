@@ -38,3 +38,9 @@ inputs/idr0028_processed/
 # Z: path by preprocess_cellsurvey.py - see that script's docstring) - a size concern only, not a
 # PII one (no patient/subject privacy or ethics constraint on this sample - confirmed).
 inputs/cellsurvey_processed/
+
+# One-off analysis outputs (explorations/<domain>/out_*/ PNGs + CSVs) and the self-contained HTML
+# report derived from the markdown - all regenerable from the committed exploration scripts, and the
+# PNGs/HTML are multi-MB each. Commit the *.py / *.md source, ignore the artifacts.
+explorations/*/out_*/
+explorations/*/*.html
