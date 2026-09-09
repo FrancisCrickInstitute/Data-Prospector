@@ -14,8 +14,8 @@ tested and found unsupported, not swept away - because knowing what *isn't* true
 useful as knowing what is.
 
 *(One naming note up front: this tool is **Data Prospector**, but it was formerly called
-**Diverger** - the design log, the repository name, and the code's internal terminology still use
-that name, so don't be surprised to see both.)*
+**Diverger** - the design log and the code's internal terminology still use that name, so don't be
+surprised to see both.)*
 
 No single step here needs you to write or read Python - running an analysis is copy-pasting one
 command into a terminal. Understanding the *design* of the pipeline (further down this file) does

@@ -1,10 +1,24 @@
-﻿# Data Prospector development log (rev. 93)
+﻿# Data Prospector development log (rev. 94)
 
-Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
+Design, run, and decision log for `FrancisCrickInstitute/Data-Prospector` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 94: this document's own header, and `README.md`'s naming note, corrected — the GitHub repo was
+renamed `diverger-agents-template` → `Data-Prospector` at some undocumented point after rev. 64.**
+Caught while reviewing `README.md`'s "one naming note up front" paragraph: rev. 64 (the product
+rename to "Data Prospector") explicitly recorded the GitHub repository name as one of three things
+*deliberately left unrenamed* ("a much larger decision involving remotes/clone URLs, out of scope
+for a prose rename"), but `git remote -v` now shows `origin` pointing at
+`https://github.com/FrancisCrickInstitute/Data-Prospector.git` — the rename happened at some point
+since, without a corresponding log entry or doc update. This document's own line 3 (repo name in the
+opening description) and `README.md`'s naming note (which claimed "the repository name... still
+use[s]" the old name) were both stale as a result; both fixed to say what's actually true now. What
+did *not* change, and is still accurate: the design log and the code's internal terminology (this
+document's own prose, `pixi.toml`'s `diverger` environment name) still say "diverger" throughout,
+exactly as rev. 64 chose to leave them. Docs-only, no code touched.
 
 **Rev. 93: `cbias`/`trello` — configs, sample data, and anonymisation scripts — untracked from the
 public GitHub repo (`FrancisCrickInstitute/Data-Prospector`) and gitignored, kept locally only.**
