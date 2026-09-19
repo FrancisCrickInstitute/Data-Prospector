@@ -1106,6 +1106,29 @@ Seven observations, each supported by at least two entries above.
 
 ---
 
+## 17. Design review against *A practical risk framework for LLM use in life science research* (rev. 72)
+
+Sharpton, Davis II & Alexiev (2026), PLoS Comput Biol 22(9):e1014776. Like §13's review of *Building effective agents*, this is a cross-check of the project against an external framework rather than a change request — but this one is the closest match to date: it names the exact two things this fork has already inverted around (calibrating verification to risk, and guarding model-as-judge against sycophancy). Short section; the value is that it gives both stances a citable, external rationale.
+
+### 17.1 What the paper argues
+
+Two coordinated levers, not one. **Prompt design reduces risk upstream** (a well-constrained prompt closes failure modes *before* any output exists); **verification handles what remains downstream**, and that verification effort should be **matched to three dimensions — output verifiability, researcher expertise, and consequence of error** — rather than applied uniformly. Two failure modes are foregrounded for life science specifically: **hallucination** (fluent, confident invention, no self-signal) and **sycophancy** (systematic agreement, "especially dangerous when researchers seek critical evaluation").
+
+### 17.2 Where diverger already embodies it
+
+- **One hard oracle, placed exactly where verifiability is high.** The Docker exit code is the only ground-truth check in the pipeline, and it lives on *execution* — the single stage whose correctness is machine-checkable. Ideation and judging are, by the paper's dimensions, *low-verifiability and low-consequence* (leads are skimmable and optional), so they get no oracle by design — `CLAUDE.md`'s "no oracle for angle *quality* by design; that's the human reading the gallery" is the paper's *match verification to verifiability*, stated from the other end. This is not an accident the project stumbled into; it is the inverse of the converger's hill-climb toward one "best" script, which trusted a single unverifiable judgement.
+- **Sycophancy is the paper's sharpest warning, and the judge prompts already answer it.** The paper singles out *"seek critical evaluation… the model inclines toward agreement when researchers present interpretations and ask for feedback"* — which is precisely `judge_insight`/`judge_soundness` being handed an angle that *another model just generated*, with `why_non_obvious`/`rough_method` self-assessments baked in. The judge suffix already instructs "Do NOT take its own `why_non_obvious` field as evidence — judge independently against the anti-target list" (`prompts.py`), i.e. it grounds the score in an external negative signal (the anti-target list) rather than the angle's own claim. What this document has treated as ordinary good judge wording, the paper names as a primary sycophancy mitigation; the wording can now be pointed to as *deliberately* anti-sycophancy rather than merely strict.
+
+### 17.3 Where the paper is harsher than this project has been
+
+- **Structured output enforced at the API level, not the prompt level.** The paper argues schema enforcement (JSON/structured-output modes, function calling) makes malformed output "substantially rarer" than prompt-level formatting because the API constrains generation rather than merely requesting a shape. This project uses prompt-level XML tags (`<angle>`, `<score>`, `<verdict>`…) with a tolerant regex/markdown fallback in `parsing.py` — deliberately tolerant of minor formatting drift. That tolerance is the right call for an IDEATION fan-out where a stray tag must not strand a batch, and the fallback has been load-bearing across runs; but the paper is an independent case that the two approaches are a real, named tradeoff rather than XML-tags-plus-fallback being merely "good enough by default".
+
+### 17.4 What does not change
+
+Nothing. Both the judge prompts and the no-oracle-for-angle-quality stance were already settled for reasons independent of this paper (D5's req-score deletion; §15.5 Class E's "every model-produced number has needed downgrading"). The paper is corroboration, not a trigger. Its one crisp contribution is vocabulary: §17.2's two bullets can now be cited as "calibrated verification" and "anti-sycophancy judge design" instead of being described from scratch each time they come up.
+
+---
+
 **§16 (deferred: per-run token-usage summary, by model and stage) moved to `BACKLOG.md` (rev. 68).** User-requested (rev. 67), not started, nothing implemented — exactly the not-yet-scheduled backlog shape that file now holds.
 
 ---
