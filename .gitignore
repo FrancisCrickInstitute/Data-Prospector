@@ -59,3 +59,10 @@ inputs/cellsurvey_processed/
 # PNGs/HTML are multi-MB each. Commit the *.py / *.md source, ignore the artifacts.
 explorations/*/out_*/
 explorations/*/*.html
+
+# Anonymisation key (maps real values to anonymised ones) - never commit.
+_anonymisation_map.json
+
+# IDE settings and generated outputs
+.idea/
+outputs/
