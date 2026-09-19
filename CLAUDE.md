@@ -15,18 +15,34 @@ non-obvious leads for a human to evaluate, not one winning analysis (see `docs/D
 full rationale — this fork inverted a converger that hill-climbed toward one script). The pipeline itself
 (`pipeline.py`) never changes per use case; only the domain config and input data do.
 
-**In practice this is primarily a CBIAS research instrument, with one early, real data point that it
-generalises.** `configs/cbias_config.py` is still where every calibrated threshold, prompt, and piece of tuning
-in `docs/DEVELOPMENT_LOG.md` comes from — over thirty runs of evidence. `configs/trello_config.py` has one live run
-behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed end to end on a genuinely different domain
-(a Trello board JSON+CSV export, no anti-target list, a different rubric) with no infrastructure
-failures, which is real evidence the pipeline itself is domain-portable — but it is one run, and
-`configs/trello_config.py` needed real per-domain configuration first (pinned library versions, data-structure
-notes, a ported `data_profile` — Live Issue 31/rev. 62), not a zero-effort drop-in. `configs/bioimage_config.py`
-still satisfies `PipelineConfig` and imports cleanly but has never produced a real run. `app.py`'s
-bare-default invocation (no `--config`) selects `cbias_config`, so it runs out of the box; passing
-`--config bioimage` selects paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this
-repository.
+**In practice this started as a CBIAS research instrument, and has since accumulated real evidence that it
+generalises — three demonstrated domains across five configs, not one.** `configs/cbias_config.py` is still
+where every calibrated threshold, prompt, and piece of tuning in `docs/DEVELOPMENT_LOG.md` comes from — over
+thirty runs of evidence — but as of a 2026-09-09 data-privacy cleanup, it and `configs/trello_config.py` (plus
+their anonymisation scripts and sample data) exist only in this local checkout: both were gitignored and
+removed from the public GitHub repo, since even anonymised, real organisational data (CBIAS conference
+records; a Trello board export) was judged too likely to be recognised by someone at the organisation who
+came across the public repo. `docs/DEVELOPMENT_LOG.md`'s narrative discussion of both domains is unaffected
+and stays public — only the underlying data and config files were pulled, forward-only (see that removal's
+own log entry for why a full git-history purge wasn't done). `configs/cellsurvey_config.py` (spatial
+single-cell imaging, a 32-plex multiplexed-immunofluorescence sample) now has the deepest *public* run
+history of any domain — Runs 38/39/41/42, plus ongoing hand-follow-up exploration work through rev. 92 — see
+`docs/DEVELOPMENT_LOG.md` rev. 72's "five configs, three demonstrated domains" revision of this exact framing.
+`configs/trello_config.py` has one live run behind it (Run 37, docs/DEVELOPMENT_LOG.md rev. 57): it completed
+end to end on a genuinely different domain (a Trello board JSON+CSV export, no anti-target list, a different
+rubric) with no infrastructure failures — real evidence the pipeline itself is domain-portable, even though
+the config itself is no longer public. `configs/cellprofiler_config.py` (downstream analysis of a CellProfiler
+high-content siRNA screen, the public IDR idr0028 dataset) is configured but has not yet produced a real run.
+None of `trello_config.py`/`cellsurvey_config.py`/`cellprofiler_config.py` were zero-effort drop-ins — each
+needed real per-domain configuration first (pinned library versions, data-structure notes, a ported
+`data_profile` — Live Issue 31/rev. 62; `cellsurvey_config.py` is 263 lines, `cellprofiler_config.py` 237,
+`trello_config.py` 269). `configs/bioimage_config.py` still satisfies `PipelineConfig` and imports cleanly but
+has never produced a real run. `app.py`'s bare-default invocation (no `--config`) now selects
+`cellsurvey_config` (changed from `cbias_config`, which stopped shipping with a fresh clone) — though even
+`cellsurvey`'s sample data needs a local preprocessing step (`scripts/preprocess_cellsurvey.py`) first, so
+nothing in the public repo runs truly out of the box anymore. `cbias`/`trello` remain valid `--config` values
+since their config files still work in a local checkout that has them. Passing `--config bioimage` selects
+paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
 
 ## Commands
 
@@ -34,16 +50,19 @@ Dependency management is via **pixi**, not pip/requirements.txt (the README's `p
 requirements.txt` is aspirational — no requirements.txt exists in the repo).
 
 ```bash
-pixi install                              # install/sync the environment from pixi.toml/pixi.lock
-pixi run python app.py --config cbias     # run the pipeline against the CBIAS domain config
-pixi run python app.py --config cbias --report <path> --data-dir <path> --output-dir ./outputs \
+pixi install                                  # install/sync the environment from pixi.toml/pixi.lock
+pixi run python app.py --config cellsurvey    # run the pipeline against the cellsurvey domain config
+pixi run python app.py --config cellsurvey --report <path> --data-dir <path> --output-dir ./outputs \
     --max-iterations 2 --angles-per-iteration 12 --realize-top-k 4   # explicit defaults, for reference
 ```
 
 Docker is required for the execution-validation step of the pipeline (not for running `app.py` itself):
 
 ```bash
-docker build --target cbias-analysis -t cbias-analysis:latest .   # the image configs/cbias_config.py uses
+docker build --target cbias-analysis -t cbias-analysis:latest .   # shared image: cellprofiler_config.py,
+                                                                    # cellsurvey_config.py, and (locally
+                                                                    # only) cbias_config.py/trello_config.py
+                                                                    # all point their docker_image here
 ```
 
 Without a running Docker daemon, `execute_script_in_docker` returns `None`, `validate_execution` reports
@@ -72,8 +91,8 @@ Anthropic models (see `docs/DEVELOPMENT_LOG.md` §5 for the full per-role tierin
 
 ```
 criteria split (1 call, once) → ideate (fan-out, N angles/iteration × max_iterations)
-  → judge (insight + soundness, every angle) → dedup (measurement only, not acted on)
-  → rank → realise top-k (orchestrate → workers → compile/execute loop → realisation judge)
+  → judge (insight + soundness, every angle) → rank
+  → realise top-k (orchestrate → workers → compile/execute loop → realisation judge)
   → gallery
 ```
 
@@ -102,16 +121,19 @@ criteria split (1 call, once) → ideate (fan-out, N angles/iteration × max_ite
   the gallery. **Graded, not gated**: nothing is filtered out at this stage, and `solid` has been
   essentially unreachable on this dataset's sample sizes — treat that as a property of the data, not a
   prompt-tuning target.
-- **Dedup** (`_dedup_angles`, D4 — **currently measurement-only**, Live Issue 24): clusters the judged
-  archive by token-set Jaccard similarity over `hypothesis`/`variables_involved`/`rough_method`
-  (`angle_similarity_threshold`, calibrated to 0.22) and logs what it *would* merge — but
-  `generate_and_optimize` no longer acts on the result; `all_angles` is built from the full archive.
-  This is a deliberate interim, not an oversight: dedup's original justification (saving downstream
-  judging cost) disappeared once judging moved before it, several merges have since been shown to be
-  false positives that removed real coverage, and the measurement is being kept running to decide whether
-  to delete it outright or replace it with something semantic. See `docs/DEVELOPMENT_LOG.md`'s Live Issue 24 for
-  the live decision and its evidence.
-- **Rank + select**: the full (undeduped) archive is sorted by `_judgment_sort_key` (soundness tier first,
+- **Dedup — deleted (D4, Live Issue 24).** A token-set Jaccard clustering pass (`_dedup_angles`, over
+  `hypothesis`/`variables_involved`/`rough_method`) ran measurement-only for several runs, logging what
+  it *would* merge without `generate_and_optimize` acting on it. Its original justification (saving
+  downstream judging cost) had already disappeared once judging moved before it; the measurement was
+  kept running to decide whether to fix it or delete it. On `cellsurvey` (Run 38) the counterfactual
+  showed it would have merged away the run's only confirmed finding plus one of its three
+  disconfirmations, in favour of an angle that was never realised — and the threshold (0.22, calibrated
+  on cbias vocabulary) turned out not to transfer to a domain with a narrower vocabulary, where nearly
+  every pair crossed it. Deleted rather than re-tuned per-domain, since a single global lexical
+  threshold across CBIAS survey data, a Trello export, a siRNA screen, and spatial single-cell imaging
+  is a category error, not a mis-set number. See `docs/DEVELOPMENT_LOG.md`'s Live Issue 24 for the full
+  evidence trail.
+- **Rank + select**: the full archive is sorted by `_judgment_sort_key` (soundness tier first,
   then insight). `--realize-top-k` (default 4) non-`unsupportable` angles get realised; everything else
   appears one line each in the gallery's closing "also generated" section, with full detail in the
   sibling `surfaced_angles_<ts>.md` dump.
@@ -175,7 +197,7 @@ are needed. A domain config module must provide:
 - `worker_model`, `compiler_model` — mechanical/high-volume and Docker-oracle-protected, so a cheap tier
   is fine (`configs/cbias_config.py` routes these to DeepSeek — see Commands above for the extra env vars that
   needs).
-- `angle_model` — cheap tier; volume matters more than polish here, since dedup/judges filter downstream.
+- `angle_model` — cheap tier; volume matters more than polish here, since the judges filter downstream.
 - `requirements_evaluator_model` — used for the criteria-split call *and* `validate_realization`; **must
   be vision-capable**, since the realisation judge is passed the angle's actual PNG artifacts.
 - `docker_image` — must already exist locally (built from a `Dockerfile` target with the domain's
@@ -204,9 +226,6 @@ are needed. A domain config module must provide:
 - `design_stances: list[str]` (optional — defaults to `DEFAULT_DESIGN_STANCES` in `config.py`). Ideation
   call `m` within an iteration gets `design_stances[(m + iteration) % len(...)]` as a one-line
   "Approach for this design:" steer (e.g. conventional/robust, depth-first, contrarian).
-- `angle_similarity_threshold` (optional, defaults to the calibrated `0.22` in `config.py`) — the dedup
-  Jaccard cutoff. Currently measurement-only everywhere (see Dedup above), so changing it per-domain has
-  no behavioural effect until that interim is resolved.
 
 Then wire the new config into `app.py`'s `--config` choices.
 
@@ -250,7 +269,7 @@ only from iteration 2 onward. Expect this in cost figures; it isn't a caching bu
 
 All LLM prompts/responses use XML tags (`<angle>`, `<analysis>`, `<tasks>`, `<task>`, `<criteria>`,
 `<ideation_criteria>`, `<deliverable_rubric>`, `<score>`, `<verdict>`, `<pattern_outcome>`,
-`<pattern_reasoning>`, `<criterion met="...">`) parsed via `extract_xml()` / `_parse_xml_items()` in
+`<pattern_reasoning>`, `<data_gaps>`, `<criterion met="...">`) parsed via `extract_xml()` / `_parse_xml_items()` in
 `parsing.py`, with regex/markdown-heading-based fallbacks if strict XML parsing fails (tolerating minor
 formatting drift from the model). When editing prompts, preserve these tags — downstream parsing depends
 on them.
@@ -264,6 +283,18 @@ rather than silently degrade — both for a whole-script no-op (missing data fou
 clean exit) and for a single dropped metric among several (compute it, or raise/warn unmissably naming
 which one and why — never emit a silent `NA` and continue).
 
+### Human-directed follow-ups (`explorations/`)
+
+Separate from the pipeline's own realised-angle scripts: a one-off, hand-written follow-up script under
+`explorations/<domain>/<name>.py` is the deliberate stop-gap for "go deep on angle N" (`docs/BACKLOG.md`
+§7) — a human decides what's worth pursuing further from a gallery result, writes the script, reads the
+answer. No seeded re-ideation, no judge, no Docker-oracle loop; that's what keeps a follow-up cheap and
+fully human-controlled, at the cost of the pipeline's own breadth. In use for
+`explorations/trello/group_management_review.py` (rev. 85), `explorations/trello/domain_technology_review.py`
+(rev. 86), and `explorations/cellsurvey/pd1pdl1_threshold_sensitivity.py` (rev. 92). See `docs/BACKLOG.md`
+§7 before proposing a pipeline "deepening" mode of its own — that backlog item is explicit that this stays
+the answer until hand-follow-ups demonstrably stop scaling.
+
 ## Where the project's history lives
 
 `docs/DEVELOPMENT_LOG.md` is the living design/run/decision log for this fork — every calibrated threshold, live
@@ -271,4 +302,7 @@ issue, and run result is recorded there, not here. When debugging a specific beh
 what it is, why a status exists, what a prior run showed), check there before re-deriving it from the code.
 Genuinely-deferred, nobody's-currently-working-on-it backlog items (not yet started, not an open bug) live
 in the sibling `docs/BACKLOG.md` instead — check there for parked feature ideas before assuming something
-was never proposed.
+was never proposed. External papers relevant to the project — CellSurvey domain literature, prior art on
+multi-agent hypothesis-generation architectures — are tracked separately in `docs/LITERATURE.md`, a
+reading list rather than a decision or work-item log; check there before assuming a relevant paper hasn't
+already been noted.

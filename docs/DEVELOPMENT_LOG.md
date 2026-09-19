@@ -1,10 +1,438 @@
-﻿# Data Prospector development log (rev. 71)
+﻿# Data Prospector development log (rev. 94)
 
-Design, run, and decision log for `FrancisCrickInstitute/diverger-agents-template` — still referred to
+Design, run, and decision log for `FrancisCrickInstitute/Data-Prospector` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 94: this document's own header, and `README.md`'s naming note, corrected — the GitHub repo was
+renamed `diverger-agents-template` → `Data-Prospector` at some undocumented point after rev. 64.**
+Caught while reviewing `README.md`'s "one naming note up front" paragraph: rev. 64 (the product
+rename to "Data Prospector") explicitly recorded the GitHub repository name as one of three things
+*deliberately left unrenamed* ("a much larger decision involving remotes/clone URLs, out of scope
+for a prose rename"), but `git remote -v` now shows `origin` pointing at
+`https://github.com/FrancisCrickInstitute/Data-Prospector.git` — the rename happened at some point
+since, without a corresponding log entry or doc update. This document's own line 3 (repo name in the
+opening description) and `README.md`'s naming note (which claimed "the repository name... still
+use[s]" the old name) were both stale as a result; both fixed to say what's actually true now. What
+did *not* change, and is still accurate: the design log and the code's internal terminology (this
+document's own prose, `pixi.toml`'s `diverger` environment name) still say "diverger" throughout,
+exactly as rev. 64 chose to leave them. Docs-only, no code touched.
+
+**Rev. 93: `cbias`/`trello` — configs, sample data, and anonymisation scripts — untracked from the
+public GitHub repo (`FrancisCrickInstitute/Data-Prospector`) and gitignored, kept locally only.**
+User-directed, on a plain privacy judgment call: both datasets were already anonymised, but both are
+real organisational data (CBIAS conference registration/feedback/programme records; a Trello board
+export), and the risk that a colleague browsing the public repo could recognise something in it —
+though assessed as low — wasn't worth taking. `git rm --cached` on `configs/cbias_config.py`,
+`configs/trello_config.py`, `anonymize_cbias_data.py`, `_anonymise_trello.py`,
+`inputs/cbias_data_anon/`, `inputs/cbias_report/`, `inputs/trello_data_anonymised/`,
+`inputs/trello_report/`, with matching `.gitignore` entries added so they stay on disk and don't
+resurface as untracked. **Deliberately forward-only, not a git-history purge**: `origin/main` almost
+certainly already has every one of these files across many prior commits (`git status` showed local
+`main` only one commit ahead of the last-synced `origin/main`), so this alone does not remove them
+from the GitHub-hosted history — that would need a `git filter-repo` rewrite + force-push, assessed
+as disproportionate to a low-risk, already-anonymised dataset, and was explicitly declined in favour
+of the simpler option. Revisit if that risk assessment changes.
+
+Knock-on changes, since removing the two configs that shipped ready-to-run sample data meant nothing
+in the public repo runs out of the box any more: `app.py`'s bare-default `--config` changed from
+`cbias` to `cellsurvey` (the most-evidenced domain still public) — `cbias`/`trello` stay valid
+`--config` choices, since the config files still work in a local checkout that has them, they just
+aren't what a fresh clone gets. `README.md`'s quickstart, flag reference, Docker/API-key setup notes,
+and "Using this on your own data" table were all rewritten to stop presenting `cbias`/`trello` as
+public ready-to-run examples, while saying plainly that they existed and why they were removed.
+`CLAUDE.md`'s domain-maturity paragraph and example commands were updated the same way. This log's
+own narrative discussion of both domains (everything above this entry) is unaffected and stays
+public — only the underlying data and config files were pulled, not the design history built on
+them.
+
+**Rev. 92: first use of the `explorations/` convention on the `cellsurvey` domain, following up a
+realised angle from an 09-Sep run (`outputs/gallery_20260909_090339.md`) — a threshold-robustness
+audit of the PD-L1-lineage-compartment finding.** `explorations/cellsurvey/pd1pdl1_threshold_sensitivity.py`
+(reproduces the angle's exact positivity thresholds, then re-runs its odds-ratio + spatial-enrichment
+metrics under a sweep of cutpoints and 9 normalisation×positivity-rule combinations) plus a
+biologist-facing write-up (`pd1pdl1_threshold_sensitivity_report.md`) with four figures. This is the
+pattern `BACKLOG.md` §7 described as the stop-gap for human-directed deepening: a hand-written,
+one-off follow-up script, no Docker/judge/gallery.
+
+**The finding, which is a real result in its own right:** the most striking claim in the original
+angle — that CD8⁺ cytotoxic T cells are *specifically excluded* from epithelial/PD-L1⁺ regions (an
+"immune-exclusion" pocket) — does not survive re-analysis. Three concrete things were established:
+
+1. **There is no real bimodality behind the positivity thresholds.** For 7 of 10 markers the
+   "2-component Gaussian mixture" simply split one near-unimodal distribution in half (CD4's two
+   components had means −0.18 and +0.07; the degenerate-fallback guard never fired), so the GMM-vs-Otsu
+   choice was close to arbitrary. FoxP3/CD4 end up flagged positive in 57%/97% of cells — clearly not
+   biological single markers.
+2. **The direction of the main claim survives, the magnitude and the differential sub-claim do not.**
+   "PD-L1 is spread across macrophage/epithelial/endothelial/stromal compartments" holds under every
+   method; but the odds ratios move up to ~14× (and ~900× for the CD68 compartment) from nudging one
+   cutoff, and the "epithelial exclusion" dip-below-1.0 appears in only some threshold regimes and
+   *none* of the DAPI-ratio ones.
+3. **The enrichment ratio's baseline is itself a threshold artefact.** The metric is local-density ÷
+   a global target fraction that equals `fraction(CD3⁺) × fraction(CD8⁺) × fraction(PD-1⁺)` — a product
+   of three fragility-compounding positivity rates that spans **1.2% → 17.2%** across methods (a ~14×
+   spread in the very quantity that defines "no enrichment = 1.0"). The DAPI-normalisation inflates
+   this baseline to ~15–17% (it collapses the CD3/CD8 dim-bright separation), which is precisely why
+   its enrichment curves are flat, high, and never near 1.0 — the "3–4× enrichment" there is largely a
+   readout of the broken baseline, not of biology. The exploration script now prints this baseline
+   decomposition per method so the artefact is computed, not inferred.
+
+**A second, method-level observation worth recording beyond this one domain.** The realised angle's
+`normalize_and_threshold` used an `arcsinh → 25×25 spatial-grid local-median subtraction → robust
+scale → GMM-with-Otsu-fallback` chain, and its "degenerate" guard only bailed on non-finite/zero-variance
+cases — never on the "two Gaussians split one mode" case that actually dominates. This is a §15
+class-A-shaped failure (a plausible-but-wrong cutoff computed from a distribution with no real "on/"
+off"), and the DAPI-ratio alternative the user proposed as a more biologically-grounded normalisation
+turned out to have its own failure mode (over-normalising co-varying markers, inflating positivity to
+implausible levels). Net: **neither a fixed GMM/Otsu nor a DAPI ratio is a safe default for this
+dataset; treat marker positivity as a continuous measure or justify thresholds biologically.** This is
+directly relevant to the `cellsurvey` config's `DOMAIN_NOTES`, which currently instructs
+"normalise per-marker and consider a local correction" but does not warn that a simple binary
+positivity call is under-determined on these near-unimodal distributions.
+
+**Rev. 91: the long-dangling "human-directed deepening" item moved out of §2's out-of-scope list into
+`BACKLOG.md` §7 as a proper backlog entry.** The original line read "Human-directed deepening ('go deep
+on angle 3') — deferred until after D8" — but D8's own items (saturation stopping, economy
+instrumentation) were moved to `BACKLOG.md` back in rev. 68, so the "after D8" precondition has been
+pointing at a milestone that is itself parked, with nothing ever tracking the deepening idea itself.
+The new §7 entry records what deepening actually is, names the `explorations/<domain>/<name>.py`
+hand-script convention as the honest stop-gap already covering the recurring case (rev. 85/86's trello
+reviews, the cellsurvey vascular-proximity follow-up), and sets two explicit reopen triggers rather
+than leaving "after D8" as a dead reference. Docs-only, no code touched.
+
+**Rev. 90: rev. 87/88's `data_gaps` work confirmed live end-to-end, plus one rendering wrinkle fixed
+in the same pass (`--config cellsurvey`, `outputs/gallery_20260909_090339.md`).**
+
+**(1) `data_gaps` now actually appears in the gallery.** All four realised angles in that run carry
+the "Additional data that would help" bullet, and every one is genuinely angle-specific (raw image
+tiles for the flagged cells, whole-cell boundaries for spillover checks, a second sample for
+reproducibility, etc.) rather than a copy-pasted generic list — rev. 88's "needs a live run to
+confirm" flag closes in the positive direction: the validator is engaging with the tag's instruction
+and the value survives the whole chain, not just the isolated links rev. 88/89 verified in isolation.
+
+**(2) A rendering wrinkle, and its fix.** The fourth angle (`lineage-discordance-spatial-localization-
+in-kmeans-clusters`) returned `<data_gaps>` as a bulleted list, and the XML round-trip collapsed the
+markers onto a single line — so `output.py` emitted one "Additional data that would help:" bullet
+with the list's literal " - " markers glued into it (`- **Additional data that would help:** - Per-
+cluster ... - Cell-boundary ... - Tissue ...`). `_gallery_entry` now normalises both shapes: a
+prose answer stays one line, and a value that starts with a list marker is split into sub-bullets
+(handling both newline-separated and inline-collapsed " - " markers, the latter by splitting only on
+markers after a line start or sentence-ending `.`/`;` so an em-dash-style " - " inside ordinary prose
+isn't wrongly split). Verified offline with all four shapes (single prose line, collapsed list,
+newline list, prose containing " - "). This is the second time a newly-plumbed realisation field has
+needed its renderer polished after first contact with real validator output — `plain_finding`
+(Live Issue 35) and now `data_gaps`; the pattern is that the validator's free-text shape is under-
+constrained until a live run supplies the first real example.
+
+**Rev. 88: rev. 87's fix confirmed live (`outputs/gallery_20260906_194551.md` - 3 realised/
+disconfirmed, 1 pattern_not_shown, 1 unsupportable, 0 `realization_error` - the same DeepSeek
+transport blip did not recur), and a second, unrelated gap fixed the same session: the gallery has
+never actually surfaced "what data would have helped", despite every domain report requiring the
+generated script to compute exactly that (user-noticed, "consistently... missing").**
+
+**Traced to two compounding gaps, not one.** (1) `REALIZATION_VALIDATOR_PROMPT_SUFFIX` only ever
+asked for data-gap suggestions inside the free-text `<feedback>` tag, and only in the narrowest case
+- every deliverable-rubric criterion met AND `pattern_outcome == "shown"` - so a `disconfirmed` or
+`not_shown` angle (the majority of what actually gets realised, per CLAUDE.md's own "solid has been
+essentially unreachable" note about the sibling soundness judge) never had this asked of it at all.
+(2) Even in that narrow case, `output.py`'s `_gallery_entry` never rendered `realization_feedback`
+for a normal top-tier or `pattern_not_shown` angle in the first place - it's only ever shown,
+truncated, inside the `realization_error` branch's "Note" line. So the two gaps compounded: even a
+run lucky enough to hit the one case that asked the question would still never have shown the answer.
+Confirmed this wasn't a hypothetical - every realised script in `outputs/scripts/` already prints its
+own "Data Gap Suggestions" to console per the report's own "Identify Data Gaps" requirement
+(`realization.py`'s `validate_realization` docstring already noted "the script prints metrics then
+data-gap suggestions at the very end" when building the validator's prompt) - the data has been
+sitting in the console output the validator reads on every single call, just never asked to be
+relayed unconditionally, and never rendered when it was.
+
+**Fixed with a new, always-requested `<data_gaps>` tag, not a conditional add-on to `<feedback>`.**
+`REALIZATION_VALIDATOR_PROMPT_SUFFIX` (prompts.py - NOT on the human-owned list; `ANGLE_GENERATION_*`/
+`INSIGHT_JUDGE_*`/`SOUNDNESS_JUDGE_*` are, this isn't) now asks for 1-3 sentences on what additional
+data would let THIS angle's specific claim be tested more conclusively, regardless of
+`pattern_outcome` - instructed to relay the script's own already-printed data-gap suggestions
+filtered to relevance, not dump its whole generic list verbatim, plus anything angle-specific the
+script's own list missed. The old "if shown and met: mention data gaps" line inside `<feedback>` was
+removed (redundant with, and narrower than, the new tag - keeping both would ask the same thing
+twice in two places, which is its own source of drift). `validate_realization`'s return tuple grew a
+6th element (`data_gaps`), threaded through `_run_one_design`'s result dict, and `output.py`'s
+`_gallery_entry` (shared by the top realised/disconfirmed tier and `pattern_not_shown`) now renders
+it as a new "Additional data that would help" bullet after Caveat - suppressed when the validator's
+own answer is "none" (starts-with check), so a genuine no-gap-found case doesn't clutter every entry
+with the same boilerplate line. `not_realisable`/`realization_error`/`unsupportable` tiers are
+untouched - none of them ever reach the validator that produces this field, so there's nothing to add
+there. `CLAUDE.md`'s XML-tag list updated to include `<data_gaps>`.
+
+Verified offline: `ast.parse` clean on all three touched files (`prompts.py`, `realization.py`,
+`output.py`); a real `extract_xml` call against a synthetic validator response correctly pulls the
+new tag's content; `output._gallery_entry` given a synthetic angle dict renders the new bullet when
+`data_gaps` is populated and correctly suppresses it when the value starts with "None". **Needs a
+live run to confirm** the validator actually engages with the new tag's instruction (relaying
+something genuinely angle-specific, not a copy-pasted generic list) rather than treating it as
+inert - not yet exercised against a real script's console output.
+
+**Rev. 89: rev. 88's `<data_gaps>` work, first exercised live (`--config cellsurvey`,
+`outputs/gallery_20260908_144826.md`), surfaced two things - one a real merge bug now fixed, the
+other a reminder that generated scripts sometimes disregard instructions, no matter how clear.**
+
+**(1) `data_gaps` was computed and returned end-to-end, but never rendered - a missing copy in the
+realisation merge.** Rev. 88's edit threaded `data_gaps` out of `validate_realization`
+(`realization.py`, 6th tuple element) and into `_run_one_design`'s result dict, and `output.py`'s
+`_gallery_entry` already read `angle.get("data_gaps")` - but `pipeline.py`'s
+`generate_and_optimize` realisation merge block copied `realization_status`, `realization_feedback`,
+`pattern_reasoning`, `plain_finding`, and `delivered_score` onto each angle while omitting
+`data_gaps`. Every downstream reader saw an empty string; the gallery line never appeared. (Not caught
+by rev. 88's offline check, which tested `extract_xml` and `_gallery_entry` in isolation against a
+synthetic angle dict - the angle dict was built with `data_gaps` already populated, so the one link
+that actually drops the value, `pipeline.py`'s manual field-by-field copy, wasn't exercised.) Fixed by
+adding `angle["data_gaps"] = result["data_gaps"]` alongside the `plain_finding` copy. This is the
+fourth time a newly-added realisation field has been dropped at this same manual copy site (the prior
+three: `plain_finding`, `delivered_score`, `error_stage` - each added in its own rev, each forgotten
+at this merge once) - worth folding these into a single `angle.update(result)` guarded to the fields
+`_gallery_entry`/`_write_angle_dump` actually read, rather than the growing per-field list, if anyone
+touches this block again.
+
+**(2) A generated script ignored `INPUT_FOLDER` outright, across all three compile attempts**
+(`paired-marker-spatial-state-fields`, `not_realisable`). `DOMAIN_NOTES` (fed to worker, compiler,
+and orchestrator prefixes) states the single `cells.csv` lives at `INPUT_FOLDER`; `sandbox.py` mounts
+the data dir read-only at `/data` with `INPUT_FOLDER=/data`; and the other three realised scripts this
+run all read `cells.csv` from there correctly. That one script instead wrote its own
+`_find_cells_csv()` searching `Path.cwd()` and `Path(__file__).parent` (`/work`), so it always raised
+`FileNotFoundError: No cells.csv found recursively under /work`. The compiler's repair loop kept
+regenerating the same wrong-location search rather than converging on `INPUT_FOLDER`, exhausting
+`max_compile_attempts`. No pipeline or data bug: the `cells.csv` was mounted correctly, and the
+`requires` field shown for this `not_realisable` angle ("scipy, scikit-learn", both already
+provisioned) is a misleading provisioning signal for what was actually a script bug - a known
+conflation of this tier, not new. Worth recording as a general fact rather than a fix: even an
+unambiguous, thrice-repeated instruction that every sibling script followed can still be silently
+replaced by a model generating a plausible-but-wrong alternative, and the compile/retry loop will
+happily regenerate that same wrong pattern each time rather than converge. The defence is the
+Docker oracle catching it as a `FAIL` and binning it `not_realisable`; a prompt-side wording change
+is unlikely to eliminate a failure mode this generic, and none was attempted here.
+
+**Rev. 87: a trello run (`outputs/gallery_20260906_174106.md`) realised 0 of its top-4 angles - not a
+judging problem, a missing retry path for transport failures, now fixed in `llm.py`.** User asked
+"perhaps we're being too restrictive?" after seeing a gallery with 0 realised/disconfirmed and 4
+`realization_error`. Checked before assuming either way: the 4 angles that reached realisation scored
+0.75-0.85 insight - among the highest of any run logged here - so the judges did their job; nothing
+was rejected as unsupportable. All 4 failed identically: `ReadTimeout('')` at the compile stage
+(`compiler_model="deepseek-v4-pro"` in `configs/trello_config.py`).
+
+**Root cause, traced to the actual code path, not inferred:** `_run_one_design` (`realization.py`)
+wraps its entire body - orchestrator, workers, the `max_compile_attempts`-bounded compile loop,
+validator - in one `try`/`except` (by design, so a late failure still returns whatever real output
+exists - see "The five realisation outcomes" in `CLAUDE.md`). But `llm_call` (`llm.py`) had ZERO
+retry logic for transport-level failures - its only retry loop handled content-shaped problems
+(truncated/empty model responses), doubling `max_tokens`. A raw `ReadTimeout` from any single
+`llm_call` inside the compile loop therefore unwound straight past `max_compile_attempts=3` - which
+only ever retries content/logic errors fed back as `error_feedback` - to the outer handler, killing
+the whole angle on the FIRST network blip. The compile loop's "3 attempts" never actually got a
+chance to run. All 4 top-k angles realise concurrently via `asyncio.gather` (`pipeline.py`), so one
+slow window on DeepSeek's endpoint plausibly hit all four compile calls near-simultaneously - explaining
+why every failure was identical rather than one angle succeeding by chance.
+
+**Fixed at the one chokepoint every stage shares, not per call-site.** New `_stream_with_retry` in
+`llm.py` wraps `client.messages.stream(...)` with up to 3 attempts and exponential backoff
+(2s/4s), catching `anthropic.APIConnectionError` (covers `APITimeoutError`, the SDK's usual wrapping)
+plus `httpx.TimeoutException`/`httpx.TransportError` as a fallback - the live failure surfaced as a
+bare `ReadTimeout('')`, not an `APITimeoutError`, meaning something escaped the SDK's own wrapping
+inside the streaming context manager, so both layers are caught defensively. Deliberately a SEPARATE
+retry loop from the existing token-budget one (different failure class - network vs. content - and
+conflating them would retry a transport error at double `max_tokens` for no reason). Non-transport
+exceptions are not caught and propagate on the first attempt, same as before - this only changes
+behaviour for the specific failure class that previously had no recovery path at all. Protects every
+stage through the shared `llm_call` chokepoint (ideation, judging, orchestrator, worker, compiler,
+validator, the one-off criteria split) with one change, rather than teaching each caller its own
+retry policy.
+
+Verified offline (not yet re-run live): `ast.parse` clean, `import llm` succeeds, and a mocked
+`AsyncAnthropic`-shaped client confirms three cases - (1) two transport failures then success:
+retries and returns the eventual result, 3 calls made; (2) all attempts fail: raises the LAST
+transport exception, not the first; (3) a non-transport exception (e.g. `ValueError`) is not caught
+and propagates immediately on the first attempt, confirming this doesn't accidentally widen retry
+scope to unrelated failures. **Needs a live run to confirm** - ideally one that hits a real transport
+blip, which by nature isn't reproducible on demand; absent that, the next trello run re-realising
+these same 4 high-insight angles cleanly is itself indirect confirmation.
+
+**Rev. 86: a second, heuristic exploration folded into `inputs/trello_reports/task_report.md` -
+technology and scientific domain as completion-speed drivers, user-requested.** Follow-up to rev. 85
+in the same session: neither dimension is a Trello field (the ~10 labels describe engagement type, not
+science or tool), so `explorations/trello/domain_technology_review.py` recovered both via hand-written,
+fully-visible keyword lists over `Card Name`/`Card Description`, joined against a Trello-card-ID-derived
+creation timestamp (Mongo ObjectId's leading 4 bytes) for a rough time-to-terminal-state proxy. Real
+split found: QuPath (24 cards, 10-day median to Done/Billed) and OMERO (15 cards, 12 days) resolve far
+faster than Ilastik (126 days), DL segmentation tools (126.5 days), or Imaris (136 days); Napari and
+Visiopharm have never reached a terminal state. By domain, spatial/multiplex imaging work (17 cards)
+stands out - only 1 has ever reached Done/Billed, at 187 days.
+
+**Written into the report differently from rev. 85's three findings, deliberately.** Rev. 85's
+workload/rework/staleness/billing numbers were computed directly and are stated as established. This
+one is explicitly flagged lower-confidence in its own subsection heading ("heuristic pass only -
+confirm/refute properly, don't just repeat the same shallow approach") because the keyword lists only
+matched 43.5%/30.6% of cards (technology/domain) and several standout categories have single-digit n
+(Napari, Visiopharm, Organoid, Vasculature) - a real methodological difference from rev. 85's findings
+that the report text now preserves rather than flattening into the same confident register. Guiding
+question 3 (Velocity & Timing Patterns) got one added sentence naming the lead and asking for a
+materially better categorisation, not a repeat of this keyword approach - same non-renumbering
+convention rev. 85 used for questions 1 and 6.
+
+Verified: the report's heading structure (`##`/`###`) is unchanged end to end. **Needs a live trello
+run to confirm** ideation engages with the new subsection's explicitly-hedged framing appropriately
+(building a better categorisation) rather than either ignoring it or, worse, treating a heuristic lead
+as if it were rev. 85's settled findings - not yet exercised.
+
+**Rev. 85: `inputs/trello_reports/task_report.md` gained its first "Already Explored — Do Not Repeat"
+section, mirroring `inputs/cbias_report/task_report.md`'s established convention — user-requested,
+following a direct hand-analysis of Run 37's data** (`explorations/trello/group_management_review.py`,
+written the same session to answer a real "how should we manage this team better" question the
+gallery's own top-k=4 cutoff didn't reach). Per `docs/BACKLOG.md` §6.2's own finding — a repeated
+result (lead-time analysis, Runs 25/26/30/31/33) stopped recurring only once a human hand-copied it
+into cbias's anti-target list — this is the established, and only working, mechanism for carrying a
+finding forward between stateless runs; the trello report had never had one.
+
+**Four things folded in, split correctly across the two prompts they actually reach** (`CLAUDE.md`'s
+own ideation-vs-realisation boundary): workload concentration (Gini/HHI + per-member divergence,
+established), backward/rework transitions (tested and disconfirmed — only 1/42 tracked cards looped,
+and it wasn't stale), per-list staleness (On Hold 95.6%/68 cards, Ongoing 95.2% — both overwhelmingly
+dormant), and the Done→Billed conversion rate (7.3%, 3/41 terminal cards). All four went into the new
+"Already Explored" section (feeds ideation via the criteria split) with an explicit closing steer
+toward the two genuinely open follow-ups — *why* the billing gap exists and *why* On Hold/Ongoing
+cards go dormant — rather than letting a future run re-spend a realisation slot re-measuring the same
+four numbers. Guiding questions 1 and 6 got one added sentence each pointing at those same two open
+follow-ups, without renumbering or restructuring the existing seven.
+
+**A fifth, unrelated finding from the same exploration went to `configs/trello_config.py`'s
+`DOMAIN_NOTES` instead, not the report** — the `Source` custom field has a value in the anonymised
+export that doesn't match any of `DOMAIN_NOTES`' documented five (reads like an anonymised person
+label, not a channel), and it can't be resolved further since the raw export it would need to be
+checked against is the one rev. 84 just removed. This is a data-shape/provenance fact a script must
+handle while *building* an angle, not something that should steer *which* angles get proposed, so per
+the caching table it belongs in `DOMAIN_NOTES` (reaches orchestrator/worker/compiler), not the report
+(reaches ideation only) — phrased as "inspect the actual values, don't trust this list blindly" per
+`CLAUDE.md`'s stated preference for that framing over hand-listing the one exception.
+
+Verified: `ast.parse` clean on `configs/trello_config.py`, a real `from configs.trello_config import
+CONFIG` succeeds and `CONFIG.domain_notes` renders the new caveat, and the report's heading structure
+(`##`/`###`) is intact end to end. **Needs a live trello run to confirm** ideation actually treats the
+new section as an anti-target list rather than inert prose — not yet exercised, same bar every other
+report/`DOMAIN_NOTES` change in this log has been held to.
+
+**Rev. 84: the raw (un-anonymised) Trello export removed from the repo — and `app.py`'s `--config
+trello` default was pointing at it, not at the anonymised one, this whole time (user-noticed).** The
+board itself is public, so this isn't the same PII-exposure severity as the cbias raw-data case, but
+`inputs/trello_data/` (the raw JSON+CSV, real member usernames/assignee names) had been committed
+alongside `inputs/trello_data_anonymised/` (rev. ~57's output of `_anonymise_trello.py`) since Run 37,
+and never removed. Worse than a leftover file: `app.py`'s `data_dir_default` for `--config trello` was
+literally `"./inputs/trello_data"` — the raw directory — while `cbias`'s equivalent branch has always
+correctly pointed at `inputs/cbias_data_anon`.
+
+**Correction, same rev: an initial version of this entry claimed Run 37 itself ran against the raw
+export, reasoning from rev. 62's "Verified directly against the real export (`inputs/trello_data/`,
+...)" line. That line is about a narrower, separate check — testing `generate_data_profile` in
+isolation — not the full Run 37 pipeline invocation, and the claim was wrong.** Caught by actually
+opening Run 37's own output artifacts while working the next request in this session: every
+person/lab label in `outputs/artifacts/assignment-vs-activity-workload-gap/*.png` reads `Person U`,
+`Lab AF`, etc. — the anonymisation script's output vocabulary, not real names — so **Run 37 was in
+fact run with an explicit `--data-dir` override pointing at the anonymised export**, sidestepping the
+buggy default rather than being caught by it. The default bug was still real (confirmed by reading
+`app.py` directly) and still worth fixing — it's one invocation away from silently reading raw data on
+the next person who runs `--config trello` without remembering to override it — but Run 37's own
+evidence was never actually affected by it. Recorded here rather than silently corrected, per this
+project's own practice of not quietly reinterpreting a prior claim.
+
+**Fixed:** `inputs/trello_data/` removed from git (`git rm -r --cached`) and from disk; added to
+`.gitignore` (mirroring the existing `inputs/cbias_data/` entry — regenerate locally from a fresh
+Trello export via `_anonymise_trello.py` if needed, never re-commit). `app.py`'s trello branch now
+defaults `data_dir_default` to `"./inputs/trello_data_anonymised"`, matching the `cbias` branch's
+pattern. Verified: `ast.parse` clean on `app.py`, a real `import app` succeeds, and
+`trello_config.CONFIG.extract_input_metadata()` runs correctly against the anonymised directory
+(335 cards, 23 members, 10 lists — same structure as the raw export, as expected).
+
+**One unrelated gap surfaced while checking this, not fixed here:** spot-checking the anonymised CSV's
+"Lead" custom-field column found `_anonymise_trello.py` missed at least one first name ("Ken" survives
+un-redacted in that column; others render as "Person X"). Low severity given the board is public and
+first names alone were already partially retained by design in `DOMAIN_NOTES`'s "Lead: Dave, Ken,
+Rocco, Sara, Stefania" line — but worth a follow-up pass on `_anonymise_trello.py`'s custom-field
+handling if this domain gets used again, now that its output is the actual default input rather than
+an unused-by-default side artifact.
+
+**Rev. 83: Run 42 (`--config cellsurvey`, post credit top-up) confirms three of the four rev. 78-81 QC
+fixes actually changed generated-script behaviour; the fourth is still unconfirmed, not disproven (user
+report — "rerun looks good", `outputs/gallery_20260905_114916.md`).** All four selected angles executed
+cleanly this time (2 `realised`, 1 `realised_null`/disconfirmed, 1 more `realised` — 0
+`not_realisable`, 0 `realization_error`), confirming Run 41's zero-confirmed outcome was purely the
+DeepSeek credit exhaustion diagnosed at the time, not a side-effect of the QC changes. Read all four
+generated scripts directly (not just the gallery prose) to check for the specific mechanisms each rev
+instructed, rather than inferring from plain-language summaries alone:
+- **Rev. 78 (per-marker normalisation before thresholding; nuclear-not-cell language) — confirmed.**
+  Every script that fits a positivity threshold does so on a transformed scale, not raw intensity —
+  `log1p` (`gating-kmeans-disagreement-spatial-patterning.py`, `pairwise-marker-coupling-states.py`) or
+  an explicit per-marker median/IQR robust normalisation
+  (`continuous-vascular-proximity-cd8-pd1-gradient.py`, whose own printed output states
+  "Markers robust-normalised per-marker (median/IQR)"). All four scripts correctly say "nuclear
+  segmentation" and explicitly name the whole-cell/membrane boundary as absent from the data, not
+  merely unextracted — no script asserted a cell boundary that doesn't exist.
+- **Rev. 79 (spatial/tiling confounds; local kNN baseline via `cKDTree`; no tile/FOV identity) —
+  confirmed.** All four scripts import and use `scipy.spatial.cKDTree` for a local spatial baseline —
+  exactly the mitigation `DOMAIN_NOTES` names as the only one this data supports. Three of the four
+  independently flag "no tile/field-of-view identity" as a data gap in their own Section-3 output
+  (`gating-kmeans-...`: "required to correct tiling, vignetting, and stitching artefacts before
+  per-marker thresholds"; near-identical wording in `pairwise-marker-coupling-states.py`), and the
+  vascular-proximity script's own console output states the kNN aggregate "is an approximate
+  mitigation, not a calibrated flat-field correction" — the exact distinction rev. 79 insisted on.
+- **Rev. 80 (cross-talk, non-specific binding, spectral bleed-through) — confirmed.** All four scripts'
+  data-gap/caveat sections name cross-talk, cycle carryover, and/or non-specific binding explicitly
+  (e.g. "isotype/cycle carryover controls: needed to quantify spectral bleed-through and cycle-to-cycle
+  channel contamination"), and the top-ranked angle's own `plain_finding` volunteers "marker intensities
+  used are not corrected for antibody background/spillover" as a caveat on its own confirmed result,
+  unprompted by the guiding questions — the judge, not just the worker, picked this up.
+- **Rev. 81 (`kmeans_cluster`'s all-channel/z-scored provenance vs. a typically-curated canonical-gating
+  comparison) — NOT confirmed this run.** `gating-kmeans-disagreement-spatial-patterning.py` is exactly
+  the angle this note was written for (it directly compares a canonical-gating call against
+  `kmeans_cluster`), and it does not mention the representational-mismatch point anywhere — no
+  reference to `StandardScaler`, all-channel vs. curated-subset framing, or DAPI/background channels'
+  presence in the clustering feature space. Not a regression (rev. 81 never claimed more than a
+  "needs a live run" hypothesis), but the one item of four that this run does not move from unconfirmed
+  to confirmed — leave open rather than closing on partial evidence.
+- **Live Issue 38 (constructive question 7) — generating relevant candidates, none realised yet.** The
+  "also generated" tier's four unrealised angles (insight 0.35 each, below `--realize-top-k`'s cutoff)
+  read as exactly the guiding-question-7 alternative the fix was meant to elicit — a gating-based
+  cell-type map, a niche-archetype map, a lineage-dependency-module analysis — but none of this run's
+  four *realised* angles serves question 7; all four serve 2/3/5/6. The fix is producing the right kind
+  of candidate; it just hasn't won the insight-ranking race against the vascular/gating/density angles
+  yet. Worth watching over further runs, not a fix that needs revisiting on this one data point.
+
+No code changed this rev — this is a verification-only entry confirming (mostly) rev. 78-81's
+hypotheses against real generated output, per those revs' own "needs a live run to confirm" flags.
+Live Issue 39 updated below with a `CONFIRMED (rev. 83, Run 42)` note rather than closed outright, since
+one of its four sub-fixes remains unconfirmed.
+
+**Rev. 82: new §15.8 - a consolidated retrospective of every incorrect assumption/oversight made during CellSurvey domain onboarding, user-requested.** Docs-only, no code touched. Pulls together eight items scattered across Live Issues 37-39 (rev. 76-81) into one list, in the order found, each cross-referenced rather than re-explained: a normalisation caveat too passive to change behaviour; "cell" language asserted where the pipeline only ever produces nuclear segmentations; an unverified claim stated as fact; cross-marker normalisation mistaken for the whole normalisation problem; cross-talk/antibody-specificity not considered despite the evidence (a cyclic C1-C19 acquisition protocol) already sitting in a file this project had itself written; `kmeans_cluster`'s actual computation never checked against source until directly told to; a report-authoring choice that skewed which guiding questions got realised across two runs; and the near-miss regression caught while fixing that. States the honest count plainly: seven of eight were user-caught, not self-caught, and the one exception was found by a mechanical check (re-running a parser) rather than by re-reading prose - the same lesson §15.7 already draws from the cbias retrospective, now confirmed on a second, independently-run domain. This is the first §15 retrospective not drawn from `cbias` - 15.1-15.6's taxonomy was built entirely from one domain's runs, and this section's closing note says so explicitly.
+
+**Rev. 81: `kmeans_cluster`'s actual provenance verified directly against the CellSurvey source code, correcting one assumption and surfacing a new, concrete methodological weakness (user-directed, same session, folded into Live Issue 39).** The user asked directly: check the source repo for how intensities were normalised (if at all) before clustering, rather than continuing to assume. Fetched `cellsurvey/cli.py` and `cellsurvey/utils.py` from https://github.com/FrancisCrickInstitute/CellSurvey directly (not the README, which doesn't cover this level of detail) and found `cluster_data()`'s exact implementation: `StandardScaler().fit_transform(data)` runs BEFORE `KMeans.fit_predict()` - so `kmeans_cluster` was NOT computed on raw intensities, correcting an implicit assumption in this domain's framing since rev. 39. Two things this scaling does NOT address, confirmed from the same read: it's a single global rescale per marker, so it does nothing for the position-dependent (Live Issue 39/rev. 79) or cross-talk (rev. 80) confounds; and `cli.py` confirms ALL 32 channels went into clustering completely unfiltered - DAPI (near-zero discriminating power by construction) and both non-biological background channels included as full-weight features alongside the 29 real markers, roughly 9% of the feature space contributing noise rather than signal. New "KMEANS_CLUSTER PROVENANCE" `DOMAIN_NOTES` section states all of this, and draws out its sharpest implication: a script comparing `kmeans_cluster` against its own canonical-gating call may not be comparing like with like (z-scored all-channel space vs. typically raw/curated-subset gating), so some of the disagreement Live Issues 37/38 already found could be this representational mismatch rather than (or alongside) a genuine clustering failure - flagged as a consideration for guiding question 7's constructive alternative, not asserted as overturning prior findings. Verified offline the same way as rev. 78-80: `ast.parse` + cross-module `import`, new section presence and the `{_MARKER_GLOSSARY}` f-string interpolation confirmed by printing the rendered `DOMAIN_NOTES`, `extract_input_metadata` unchanged. **Needs a live run to confirm** ideation actually picks this up when proposing a question-7 alternative - the fourth open item in this same running list.
+
+**Rev. 80: a third QC dimension added to `configs/cellsurvey_config.py` - cross-talk and antibody specificity (user addition, same session, folded into Live Issue 39).** Rev. 78/79 covered cross-marker scale and within-marker spatial/tiling confounds; the user added a third, independent one: non-specific antibody binding, and spectral bleed-through between spectrally-adjacent fluorophores. This one was groundable in specifics already on hand rather than general caveats - re-checked `marker_channel_names.csv` directly and confirmed the panel is a CYCLIC protocol (channel names carry C1-C19 cycle labels; the source filename identifies the platform as COMET/Lunaphore), with the CY3 channel reused across 10 different cycles/markers and Cy5 across 19. That structure makes two concrete risks real, not hypothetical: cycle-to-cycle carryover if signal removal between cycles was ever incomplete (a later cycle's reading could carry an earlier, unrelated cycle's true signal), and within-cycle spectral bleed-through between the CY3/Cy5 pair imaged together each cycle. New "CROSS-TALK AND SPECIFICITY" section in `DOMAIN_NOTES` states both, plus non-specific binding as a third, technology-independent risk, and closes with a concrete guardrail: treat a finding resting on ONE marker's absolute intensity more cautiously than one supported by a marker combination or spatial pattern that would be an unlikely coincidence if it were pure cross-talk. Also re-examined, with an explicit uncertainty flag: the two non-biological channels (Live Issue-adjacent, not new) sit between cycles C4 and C5 in acquisition order, consistent with a bleach/carryover check with no antibody applied - noted as a plausible reference signal for nearby-cycle markers, but explicitly flagged as unverified against the source pipeline's own documentation (which doesn't describe one), not asserted as fact. Verified offline the same way as rev. 78/79: `ast.parse` + cross-module `import`, new section presence and the `{_MARKER_GLOSSARY}` f-string interpolation both confirmed by printing the rendered `DOMAIN_NOTES`, `extract_input_metadata` re-run against the real data unchanged. **Needs a live run to confirm**, same caveat as rev. 78/79 - this is now three rounds of the same open question.
+
+**Rev. 79: rev. 78's normalisation fix corrected - it was still too narrow (user correction, same session).** Rev. 78 addressed only cross-marker incomparability (different channels, different exposure/gain, so marker A's raw scale ≠ marker B's). The user's follow-up named the larger problem directly: this is a TILED acquisition of a large tissue section, stitched/fused from many fields of view - so WITHIN one marker, comparing object X's raw intensity to object Y's is *also* unsafe, independent of the cross-marker issue, because of illumination non-uniformity within a tile (vignetting), tile-to-tile exposure/gain drift, stitching/fusion seams, and non-uniform antibody binding/staining/penetration across the section (a wet-lab confound, not just an imaging one). A single global per-marker rescale (rev. 78's fix) does nothing for any of this - it corrects a scale/offset, not a position-dependent effect. Re-checked what's actually available to correct against: no tile/field-of-view identity column exists anywhere in the source zarr's per-cell metadata (confirmed directly during this project's original data exploration, not assumed) - so a true tile-aware correction isn't directly computable from this data. What IS available is each object's (x, y) centroid, which supports an approximate mitigation (a local k-nearest-neighbour or spatial-grid baseline via `scipy.spatial.cKDTree`, already listed in `AVAILABLE_LIBRARIES`) - explicitly not equivalent to a true calibrated flat-field correction, which nothing in this data supports. `DOMAIN_NOTES`'s marker_* description now points to a new "ACQUISITION ARTEFACTS" section covering both problems together, closing on an explicit "no single raw intensity value should be treated as correct, and no two raw intensity values - even for the same marker - should be assumed directly comparable" statement; `AVAILABLE_LIBRARIES`' scipy bullet extended to name the local-baseline use case. Verified offline the same way as rev. 78: `ast.parse` + cross-module `import`, the new section's presence and the `{_MARKER_GLOSSARY}` f-string interpolation both confirmed by printing the rendered `DOMAIN_NOTES`, `extract_input_metadata` re-run against the real data unchanged. Folded into Live Issue 39 below as a correction, not a new issue, since it's the same fix being made complete rather than a separately-discovered problem. **Needs a live run to confirm**, same caveat as rev. 78.
+
+**Rev. 78: two real domain-accuracy gaps fixed in `configs/cellsurvey_config.py` - see new Live Issue 39 (§3) - both flagged directly by the user reading Run 41's scripts, neither a pipeline-mechanism bug.** (1) `DOMAIN_NOTES` said marker intensities were "not normalised/log-transformed" but only as a passive aside ("inspect... before assuming") - weak enough that every realised script across four runs fitted GMM/Otsu/percentile positivity thresholds directly on raw per-channel intensities regardless, despite the acquisition channel names showing different exposure/gain settings per channel. Rewritten as an active instruction: normalise each marker (via `AVAILABLE_LIBRARIES`' now-extended `sklearn.preprocessing` note) before treating a fitted cutpoint as biological, and say so explicitly in the script. (2) Every "cell"/"cells.csv"/"per-cell" reference in `DOMAIN_NOTES` and `preprocess_cellsurvey.py`'s docstring implied a whole-cell measurement region, when the source pipeline (Stardist) only ever segments NUCLEI - confirmed directly against the CellSurvey README, which documents no whole-cell/membrane boundary step at all, and confirmed unverifiable (also checked directly) whether intensity is measured strictly within the raw nuclear polygon or some expanded region. New "SEGMENTATION REGION" note states this plainly, names which markers (CD3/CD8/CD31/Collagen-I/Vimentin/E-cadherin/etc. - most of the panel) have a non-nuclear expected localisation and are therefore most exposed to this caveat, and the "WHAT IS NOT AVAILABLE" section's cell-boundary claim corrected from "not extracted" to "does not exist in this pipeline's output at all, extracted or not." Verified offline: `ast.parse` + cross-module `import` (all core modules together, not just `cellsurvey_config.py` in isolation); the f-string `{_MARKER_GLOSSARY}` interpolation confirmed intact by printing the full rendered `DOMAIN_NOTES`; a real `extract_input_metadata` run against the actual processed data, unchanged in output from before the edit (the fix is documentation/instruction only - no column or value changed). **Needs a live run to confirm** ideation/the compiler actually normalise before thresholding and stop asserting whole-cell boundaries as a data gap rather than an impossibility, now that both are stated as instructions rather than passive asides - this is a hypothesis about what the report/DOMAIN_NOTES should say, not yet tested against a live call.
+
+**Rev. 77: `task_report.md` extended with a constructive guiding question 7 and a curated "Already Explored" section - see new Live Issue 38 (§3).** User-reported, Run 40 (`gallery_20260904_142733.md`): the top-3 realised angles again all concluded some version of "the shipped clustering/community grouping doesn't reliably reflect real cell types" - a finding two independent runs had now reached by different methods. **First, checked whether rev. 76's fix actually worked before treating this as a regression**: it did - Run 39's best non-cluster-critique angle scored insight 0.35 and never approached the realise cutoff, while Run 40's marker-co-expression angle (question 5) scored 0.70, nearly tying the top cluster-critique angles, and *was* selected for realisation - it only missed the top tier because of an unrelated code bug (an int64 overflow producing phi-coefficient values outside the mathematically possible [-1,1] range, plus zero PNGs written), correctly caught by the validator. So this run's concentration is closer to ordinary run-to-run variance than a resurfacing of the rev. 76 problem. Two real gaps remained regardless: nothing in the report asked for a CONSTRUCTIVE alternative to the shipped grouping (only diagnostic "does it hold up" framings, Q1-3), and nothing curated the now-twice-confirmed finding forward the way `idr0028_config.py` curates the study's own published Z-scores. Both fixed: new **guiding question 7** asks angles to propose and actually deliver a replacement grouping (canonical-gating-based, marker-informed re-clustering, or niche map) compared quantitatively against the shipped one, rather than another audit; new **"Already Explored - Do Not Repeat"** subsection (matching `idr0028_report`'s naming convention) states the now-established finding explicitly and redirects further work on this theme toward question 7 or genuinely novel mechanisms, not another confirmation. "About the Shipped Groupings" and the Success Criteria bullet both updated to reference question 7 alongside 1-3. Verified offline: `_parse_guiding_questions` re-run after every edit (not just at the end) - confirmed 7 questions parse correctly, including immediately after the heading changed to add "and 7", continuing the practice Live Issue 37 established of checking this mechanically rather than by inspection. **Needs a live run to confirm** question 7 actually gets proposed, scores competitively, and gets realised - a hypothesis about what the report should ask for, not yet tested against a live ideation call.
+
+**Rev. 76: `configs/cellsurvey`'s `task_report.md` rebalanced - see new Live Issue 37 (§3) - after the user observed all three realised angles in Run 39 revolved around the same "is the shipped clustering arbitrary" theme they already knew the answer to.** Round-robin guiding-question cycling was confirmed working correctly (all 6 questions parse and cycle across ideation calls) - the cause was the report text itself: "About the Shipped Groupings" was worded as *"a central objective of this analysis"* rather than context for guiding questions 1-3 specifically, and fed both `ideation_criteria` (pulling every angle toward it regardless of assigned question) and, via Success Criteria's first bullet, `deliverable_rubric` (grading every realised angle against it, including ones targeting questions 4-6 that explicitly don't need it). Rebalanced: the section now scopes itself to questions 1-3 and states outright that questions 4-6 need not reference `kmeans_cluster`/`community` at all; the Success Criteria bullet now only applies where an angle actually engages with the groupings. **A near-miss caught during the fix, not shipped**: the section's heading briefly became "...Context for Guiding Questions 1-3", which collided with `_parse_guiding_questions`'s heading-matching regex (`_GUIDING_QUESTIONS_HEADING`, matches the FIRST heading containing "guiding question", case-insensitive) - since this heading now sat *before* the real "## Guiding Questions for Analysis" heading, the parser locked onto it instead and returned zero guiding questions, silently disabling the whole cycling mechanism this rev exists to fix. Caught by re-running the same offline parser check that had confirmed the original report was fine, before any live run; fixed by renaming the heading to "...Context for Questions 1-3" (avoiding the phrase in a heading, while keeping it freely in body prose, which the regex doesn't touch). Recorded as a generic fragility for any future domain report: don't put the phrase "guiding question" in any heading other than the actual guiding-questions section itself. **Needs a live run to confirm** the rebalanced wording actually diversifies which guiding questions get realised, not just that the report still parses.
+
+**Rev. 75: the `not_realisable` tier's "Why blocked" traceback fixed - see new Live Issue 36 (§3).** User-reported, spotted immediately after rev. 74: a raw Python traceback in `gallery_20260904_120057.md` looked "out of place" next to the newly-readable realised findings, and inspection found the traceback shown was cut off *before ever reaching the actual exception* - a truncation-direction bug, not a design gap. `sandbox.py`'s `validate_execution` deliberately keeps the TAIL of the container's output (a comment there already explains why: "Python puts the actual exception last, after the traceback frames"), but two downstream sites in `realization.py` re-truncated that same string from the HEAD (`exec_feedback[:500]` on the per-attempt console log, `fb[:1000]` building `attempt_summary`), silently discarding exactly what `sandbox.py` had preserved - by the time `output.py`'s gallery renderer took its own `feedback[:400]` head-slice, the actual exception had already been lost twice over. Fixed by changing all three slices to take the tail (`[-500:]`, `[-1000:]`, `[-600:]`), and the gallery's version is now also wrapped in a markdown code fence so a multi-line traceback renders as preformatted text instead of mangled inline prose - which is what actually looked "out of place." Verified offline: `ast.parse` + cross-module `import`; a synthetic multi-frame traceback (padded past all three old truncation points, real exception - a `KeyError` - placed at the very end) run through the exact `attempt_summary`/gallery-rendering logic, confirming the exception now survives to the rendered block, where it previously would not have.
+
+**Rev. 74: a plain-language layer added to the gallery, plus a new standing guardrail on interpretability — both prompted directly by the user reading Run 38's `cellsurvey` gallery and reporting they were struggling to interpret it themselves.** See new Live Issue 35 (§3) for the full diagnosis and fix; summary here. `prompts.py`: `REALIZATION_VALIDATOR_PROMPT_SUFFIX` (not human-owned) gained `{question_or_stakeholder_served}` and a new `<plain_finding>` tag - 2-4 plain-language sentences, written for the angle's own named reader, that fold in the independent soundness caveat and stay precise on domain entities while explaining any statistical method/error in consequence rather than name. `realization.py`: `validate_realization()` takes two new optional params and returns `plain_finding` as a fifth tuple element; `_run_one_design()` threads `question_or_stakeholder_served`/`soundness_caveat` in and carries `plain_finding` through all four of its return branches. `pipeline.py`: copies it onto the angle alongside the other realisation fields. `output.py`: `_gallery_entry` now shows **"In plain terms:"** first when present, with the existing Hypothesis/Serves/Finding/Caveat moved under a **"Technical detail:"** label beneath it - unchanged otherwise, and `realization_error` angles (which never reach the validator) fall through exactly as before. `_write_angle_dump` also carries the new field. **No human-owned prompt touched** (`ANGLE_GENERATION_*`, `SOUNDNESS_JUDGE_*` are unchanged) - this is a new presentation layer, not a rewrite of ideation or judging, so the underlying judges' precision is unaffected. Verified offline: `ast.parse` + a real cross-module `import` together; a real `.format()` call against the new prompt with every placeholder supplied; a mocked end-to-end test (a fake validator response through `extract_xml` through a fake angle dict through `_gallery_entry`) confirming the rendered markdown block looks right. **Needs a live run to confirm** the validator model actually writes usable, genuinely accessible text in practice - offline verification proves the plumbing works, not that the writing succeeds at the goal. Also: `§2`'s guardrail list gained an explicit interpretability guardrail (below), and its stale `_dedup_angles` mention (rev. 73 deleted that function) was corrected in the same pass.
+
+**Rev. 73: two changes carried out following Run 38 (`--config cellsurvey`) — Live Issue 24's dedup deletion, implemented rather than left as a recommendation, and an unrelated `.gitignore` hygiene fix caught in the same pass.**
+
+**(1) Dedup deleted.** Live Issue 24's entry below already argued the case from Run 38's counterfactual (dedup would have merged away the run's only `realised` finding plus one of its three disconfirmations) and closed with an explicit recommendation to delete `_dedup_angles` and its helpers rather than re-tune the threshold per domain. This rev carries that out. `config.py`: removed the `angle_similarity_threshold` field. `ideation.py`: removed `_dedup_angles`, `_angle_signature`, `_pick_representative`, and the now-unused `_judgment_sort_key` import — `_token_set`/`_jaccard` were kept, since `_log_iteration_diversity` (a separate, still-live measurement — it produced Run 38's own 0.20/0.16 diversity reading) depends on them; the module docstring was updated to stop describing dedup as something the module still does. `pipeline.py`: dropped the `_dedup_angles` import and the entire dedup block (the clustering call, the `[dedup]` summary print, and the per-cluster logging loop) — `all_angles` is now built directly from the judged archive with a comment pointing at this Live Issue for why the step is absent, and `generate_and_optimize`'s own docstring (both the stage-flow paragraph and the `"all_angles"` return-value description) no longer claims a dedup step exists. `CLAUDE.md`: the pipeline-flow diagram, the Dedup architecture bullet (now documents the deletion and the cellsurvey counterfactual instead of describing live measurement-only behaviour), the `angle_model` bullet's "dedup/judges" phrasing, and the `angle_similarity_threshold` config-field bullet (removed outright) were all updated to match. Verified offline: `ast.parse` clean and a real `import` across every core module (`app`, `config`, `pipeline`, `ideation`, `judging`, `realization`, `output`, `parsing`, `llm`, `sandbox`, `preflight`) together — not just each file in isolation, so a stale cross-import would have surfaced; confirmed none of the five domain configs set `angle_similarity_threshold` explicitly (so removing the field breaks nothing per-domain); a repository-wide `grep` for `angle_similarity_threshold`/`_dedup_angles`/`_angle_signature`/`_pick_representative` returns no hits outside this document and `DEVELOPMENT_LOG_ARCHIVE.md`, which are historical record, not live code. **Needs a live run to confirm** the pipeline still behaves correctly end-to-end with the step actually gone, not just that it imports — nothing in this rev exercised `generate_and_optimize` itself.
+
+**(2) `.gitignore` gained `__pycache__/` and `*.pyc`.** Caught while reviewing Run 38's `git status`: four `configs/__pycache__/*.pyc` files had been `git add`ed alongside that run's real deliverables, and `__pycache__` was not ignored at all — a gap that predates this run and could recur for any config. Fixed by unstaging the four files and adding both patterns to `.gitignore`; confirmed via `git status` that both `__pycache__/` directories present at the time no longer appear as untracked or staged.
 
 **Rev. 70: the three domain config modules moved into a new `configs/` package — `cbias_config.py`, `trello_config.py`, `bioimage_config.py` are now `configs/cbias_config.py`, `configs/trello_config.py`, `configs/bioimage_config.py`.** User-requested, the next root-tidying step after rev. 69's `docs/` move. Unlike the two doc moves, this one is a real code change, not a text move: `app.py`'s three `--config`-branch imports changed from `from cbias_config import CONFIG` etc. to `from configs.cbias_config import CONFIG` etc., and a new (empty) `configs/__init__.py` makes it an explicit regular package rather than relying on implicit namespace-package behaviour. Checked before moving, not assumed: none of the three configs does any `__file__`-relative path construction (their `Path(...)` calls are all built from the `directory`/`data_dir` argument passed in at call time, never from the module's own location), so the directory move carries no hidden path risk; and `from config import PipelineConfig` inside each moved file still resolves correctly with no change, since `config.py` stays at the repository root and the root stays on `sys.path` (added automatically as `app.py`'s own directory, the actual entrypoint) regardless of which subdirectory the *importing* module lives in. **`config.py` (the shared `PipelineConfig` base) and `pipeline.py`/`ideation.py`/`judging.py`/`llm.py`/`output.py`/`parsing.py`/`preflight.py`/`prompts.py`/`realization.py`/`sandbox.py` (the twelve-module pipeline core) were explicitly left at root** — this was the scope this session's discussion (before rev. 69) already flagged as the expensive, high-risk part of any reorganisation, and moving three self-contained domain configs with a single external caller (`app.py`) is a materially smaller, materially safer change than restructuring the pipeline's own dense flat cross-import graph. Cross-references updated in the same pass: `app.py`'s three import lines (the only functional change); comments/prose in `anonymize_cbias_data.py`, `CLAUDE.md`, `config.py`, `README.md`, `Dockerfile`, and this document and its archive, all now read `configs/<name>_config.py`. The three config files' **mutual** references to each other (`cbias_config.py`'s comment naming `trello_config.py`, and vice versa) were deliberately left bare — they're still siblings, now inside `configs/` rather than at root, exactly the same reasoning as rev. 69's docs. Verified: `ast.parse` clean on every touched file; a real `from configs.cbias_config import CONFIG` (and the other two) plus a real `import app` both succeed, confirming the actual import wiring works, not just that the text looks right; stale root-level `__pycache__` entries for the three old module locations removed so nothing stale lingers. `grep` confirms no un-prefixed external reference remains anywhere in the repository.
 
@@ -116,8 +544,9 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 - **Human-owned prompts stay human-owned.** `ANGLE_GENERATION_*`, `INSIGHT_JUDGE_*` and `SOUNDNESS_JUDGE_*` are now filled in. Do not rewrite them; propose changes and let the human make them. The `*_FALLBACK` counterparts have been removed (see §3) now that these are stable — a missing/empty human-owned prompt is a hard failure now, not a silent generic substitute.
 - **Do not delete dormant code.** See §6. *Dormant* means "a later step is scheduled to revive it". It does **not** cover genuinely dead code — a value computed and never read, a formatted string no caller consumes. §6 records that nothing is currently dormant, so D-consolidate's deletions do not conflict with this guardrail; check §6 before deleting anything and add to it if you leave something temporarily unused.
 - **Follow the caching convention (§4) for every new prompt.**
-- **Reuse, don't rewrite.** `_parse_xml_items`, `_jaccard`/`_token_set`, `_log_iteration_diversity`, `_angle_record`, `_dedup_angles`, `llm_call` (semaphore + images + `cache_prefix` + provider routing), `extract_xml`, `format_prompt`, the Docker sandbox and artifact copy-out all carry over.
+- **Reuse, don't rewrite.** `_parse_xml_items`, `_jaccard`/`_token_set`, `_log_iteration_diversity`, `_angle_record`, `llm_call` (semaphore + images + `cache_prefix` + provider routing), `extract_xml`, `format_prompt`, the Docker sandbox and artifact copy-out all carry over. (`_dedup_angles` was on this list through rev. 72 - deleted rev. 73, see Live Issue 24.)
 - **Instrument before tuning.** Every threshold here should be set from observed numbers. §3's run log is the evidence base.
+- **Interpretability is a first-class requirement, not a nice-to-have (rev. 74).** The entire point of an angle, a judge verdict, and a gallery entry is to be understood by the human or domain reader it names (`question_or_stakeholder_served`) - a technically correct finding nobody can parse has delivered nothing, and this project has no other oracle for angle *quality* (CLAUDE.md is explicit that this is the human's job, not Docker's). Every output-facing decision - prompt wording, gallery rendering, visualisation choices, terminology - should be checked against that named reader, not only against technical correctness, and this applies throughout the pipeline (ideation, judging, realisation, the gallery), not just at the one surface Live Issue 35 happened to catch first. See Live Issue 35 for the concrete case (a gallery whose findings were individually correct and collectively unreadable) and its fix.
 - **Keep it a template.** No new frameworks, no tree-search controllers, no persistent Elo ratings, no async task queues. *This guardrail has held on the architecture and failed on the repository* — see §12.3. D-consolidate item 3 forces an explicit decision about whether "template" is still the honest description, because two of the three shipped domain configs are now vestigial and one of them is the broken default.
 - **Prompts live in `prompts.py`.**
 
@@ -127,7 +556,7 @@ This fork inverts the machinery. The goal is a **skimmable gallery of distinct, 
 - **External retrieval / literature enrichment** — see `BACKLOG.md`.
 - **Dynamic library provisioning** — see `BACKLOG.md`. Do not solve this by narrowing ideation.
 - The "team capability & horizon scanning" variant (a later, separate fork).
-- Human-directed deepening ("go deep on angle 3") — deferred until after D8.
+- Human-directed deepening ("go deep on angle 3") — see `BACKLOG.md` §7.
 
 ---
 
@@ -218,6 +647,7 @@ The evidence base for every threshold in this document.
 | 17 | 0.08 / 0.11 | working | **First `realised` with a genuine confirmed finding.** Dedup 8→7 (0.497 — highest yet, unambiguous). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 1 realised_null**, 2 pattern-not-shown, 0 not realisable. New: cmudict gap (Issue 15), host-side Unicode crash (Issue 16) |
 | 18 | 0.10 / 0.08 | working | **Regression: data discovery fails again, but now loudly.** Dedup 8→7 (0.382). 0 solid / 4 caveat / 3 unsupportable. Realisation: 1 realised, 0 realised_null, 0 pattern-not-shown, **3 not realisable** — two of them path-resolution failures (Issue 17), one still `sentence-transformers` |
 | 19 | 0.09 / 0.12 | working | **Issue 17 confirmed. First 100% realisation rate in the project's history.** Dedup 8→7 (0.278). 0 solid / 6 caveat / 1 unsupportable. Realisation: **1 realised, 3 realised_null, 0 pattern-not-shown, 0 not realisable.** Readability decline replicates Run 17; stakeholder-blurring disconfirmed a third time |
+| 38 | **0.20 / 0.16** | working | **`--config cellsurvey` — third demonstrated domain, and the hardest yet**: 362,736 cells, 32 marker channels, spatial coordinates, and a task framed as *interrogating an existing pipeline's output* rather than analysing raw data. **4/4 compiles passed on attempt 1/3**; 1 realised, 3 realised_null, 0 not-realisable, 0 unsupportable, 0 judge errors. **Live Issue 29 (preflight) confirmed live** — 3 models + Docker checked in four calls before any spend. **Live Issue 34's cluster logging confirmed live, and immediately decisive: 8 angles → 3, six of eight in a single cluster** spanning guiding questions 1, 2, 4 and 6. That counterfactual answers Live Issue 24 (see its entry). New §15 entry E4: the judge caught a hypothesis test computed on the wrong tail |
 | 37 | **0.17 / 0.19** | working | **FIRST RUN ON A NON-CBIAS CONFIG — `--config trello`.** Different domain (Trello JSON+CSV), 7 guiding questions, **no anti-target list at all**, different rubric. 2 realised, 1 realised_null, **1 `pattern_not_shown`**, 0 not-realisable, 0 unsupportable, 0 judge errors. **The judge's best catch in the log: it located a specific index error in generated source** (§15.7 obs 5). Worker resilience fired (`3/4 succeeded - failed: main`) and the design still passed. **Diversity is ~2× the cbias band** and dedup produced the first-ever chained + `within_iteration` merge — which exposed Live Issue 34, a self-inconsistent `[dedup]` log line |
 | 36 | — | — | Docker restored. 4/4 realised or disconfirmed, 0 not-realisable, 0 judge errors, 1 unsupportable. **Issue 33 confirmed live**: the `is_string_dtype` fix took the Likert item count from 1 (Run 34) to ~18. **First statistically-tested disconfirmation in the log** — `semantic-drift-abstract-embeddings` ran a 999-permutation PERMANOVA (pseudo-F=0.80, p=0.994) and the verdict rests on it. B1 correction: attempt 1 silent-exited, Issue 11's backstop caught it, attempt 2 produced a *declared* TF-IDF fallback |
 | 35 | 0.09 / 0.10 | working | **Docker unavailable — all 4 realisations `Execution: SKIPPED`, all binned `not_realisable`, zero verified output for a full ~110-call run.** Strongest motivating case for Live Issue 29's preflight (see that entry). Tier mislabelling recurs (Live Issue 28 pattern, 4th instance). Two `<task>` XML parse failures in one run, one a new error type — 5 total for D-simplify item 1. Dedup would-merge at 0.223, first plausible **true** positive |
@@ -247,7 +677,44 @@ The evidence base for every threshold in this document.
 
 #### Open
 
-**24. Dedup merged two angles serving different guiding questions, removing coverage (Run 23).** `8 → 5 after dedup`, three across-iteration merges:
+**24. RESOLVED (Run 38), IMPLEMENTED (rev. 73) — DELETE DEDUP. The demonstration this entry has been waiting for since rev. 24 arrived, and it points one way.**
+
+Run 38 (`--config cellsurvey`) produced the most aggressive dedup result in the log — **8 angles → 3, with six of eight in a single cluster** — and Live Issue 34's new cluster logging made it legible on its first outing:
+
+```
+cluster {[cluster-biological-coherence], [gating-vs-kmeans-disagreement-audit],
+         [local-canonical-lineage-niche-coherence], [lineage-nearest-neighbour-asymmetry],
+         [within-cluster-lineage-marker-dispersion], [equivocal-gating-band]}
+  -> would keep [equivocal-gating-band]
+```
+
+**Those six span guiding questions 1, 2, 4 and 6** — cluster coherence, gating-vs-clustering, neighbourhood niches, and lineage spatial organisation. They are not duplicates. They share vocabulary because the *domain* compels every angle to name markers, say "GMM threshold", and reference `kmeans_cluster`.
+
+**The counterfactual, which is the decision criterion this entry set out:**
+
+| Angle | Actually realised | Under dedup |
+|---|---|---|
+| `equivocal-gating-band` | realised_null | ✓ kept (the survivor) |
+| `residualized-pair-coexpression` | realised_null | ✓ (outside the cluster) |
+| `within-cluster-dispersion` | **realised_null** — dispersion and silhouette move *opposite* to the hypothesis | ✗ **merged away** |
+| `lineage-nearest-neighbour-asymmetry` | **realised** — the run's **only** confirmation | ✗ **merged away** |
+| `graph-definition-sensitivity` | below cutoff, never run | would have been realised in their place |
+
+**Dedup would have destroyed the run's only confirmed finding plus one of its three disconfirmations**, substituting one untested angle. Two of four realisations lost. This is the "would suppressing these have cost a realisation?" question the entry has been running as a measurement since rev. 29, answered unambiguously on its thirteenth data point.
+
+**The deeper reason, which matters more than the verdict.** Diversity ran at **0.20 / 0.16** on cellsurvey against **0.07–0.12** throughout cbias. The threshold is **0.22**. On cbias the mean pairwise similarity sits far below the merge threshold so almost nothing crosses it; on cellsurvey the mean is close enough that most pairs do. **The 0.22 constant was hand-calibrated on cbias vocabulary and does not transfer.**
+
+That is not a tuning problem — §3's "Known ceiling" already establishes why re-tuning fails, and this is the same lexical-versus-semantic gap amplified by a domain with a genuinely narrow vocabulary. **A per-config threshold is the wrong fix**: it adds one hand-set constant per domain, and the project now has five configs across survey data, project-management exports, spatial single-cell imaging, and a high-content siRNA screen. A single global lexical threshold across that spread is a category error, not a mis-set number.
+
+**Recommendation: delete `_dedup_angles` and its four helpers (~115 lines), the threshold constant, and the measurement-only logging.** §13's rule applies exactly — the original justification (saving judging cost) was removed when D6-fix moved judging first, no replacement was ever established, and the component has now been shown to remove useful output rather than noise. The `[dedup]` log line has been the measurement; with the measurement concluded, the instrument goes too.
+
+**IMPLEMENTED (rev. 73).** Done exactly as recommended: `_dedup_angles`/`_angle_signature`/`_pick_representative` removed from `ideation.py`, `angle_similarity_threshold` removed from `config.py`, the dedup block and `[dedup]` logging removed from `pipeline.py`, and `CLAUDE.md`'s architecture description updated to match. See the rev. 73 banner at the top of this document for the full change list and verification. `_log_iteration_diversity` (the `[diversity]` measurement) was kept — it is a separate, still-live instrument that does not filter anything, and it is what produced this very entry's 0.20/0.16 reading.
+
+**What is *not* being claimed:** near-duplicate angles do occur (Run 35's 0.223 pair looked like a genuine true positive). The claim is that a human skimming a gallery dismisses a near-duplicate in a second, while dedup silently removes angles it cannot distinguish from duplicates — and on cellsurvey that was 6 of 8.
+
+*Original entry follows.*
+
+**24 (original). Dedup merged two angles serving different guiding questions, removing coverage (Run 23).** `8 → 5 after dedup`, three across-iteration merges:
 
 ```
 [stakeholder-role-evaluative-separation] -> [closed-ended-covariance-themes]     (0.242)
@@ -349,7 +816,22 @@ Not urgent; the abort is still correct, it just did not help here. Two options, 
 
 **FIXED (rev. 39), option 2 only.** `_run_one_design`'s repeat-detection branch now computes `remaining = max_compile_attempts - 1 - attempt` before logging: with attempts genuinely left to skip, it logs `aborting the N remaining compile attempt(s)` (unchanged claim, still true); when the repeat lands on the last attempt — the case that actually happened in Run 27 — it logs `it was the last attempt available, so nothing was saved by detecting it` instead, and `aborted_on_repeat` (which drives the `(aborted early - the same error recurred verbatim)` note on the final `not_realisable` feedback) is only set `True` in the real-saving case. No change to when the loop breaks or to `max_compile_attempts` itself — this is wording only, exactly as scoped. Verified offline with a mocked `_run_one_design` run for both cases (repeat with 2 attempts remaining; repeat only on the final attempt of 3) — deleted after passing.
 
-**29. No preflight check that every configured model is reachable.** Run 28's `APIStatusError("Error code: 402 - Insufficient Balance")` was an account state, not a pipeline fault, and the pipeline handled it correctly. But it exposes that nothing verifies the configured models are usable before ~110 calls are committed.
+**29. CLOSED — CONFIRMED LIVE (Run 38).** The first run with `preflight.py` in place opens:
+
+```
+[preflight] checking 3 model(s) and Docker availability...
+  [OK] claude-opus-4-8: reachable
+  [OK] claude-sonnet-5: reachable
+  [OK] deepseek-v4-pro: reachable
+  [OK] docker: daemon reachable
+[preflight] all checks passed
+```
+
+Four calls before any spend. Run 35 discovered the same Docker fact at the *realisation* stage, after ideation, 16 Opus judge calls, four orchestrations, four worker fan-outs and four compiles — roughly the full ~110-call bill for zero verified output. Both halves of the entry (models and Docker) are covered, and the Docker half — argued as the stronger case — is the one that would have saved Run 38's predecessor entirely.
+
+*Original entry follows.*
+
+**29 (original). No preflight check that every configured model is reachable.** Run 28's `APIStatusError("Error code: 402 - Insufficient Balance")` was an account state, not a pipeline fault, and the pipeline handled it correctly. But it exposes that nothing verifies the configured models are usable before ~110 calls are committed.
 
 **Be honest about the scope: a preflight would NOT have caught Run 28.** DeepSeek worked for ideation and for three of four compiles, then ran out mid-run. Credit exhaustion partway through is out of scope for any startup check, and as noted when this was raised, it is obvious from the console anyway.
 
@@ -435,7 +917,22 @@ Deleted after passing, per convention. **Needs a live run to confirm** — the m
 - **Issue 33 (= §15 B5) — FIXED (rev. 56), CONFIRMED (Run 36). Closed.** A dtype gate (`is_object_dtype()`) is invisible to pandas 3.0's native `str` dtype, silently skipping all 21 Likert columns in a generated clustering script; `AVAILABLE_LIBRARIES` now documents the `str`/`object` split and points at `is_string_dtype()`. Run 36 confirmed it live — the Likert item count the affected angle-shape sees went from 1 (Run 34) to ~18.
 - **Live Issue 5 (caching) — MEASURED (rev. 51, Run 33), closed.** Anthropic shows the expected write-then-read cache pattern; DeepSeek's flat nonzero `cache_read` from call 1 is its own internal metric, not the explicit-breakpoint convention, and must not be read as the same number.
 
-**34. The `[dedup]` measurement log is self-inconsistent on chained merges (Run 37).** The trello run produced the first chained merge and the first `within_iteration` merge in the whole measurement, and the output does not survive it:
+**34. FIXED — CONFIRMED LIVE (Run 38), and it earned its keep immediately.** The new cluster format rendered a six-member chain on its first outing:
+
+```
+cluster {[a], [b], [c], [d], [e], [f]} -> would keep [f]
+    [b] -> [a] (similarity=0.255, within_iteration)
+    [c] -> [b] (similarity=0.301, within_iteration)
+    ...
+```
+
+Under the old per-pair format this would have printed five lines whose `would keep` fields all named `[f]` while each line's merge target named someone else — unreadable, and precisely the failure this entry described. **The fix is what made Live Issue 24 resolvable**: the counterfactual there depends on knowing which angles were in the cluster and which single one survived, and only the cluster form supplies that.
+
+**One correction to this entry's original diagnosis, recorded rather than edited away.** It called the old output "self-inconsistent" and the `would keep` field "wrong". It was neither: the survivor was correct and the pairwise similarity was correct. What the isolated per-pair line omitted was the *other cluster members and the later merge events that brought them in* — the output was **incomplete, not incorrect**. That is a §15 F-class miss: a logic bug inferred from an output shape without tracing how a chain actually forms.
+
+*Original entry follows.*
+
+**34 (original). The `[dedup]` measurement log is self-inconsistent on chained merges (Run 37).** The trello run produced the first chained merge and the first `within_iteration` merge in the whole measurement, and the output does not survive it:
 
 ```
 would merge [done-to-billed-leakage] -> [effective-activity-vs-formal-lead-mismatch]
@@ -453,6 +950,72 @@ would merge [reverse-transition-rework-loops] -> [done-to-billed-leakage]
 **Fix:** log the cluster, not the pair — one line per merged cluster listing every member, the single representative, and the pairwise similarities that produced it. That form is also strictly more informative for the Issue 24 decision than the current per-pair output.
 
 **FIXED (rev. 58), exactly the proposed fix.** `_dedup_angles` (`ideation.py`) now groups its existing pairwise merge events by the cluster they built, returning a `merge_stats["clusters"]` list (one entry per cluster with 2+ members: `members` in join order, the resolved `representative`, and the `pairwise` events underneath) alongside the unchanged `"merges"`. `pipeline.py`'s `[dedup]` log loop now prints `cluster {A, B, C} -> would keep [C]` per cluster, with each pairwise line indented underneath it — so a chained merge's pairwise detail now reads as evidence for the cluster-level claim instead of appearing to contradict it. No clustering or survivor-picking logic touched — `_pick_representative`, `_jaccard`, `_angle_signature`, and the within/across counters are all unchanged; this is a reporting fix only. Verified offline with a mocked `_dedup_angles` run reproducing Run 37's exact shape (`effective-activity-vs-formal-lead-mismatch` → `done-to-billed-leakage` → `reverse-transition-rework-loops`, sims 0.250 across-iteration / 0.259 within-iteration): the rendered log now shows one cluster line naming all three members and the correct representative, with both pairwise lines underneath referencing only ids inside that same cluster — plus a regression check that Run 25's plain isolated-pair shape still renders as a single two-member cluster, unchanged in substance. Deleted after passing, per convention. **Needs a live run to confirm** — this can only be exercised by a chained or `within_iteration` merge, which so far has only appeared on the trello config's higher-diversity runs (Run 37), so the next trello run is the natural check.
+
+**35. FIXED (rev. 74), CONFIRMED (Run 39). Gallery findings were written for technical correctness, not for the reader they name (Run 38, user report).** The user read `gallery_20260904_103032.md` (the `cellsurvey` run) and reported struggling to interpret parts of it themselves, and expected a biologist to struggle more. Concrete examples from that gallery: *"marker pairs whose joint positivity is substantially higher or lower than expected from their marginal positivity after controlling for shared lineage marker programmes"*; *"the printed 'empirical p-value (observed ≤ null): 1.0000' is computed on the wrong tail"*; *"robust within-cluster dispersion... mean silhouette width... GMM/valley thresholds... phi effect sizes... FDR correction"*.
+
+**Diagnosis: this is methodology/statistics jargon, not biology jargon.** The actual domain terms (CD8+, CD31+, PD-L1, `kmeans_cluster`) are fine — specific and checkable, which is the point of naming real entities. The friction is entirely in how the *method and its caveats* get described, and it traces to an architectural gap: the gallery concatenates three independently-written LLM outputs, and none of the prompts governing them was ever told who reads the result, even though every angle already names its reader via `question_or_stakeholder_served`:
+
+| Gallery field | Source | Prompt |
+|---|---|---|
+| Hypothesis | ideation | `ANGLE_GENERATION_PROMPT` — human-owned |
+| Finding | realisation validator's `pattern_reasoning` | `REALIZATION_VALIDATOR_PROMPT` — not human-owned |
+| Caveat | soundness judge's `soundness_caveat` | `SOUNDNESS_JUDGE_PROMPT` — human-owned |
+
+**FIXED (rev. 74) — a plain-language layer, not a rewrite.** A new `<plain_finding>` tag added to `REALIZATION_VALIDATOR_PROMPT_SUFFIX` (not human-owned) produces one accessible paragraph per realised angle, written for the angle's own named reader, folding in the independent soundness caveat and explaining any statistical method/error by its consequence rather than its name — while staying precise about which domain entities are involved. Plumbed through `validate_realization` → `_run_one_design` → `generate_and_optimize` → the gallery, where `output.py`'s `_gallery_entry` now shows **"In plain terms:"** first, with the existing Hypothesis/Serves/Finding/Caveat moved under a **"Technical detail:"** label beneath it rather than removed. **No human-owned prompt touched** — `ANGLE_GENERATION_PROMPT` and `SOUNDNESS_JUDGE_PROMPT` are unchanged, so the underlying judges' precision (what the insight/soundness judges actually reason about) is unaffected; this is a new presentation step, not a rewrite of ideation or judging. Rejected alternatives: rewriting the two human-owned prompts directly (risks blurring the precision those judges rely on, and isn't mine to do unilaterally per §2's guardrail); replacing the technical fields outright (throws away detail a technical reader — or a future curation pass into "Already Explored" — still wants).
+
+Verified offline: `ast.parse` and a real cross-module `import` together; a real `.format()` call against the new prompt with every placeholder supplied; a mocked end-to-end test (a synthetic validator response → `extract_xml` → a synthetic angle dict → `_gallery_entry`) confirming the rendered block is structured correctly.
+
+**CONFIRMED (Run 39, `--config cellsurvey`), user-judged.** `gallery_20260904_120057.md`'s three realised angles each open with an "In plain terms" paragraph that does what rev. 74 asked of it — concrete and checkable (*"clusters 1, 3, and 8 line up almost perfectly with Endothelial cells (94-99% purity)"*; *"the biggest cell... has an area of about 18,795 square units, which converts to a radius of only about 77 units"*), and statistical caveats given as plain consequence rather than jargon (*"no statistical test was run to confirm it's not due to chance"*; *"these findings should be read as a plausible, checkable lead... not a proven fact"*). The user's own assessment: "that looks better." One residual rough edge, noted rather than fixed on a single data point: plain-language text still surfaces raw column names (`marker_TRITC_1_TRITC`, `marker_Cy5_1_Cy5`) for the two non-biological channels — precise, per the prompt's own instruction, but still code-shaped rather than prose. Revisit if it recurs.
+
+**The broader point, recorded as its own guardrail (§2) rather than left as one issue's footnote:** this pipeline has no oracle for angle *quality* beyond the human reading the gallery (CLAUDE.md says so explicitly) — which means interpretability isn't a polish pass at the end, it's the thing the whole pipeline is *for*. A technically flawless finding that its named reader can't parse is exactly as useless as one that's wrong. This should inform every future output-facing prompt or rendering decision, not just the one this entry fixes.
+
+**36. FIXED (rev. 75). The `not_realisable` tier's "Why blocked" traceback was truncated before it ever reached the actual exception (user report, immediately after rev. 74).** The user flagged a raw traceback in `gallery_20260904_120057.md` as looking "out of place" — a direct, concrete instance of the guardrail Live Issue 35 had just added: an output-facing field nobody had checked against its reader.
+
+**Root cause: a truncation-direction bug, not a design gap.** `sandbox.py`'s `validate_execution` deliberately keeps the TAIL of the container's output (its own comment already explains why: "Python puts the actual exception last, after the traceback frames") — but two sites downstream in `realization.py` re-truncated that same already-tail-sliced string from the HEAD instead (`exec_feedback[:500]` on the per-attempt console log; `fb[:1000]` building `attempt_summary`), silently discarding exactly what `sandbox.py` had preserved. By the time `output.py`'s gallery renderer took its own `feedback[:400]` head-slice, the actual exception message had already been lost twice over — which is exactly why the reported example showed three stack frames and nothing else: the slice landed squarely in the middle of the call stack, before the traceback ever reaches the line naming what actually went wrong.
+
+**Fixed:** all three slices now take the tail (`[-500:]`, `[-1000:]`, `[-600:]`), and the gallery's version is additionally wrapped in a markdown code fence so a multi-line traceback renders as preformatted text instead of mangled inline prose — which is what actually looked "out of place" to the user, on top of the missing exception. Verified offline: `ast.parse` + cross-module `import`; a synthetic multi-frame traceback, padded well past all three old truncation points with the real exception (a `KeyError`) placed at the very end, run through the exact `attempt_summary`-building and gallery-rendering logic — confirmed the exception now survives to the rendered code block, where the old head-slices would have discarded it before it ever got there.
+
+**Same lesson as Live Issue 35, cheaper to have caught the first time:** a field can be exactly right in isolation (`sandbox.py`'s tail-slice was correct, and came with a comment explaining why) and still fail its reader once something downstream re-slices it without noticing the earlier design intent. The new §2 guardrail exists precisely so the next such field gets checked before a user has to find it.
+
+**37. FIXED (rev. 76). Run 39's three realised angles all revolved around one theme the user already knew the answer to (user report).** All three realised `cellsurvey` angles in `gallery_20260904_120057.md` tested some version of "is the shipped `kmeans_cluster`/`community` grouping biologically meaningful" - a question the user had already told this task's own report the answer to (arbitrary parameters, not validated) back when `configs/cellsurvey_config.py` and `task_report.md` were designed. The angles were legitimate and well-executed, but three-for-three on a question with a known-likely answer is a weak use of a run's realised-angle budget when the report also asks five other guiding questions.
+
+**Diagnosis, ruling out a pipeline bug first:** `_parse_guiding_questions` was re-run offline against the actual report and confirmed all 6 guiding questions parse cleanly and cycle round-robin across ideation calls exactly as designed - the round-robin mechanism itself was not at fault. Re-reading `task_report.md` found the real cause: its "About the Shipped Groupings" section stated *"A central objective of this analysis is proposing alternative, more biologically-grounded ways to define cell populations and spatial niches"* - worded as an overarching mandate, not context for the three guiding questions (1-3) it actually belongs to. This text reaches ideation twice over: once through `ideation_criteria` (shared by every angle-generation call regardless of which of the 6 questions it was assigned), and again through Success Criteria's first bullet (*"Suggested metrics engage critically with `kmeans_cluster`/`community`"*), which feeds `deliverable_rubric` and is checked against **every** realised angle by `validate_realization` - including ones targeting questions 4-6 (niches, co-expression, named-lineage spatial patterns), none of which need the clustering lens at all, and one of which (question 4) explicitly says "Independent of `community`".
+
+**FIXED:** rebalanced both passages. The section is now scoped explicitly to questions 1-3, with an added sentence stating outright that questions 4-6 don't need to reference `kmeans_cluster`/`community` at all; the Success Criteria bullet now only applies where an angle actually engages with the groupings, split from the (unconditional, unchanged) marker-glossary-grounding requirement.
+
+**A near-miss caught during the fix, not shipped.** The rebalanced section's heading briefly read "...Context for **Guiding Questions** 1-3" - which, sitting before the real "## Guiding Questions for Analysis" heading, is itself a heading containing the phrase "guiding question". `_parse_guiding_questions`'s heading match (`_GUIDING_QUESTIONS_HEADING`, first-match, case-insensitive) locked onto it instead, and the "section" between it and the next heading (the actual guiding-questions list) contained no numbered items - collapsing the guiding-question count from 6 to **0** and silently disabling the exact cycling mechanism this fix exists to restore. Caught by re-running the same offline parser check used to diagnose the issue in the first place, immediately after the edit and before any live run - not by inspection. Fixed by renaming the heading to "...Context for Questions 1-3" (the phrase is fine anywhere in body prose, which the regex never touches - only a heading line matches). **Generic fragility worth remembering for any future domain report**: never put the phrase "guiding question" in a heading other than the actual guiding-questions section itself, since the parser takes the first match, not the intended one.
+
+**Needs a live run to confirm** the rebalanced wording actually changes which guiding questions get realised, not just that the mechanics all still work - the fix is a hypothesis about why Run 39 skewed the way it did, informed by re-reading the text but not yet tested against a live ideation call.
+
+**38. FIXED (rev. 77). Run 40's realised angles again concentrated on "does the shipped clustering hold up" - but this time the diagnosis is that the finding is now established, not that ideation is still miscalibrated (user report).** All three of Run 40's top-tier angles concluded some version of "the shipped `kmeans_cluster`/`community` grouping doesn't reliably correspond to real cell types or niches" - the same conclusion Run 39 had already reached. The user's own framing was sharper than "diversify further": *"an interesting finding, but it would be more useful for the pipeline to produce a more appropriate clustering/community definition analysis,"* plus a tentative idea about "filing these results" - which pointed at this project's existing cross-run curation convention (the report's own "Already Explored" section, maintained by hand, per CLAUDE.md and `idr0028_config.py`'s precedent with the study's own published Z-scores).
+
+**First checked whether Live Issue 37's rev. 76 fix had actually failed, since that would change the diagnosis entirely.** It hadn't: Run 39's best non-cluster-critique angle scored insight 0.35 and was never close to the realise cutoff; Run 40's marker-co-expression angle (question 5) scored 0.70 - nearly tying the top cluster-critique angles - and *was* selected for realisation, missing the top tier only because of an unrelated bug (an int64 overflow producing phi-coefficient values outside the mathematically possible [-1,1] range, plus zero PNGs written), which the validator correctly caught rather than let through. Rev. 76's fix is working; Run 40's concentration is closer to ordinary run-to-run variance in what happens to execute cleanly than a resurfacing of the original problem.
+
+**What was still a real gap, independent of that:** nothing in the report asked for a CONSTRUCTIVE alternative to the shipped grouping - questions 1-3 are all "does X hold up" framings, and question 4 (niches) is constructive but scoped to spatial composition, not a general cell-type replacement. And nothing curated the now-twice-confirmed finding forward, so ideation had no signal that this specific question was already answered.
+
+**FIXED:** two additions to `task_report.md`. New **guiding question 7** asks angles to propose and actually deliver a replacement grouping (canonical-gating-based cell-type assignment, marker-informed re-clustering, or a neighbourhood-composition niche map), compared quantitatively against the shipped one - the deliverable is a usable alternative, not another diagnosis. New **"Already Explored - Do Not Repeat"** subsection (matching `idr0028_report`'s own naming and function) states the now-established finding explicitly, and tells ideation that questions 1-3 remain legitimate only for a genuinely new mechanism on this theme, not a restatement under a different statistical method. "About the Shipped Groupings" and the Success Criteria bullet both updated to reference question 7 alongside 1-3.
+
+Verified offline: `_parse_guiding_questions` re-run after each edit in sequence (not just once at the end), confirming 7 questions parse correctly at every step, including immediately after the section heading changed to mention "and 7" - the same discipline Live Issue 37 established, applied proactively this time rather than after a near-miss. **Needs a live run to confirm** question 7 actually gets proposed, scores competitively against the now-familiar critique framing, and gets realised - this is a hypothesis about what the report should ask for, not yet tested against a live ideation call.
+
+**39. FIXED (rev. 78). Two real domain-accuracy gaps in `configs/cellsurvey_config.py`, both flagged directly by the user reading Run 41's generated scripts, neither a pipeline-mechanism bug (user report).** "Quality control is not coming up at all... thresholds are being calculated on histograms of intensity values with no normalisation applied," and "references are made to cells and/or cell boundaries when the only boundaries in the input data are nuclear boundaries derived from stardist."
+
+**Both checked against source before touching anything, per this session's established practice.** (1) `DOMAIN_NOTES` already said marker intensities were "not normalised/log-transformed," but only as a passive aside ("inspect the actual value ranges before assuming... or applying a threshold") - re-checking every realised script across all four runs to date confirmed every one of them fitted a GMM/Otsu/percentile positivity threshold directly on raw per-channel intensity, despite the acquisition channel names showing visibly different exposure/gain settings per channel (e.g. "..._6000-..." vs "..._100-..." in `marker_channel_names.csv`) - the existing wording clearly wasn't steering behaviour. (2) Every "cell"/"per-cell" reference in `DOMAIN_NOTES` and `preprocess_cellsurvey.py` implied a whole-cell measurement region; re-fetched the CellSurvey README directly and confirmed it documents no whole-cell/membrane boundary step anywhere - Stardist segments nuclei only - and confirmed (also checked directly, not assumed) that the README does not document whether intensity is measured strictly within the raw nuclear polygon or some expanded/dilated region, so that specific sub-question is genuinely unverifiable from what's available, not just unresearched.
+
+**FIXED**, both as instructions rather than passive asides. `DOMAIN_NOTES`'s marker_* description now states plainly that a script fitting a threshold on raw intensity is fitting a cutpoint that partly reflects acquisition settings, not purely biology, and must normalise per-marker first (via `AVAILABLE_LIBRARIES`' `sklearn.preprocessing` note, extended in the same pass to name this exact use case) and say so explicitly. A new "SEGMENTATION REGION" note states that every object is a Stardist nuclear segmentation, names which markers (CD3, CD8, CD31, Collagen-I, Vimentin, E-cadherin, and most of the rest of the panel) have a non-nuclear expected localisation and are therefore most exposed to this caveat, and states the nuclear-vs-expanded-region question as an open, checked-and-confirmed-unverifiable fact rather than an assumption either way - the same honesty pattern this file already uses for `area`/`x`/`y` units. "WHAT IS NOT AVAILABLE" corrected from "no cell-boundary polygon is present [in this extraction]" to "no whole-cell boundary exists in this pipeline's output at all, extracted or not" - a fact about the source data, not a scope choice this project made. `preprocess_cellsurvey.py`'s docstring corrected to match (`stardist_boundaries` are per-NUCLEUS, not per-cell).
+
+Verified offline: `ast.parse` + a real cross-module `import` (every core module together, not `cellsurvey_config.py` in isolation); the `{_MARKER_GLOSSARY}` f-string interpolation confirmed intact by printing the full rendered `DOMAIN_NOTES`; `extract_input_metadata` re-run against the real processed data, output unchanged from before the edit (this fix is documentation/instruction only - no column, value, or extraction logic changed). **Needs a live run to confirm** ideation/the orchestrator/compiler actually normalise before thresholding and stop asserting whole-cell boundaries as a missing-but-obtainable data gap now that both are stated as active instructions rather than passive asides - a hypothesis about what `DOMAIN_NOTES` should say, not yet tested against a live call.
+
+**CORRECTED (rev. 79) - the normalisation half of this fix was still too narrow.** The fix above only addressed cross-marker incomparability. The user's direct follow-up named the larger problem: this is a tiled acquisition, stitched from many fields of view across a large tissue section - so within ONE marker, comparing object X's raw intensity to object Y's is *also* unsafe, independent of the cross-marker issue, due to within-tile illumination non-uniformity (vignetting), tile-to-tile exposure/gain drift, stitching/fusion seams, and non-uniform antibody binding/staining/penetration (a wet-lab confound, not just an imaging one). A single global per-marker rescale does nothing for any of this - it corrects a scale/offset, not a position-dependent effect. Re-confirmed no tile/field-of-view identity column exists anywhere in this data (checked directly against the source zarr's per-cell metadata) - true tile-aware correction isn't computable from what's here - but each object's (x, y) centroid supports an approximate mitigation (a local k-nearest-neighbour or spatial-grid baseline, via the already-available `scipy.spatial.cKDTree`), explicitly flagged as NOT equivalent to a true calibrated flat-field correction. See the rev. 79 banner at the top of this document for the full fix and verification.
+
+**EXTENDED (rev. 80) - a third, independent QC dimension: cross-talk and antibody specificity.** The user added non-specific antibody binding and spectral bleed-through between spectrally-adjacent fluorophores. Grounded in the panel's own metadata rather than left general: `marker_channel_names.csv` shows a cyclic protocol (C1-C19 cycle labels; the source filename identifies COMET/Lunaphore), CY3 reused across 10 cycles/markers and Cy5 across 19 - making cycle-to-cycle carryover (incomplete signal removal between cycles) and within-cycle CY3/Cy5 spectral bleed-through concrete risks, not hypothetical ones. New "CROSS-TALK AND SPECIFICITY" DOMAIN_NOTES section states both plus non-specific binding, and closes with a concrete guardrail: trust a marker-combination or spatial-pattern finding over one resting on a single marker's absolute intensity, since the latter is exactly what cross-talk would produce. The two non-biological background channels (sitting between cycles C4 and C5) are noted as a *plausible* carryover reference for nearby markers, explicitly flagged as unverified against the source pipeline's own documentation rather than asserted as fact. See the rev. 80 banner at the top of this document for the full fix and verification.
+
+**By rev. 80 this domain's DOMAIN_NOTES documents three independent reasons no raw intensity value is trustworthy on its own** - cross-marker scale (rev. 78), within-marker spatial/tiling confounds (rev. 79), and cross-talk/specificity (rev. 80) - all three still awaiting the same live-run confirmation.
+
+**VERIFIED AND EXTENDED (rev. 81) - checked against the source code this time, not left as an assumption.** The user asked directly whether `kmeans_cluster` was normalised before clustering. Fetched `cellsurvey/cli.py`/`cellsurvey/utils.py` from the source repo directly: `cluster_data()` does run `StandardScaler().fit_transform()` before `KMeans.fit_predict()` - correcting this domain's implicit framing that the shipped clustering used raw values. But the same read also surfaced a genuine, previously-unknown weakness: ALL 32 channels (including DAPI and both non-biological background channels) went into that clustering completely unfiltered, undiluted by any per-channel weighting or curation - roughly 9% of the feature space contributing noise rather than biological signal. New "KMEANS_CLUSTER PROVENANCE" section states both facts, and flags the sharpest consequence: comparing `kmeans_cluster` (z-scored, all-channel) against a script's own canonical-gating call (typically raw, curated-subset) may not be an apples-to-apples test of clustering quality - some of Live Issues 37/38's already-found disagreement could be this representational mismatch, not only a genuine clustering failure. Flagged as a consideration for guiding question 7, not a retraction of prior findings. See the rev. 81 banner at the top of this document for the full fix and verification.
+
+**Four rounds on this one domain config's DOMAIN_NOTES now** (rev. 78 cross-marker scale, 79 spatial/tiling, 80 cross-talk, 81 clustering provenance) - all still awaiting the same live-run confirmation that the compiler/orchestrator actually pick any of this up.
+
+**CONFIRMED (rev. 83, Run 42) - three of four sub-fixes verified directly in generated code, not just gallery prose.** Read all four Run 42 scripts directly. Rev. 78 (per-marker normalisation, `log1p`/robust-scale before thresholding; correct nuclear-not-cell language) confirmed in all four. Rev. 79 (`cKDTree` local-baseline mitigation; "no tile/FOV identity" named as a data gap) confirmed in all four. Rev. 80 (cross-talk/non-specific-binding/bleed-through named explicitly, including unprompted in the top-ranked angle's own `plain_finding` caveat) confirmed in all four. Rev. 81 (the `kmeans_cluster` all-channel/z-scored-vs-curated representational-mismatch point) did NOT surface even in the one script best positioned to use it (`gating-kmeans-disagreement-spatial-patterning.py`, which directly compares gating against `kmeans_cluster`) - left open rather than closed, since three-of-four confirmed is not the same claim as four-of-four. See the rev. 83 banner at the top of this document for the full per-script evidence trail. Also noted: Live Issue 38's question-7 fix is generating relevant unrealised candidates (insight 0.35, below the realise cutoff) but none of Run 42's four realised angles serves question 7 yet - a ranking-competition observation, not a defect in the fix itself.
 
 
 ### Known ceiling: dedup is lexical
@@ -652,6 +1215,22 @@ Behind that is the identity question this fork has been deferring. Two honest op
 - **Worth noting as a signal in its own right:** diversity ran at **0.17 / 0.19**, roughly double the 0.07–0.12 cbias band, and dedup produced the first chained and first `within_iteration` merges ever seen. Plausibly because the trello report carries no anti-target list — nothing is being excluded, so angles cluster. That is a hypothesis, not a finding.
 
 **The decision below therefore stands but weakens.** Option (b) is no longer purely hypothetical: one of the two non-CBIAS configs now has a working run. Two or three more trello runs would settle it either way, and are cheap.
+
+**REVISED AGAIN (rev. 72, Run 38): with five configs and three demonstrated domains, the template reading is now the better-supported one.** Rev. 57 recorded trello as a single data point. The position has moved substantially since:
+
+| Config | Domain | Status |
+|---|---|---|
+| `cbias` | Symposium survey/abstract/programme data | 34 runs |
+| `trello` | Project-management board export (JSON + CSV) | Run 37, clean |
+| `cellsurvey` | Spatial single-cell imaging — 362,736 cells, 32 marker channels | **Run 38, 4/4 first-attempt compiles** |
+| `idr0028` | High-content siRNA screen — 1,536 wells, ~540k cells per plate file | Configured, not yet run |
+| `bioimage` | — | Untested |
+
+**What Run 38 adds beyond Run 37.** cellsurvey is a materially harder domain than trello: two orders of magnitude more rows, 32 continuous channels rather than categorical fields, and a task framed as *interrogating another pipeline's output* rather than analysing raw data. Every realisation compiled and executed on the first attempt, the judges produced domain-appropriate caveats (single-sample, unvalidated GMM thresholds, no ground-truth cell types), and one of them caught a subtle statistical error (E4). None of that is CBIAS-shaped.
+
+**The honest qualification, unchanged from rev. 57.** Each config required real per-domain work — `cellsurvey_config.py` is 263 lines, `idr0028_config.py` 237, `trello_config.py` 269. This is a template that works *after* configuration, which is what a template should be, but it is not zero-effort and should not be described as such anywhere user-facing.
+
+**And one thing the expansion has already cost, which strengthens the case for acting on Live Issue 24:** the dedup threshold was calibrated on cbias vocabulary and does not survive contact with a fourth domain. Any other hand-set constant in the pipeline is now suspect for the same reason, and should be checked against a non-cbias config before being trusted.
 
 - **(a) It is a CBIAS research instrument.** Make `cbias` the default config, delete or clearly mark `configs/bioimage_config.py` and `configs/trello_config.py` as untested examples, and amend §2's "keep it a template" guardrail to say what is actually being kept — a *simple, single-module, no-framework* pipeline, which is the property that has genuinely held.
 - **(b) It is still a template.** Then the bioimage and trello paths must actually run, which means shipping sample inputs for at least one of them and confirming the diverger's ideation/judging stages produce something sensible on a domain that is not a four-year survey dataset. Note that no such run has ever been done: **every one of the twenty runs in §3 is `cbias`.**
@@ -1075,7 +1654,12 @@ C1 is the class the pipeline defends against well and by design; C2 is the gap �
 |---|---|---|---|
 | E1 | **`delivered_score` is anti-correlated with worth.** Scored 1.00 for a noisy disconfirmation and 0.71 for the run's best result. | 5 runs (12, 16, 17, 19, 22) | Omitted from the gallery (D7); never gated on |
 | E2 | **`req_score` carried no information.** An LLM rubric judge over a real oracle's output. | D1–D5 | Deleted |
+| E4 | **A statistically valid computation answering the wrong question (Run 38).** `lineage-nearest-neighbour-asymmetry` printed `empirical p-value (observed <= null): 1.0000` from `np.sum(perm_medians <= obs_median)`. Observed median 142.25 against a null cluster at ~58–62, so every permutation lies below the observation and p = 1.0 — arithmetically correct, and the **wrong tail** for an exclusion hypothesis, which needs `P(perm >= obs)` ≈ 0. | 38 | Judge caught it and still ranked the angle `realised` — the visual evidence stands, the test does not. Read from the console alone the number says "not significant", the exact opposite of the finding |
 | E3 | **Lexical dedup conflates method with topic.** 6 false positives across Runs 23–26, all in the 0.22–0.36 band, all sharing topic vocabulary while differing in method. The highest-similarity merge in the whole log (0.360) is a false positive. | 23–26 | Reduced to measurement-only (Issue 24); fix, if any, must be semantic |
+
+**E4 is a new shape and worth separating from A3/A4 and Run 37's index error.** Those were code that computed the wrong thing. This is code that computes the *right* thing and attaches it to the *wrong claim* — the test is valid, correctly implemented against its own label, and answers a question nobody asked. **No deterministic check can catch this class**: the script runs, exits 0, prints a well-formed p-value with a truthful label. It is caught only by something that holds the hypothesis and the statistic in mind at once, which in this pipeline is the realisation judge and nothing else.
+
+Note the judge's handling was also correct in a way worth recording: it flagged the wrong-tail error *and still ranked the angle `realised`*, on the grounds that the histogram and hexbin map legitimately support the claim while the p-value does not. Downgrading the whole angle would have discarded a real finding over a reporting fault; ignoring it would have let a "not significant" number stand against a significant result. Grading rather than gating, exactly as §7 requires.
 
 **The pattern across E:** every model-produced *number* in this project has needed downgrading — from gate, to rank, to display, to nothing. The model-produced *prose* (`pattern_reasoning`, soundness caveats) has held up far better, including catching A3. **Trust the judges' reasoning; distrust their scores.**
 
@@ -1111,6 +1695,73 @@ Seven observations, each supported by at least two entries above.
 7. **Telling the model to "inspect the data first" is not enough on its own — and A5 is the proof, not a hypothesis.** `DOMAIN_NOTES` has instructed exactly this ("INSPECT A COLUMN'S ACTUAL UNIQUE VALUES before deciding it needs a text-to-ordinal mapping") since the A2/Issue 25 fix (rev. 32) — a general rule, not tied to one column, live for many runs before Run 29. A5 happened anyway, on a different column, in the identical shape: a hand-written value map built from what a Likert scale is *expected* to contain, not from what `.unique()` on the real column would have returned. The instruction asks the model to adopt a habit of mind at code-generation time, when there is no dataframe in front of it to actually inspect — it is writing code that will run against real values later, and nothing checks whether the code it wrote actually earns the "inspected first" claim. Enumerating the exact vocabulary in `DOMAIN_NOTES` (rev. 43) fixes *this* instance but is a hand-maintained description that goes stale the moment a new column, or a new year's export, adds a value nobody re-verified — the identical maintenance burden A1's structural fix was chosen specifically to avoid. **The structural alternative, not yet implemented:** extend the existing no-silent-failure convention (Issue 11's whole-script fail-fast, Issue 22's per-metric version) to value-mapping code specifically — require any script that maps free-text values to an ordinal/category scale to assert its map covers every value the column actually contains, raising and naming whichever ones don't rather than silently dropping the rows that fail to match. That converts "figure out the vocabulary" from a request the model must remember to honour into a property Docker's exit code enforces on every run, self-correcting against whatever the data actually is rather than whatever `DOMAIN_NOTES` last said it was — observation 3 above, applied to the model's own code shape instead of to the input data. Worth a dedicated review pass (a `WORKER_PROMPT_SUFFIX`/`COMPILER_PROMPT_SUFFIX` rule change, human-owned-prompt-adjacent even though those suffixes aren't formally in that guardrail), not folded into rev. 43's fix.
 
 **Scope note.** This section is about model limitations, not about what the CBIAS data says. Conclusions about the symposium belong in the report's Already Explored section, not here.
+
+### 15.8 CellSurvey domain onboarding — eight corrected assumptions, seven of them user-caught
+
+15.1-15.6's taxonomy was built entirely from `cbias` runs. This is the first retrospective drawn from
+a second domain, and it reads differently - every item below is a config-authoring mistake caught
+before or shortly after a live run, not a mid-run pipeline failure. User-requested (rev. 82): "document
+all the incorrect assumptions and oversights you've made so far on the CellSurvey data." Eight items,
+in the order found, each cross-referenced to its full write-up rather than repeated here:
+
+1. **Passive normalisation caveat, ignored in practice (user-caught).** Original `DOMAIN_NOTES` said
+   intensities were "not normalised... inspect before assuming a scale" - phrased as advice, not
+   instruction. Every realised script across four runs fitted a positivity threshold on raw intensity
+   anyway; the wording simply wasn't strong enough to change behaviour. Fixed as an active instruction,
+   Live Issue 39/rev. 78.
+2. **"Cell" language asserted where only "nucleus" was true (user-caught).** `area` was correctly
+   labelled "segmented nucleus area" from the first draft, but every surrounding reference
+   ("cells.csv", "per-cell", "cell-boundary") implied a whole-cell measurement region that does not
+   exist anywhere in this pipeline's output - Stardist segments nuclei only. The inconsistency sat
+   unnoticed within the same file. Fixed rev. 78.
+3. **An unverified claim stated as fact (self-corrected, only once forced to re-examine the passage).**
+   The original marker_* description asserted intensities were "already background/DAPI-independent" -
+   a claim never actually checked against anything, dropped once the wording was revisited for a
+   different reason (rev. 78's normalisation fix).
+4. **Cross-marker normalisation is not the whole normalisation problem (user-caught).** Rev. 78 fixed
+   comparability ACROSS markers and stopped there; it took the user pointing out that this is a tiled
+   acquisition of a large tissue section - illumination non-uniformity, tile-to-tile drift, stitching
+   seams, non-uniform staining - to surface that comparisons WITHIN one marker, across objects, are
+   independently unsafe. Fixed rev. 79 (Live Issue 39).
+5. **Cross-talk and antibody specificity not considered at all, despite the evidence already being on
+   hand (user-caught).** `marker_channel_names.csv` - extracted in this project's very first
+   preprocessing pass - already showed a cyclic C1-C19 protocol with the CY3/Cy5 fluorophores each
+   reused across 10-19 different cycles. That structure was sitting in a file this project had already
+   written before any of these caveats were drafted, and its QC implication (cycle-to-cycle carryover,
+   within-cycle spectral bleed-through) was never drawn out until the user named the general concern.
+   Fixed rev. 80.
+6. **`kmeans_cluster`'s actual computation was never checked against source, only inferred (user-
+   directed).** `DOMAIN_NOTES` called it "one arbitrary parameterisation" without ever reading
+   `cellsurvey/utils.py` to see what was actually done - a `WebFetch` of the README alone was treated
+   as sufficient. Reading the actual `cluster_data()` function, only once directly told to, corrected a
+   wrong implicit assumption (no normalisation was applied - `StandardScaler` was) and surfaced a real,
+   previously-unknown weakness in the same read (all 32 channels, including DAPI and two non-biological
+   channels, used unfiltered). Fixed rev. 81.
+7. **A report-authoring choice skewed which guiding questions got realised (user-caught across two
+   runs).** `task_report.md`'s "About the Shipped Groupings" section was worded as "a central objective
+   of this analysis," positioned before the six numbered guiding questions and reinforced by a
+   universal Success Criteria bullet - together pulling ideation and the realisation rubric toward the
+   clustering-critique theme regardless of which of the six questions a given call was actually steered
+   at. Not caught until two separate runs' top-3 realised angles all landed on the same theme. Fixed
+   Live Issues 37/38, rev. 76-77.
+8. **A near-miss while fixing #7, self-caught before a live run.** The first rewrite of that section's
+   heading included the phrase "Guiding Questions," colliding with `_parse_guiding_questions`'s
+   first-match heading regex and silently zeroing the parsed count from 6 to 0. Caught by re-running
+   the same offline parser check used to diagnose the original issue, not by inspection - the one item
+   on this list found before it reached a live run. Live Issue 37.
+
+**The honest count: seven of eight were caught by the user, not by this project's own verification
+habits, and #6 was corrected only once directly told to check source rather than infer from
+documentation.** The one item caught unprompted (#8) was caught by a MECHANICAL check (re-running a
+parser), not by re-reading the prose - the same lesson §15.7 draws from the cbias retrospective: a
+script that checks is more reliable than a re-read that doesn't. Every fix above was still verified
+offline once made (syntax, import, a real run against the real data) - that habit held throughout - but
+verifying a fix after the fact is a different thing from noticing the problem in the first place, and
+on this domain that noticing was almost entirely the user's, not this project's own.
+
+**Scope note.** Like §15.7, this is about where this project's own domain-config-authoring process got
+things wrong, not a conclusion about the CellSurvey tissue's actual biology - none of the eight items
+above changed any data, only how it is described to the pipeline's later stages.
 
 ---
 

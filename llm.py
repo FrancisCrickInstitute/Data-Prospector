@@ -6,7 +6,8 @@ semaphore shared by every caller in the pipeline.
 import asyncio
 import base64
 import os
-from anthropic import AsyncAnthropic
+import httpx
+from anthropic import AsyncAnthropic, APIConnectionError
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -46,6 +47,48 @@ def _client_for_model(model: str) -> AsyncAnthropic:
             )
         return deepseek_client
     return anthropic_client
+
+
+# Transport-level failures only (timeouts, dropped/reset connections) - never a model/content
+# problem, so retrying the identical request is the right response, unlike the token-budget
+# retry below. anthropic.APIConnectionError covers APITimeoutError (the SDK's usual wrapping);
+# the two httpx classes are a fallback in case a lower-level exception escapes unwrapped from
+# inside the streaming context manager - observed live (Run, 2026-09-06, trello): a bare
+# ReadTimeout('') surfaced at the compile stage, not an APITimeoutError.
+_TRANSPORT_ERRORS = (APIConnectionError, httpx.TimeoutException, httpx.TransportError)
+
+
+async def _stream_with_retry(client: AsyncAnthropic, *, max_attempts: int = 3, base_delay: float = 2.0,
+                              **stream_kwargs):
+    """Retry client.messages.stream(...) on transport failures only - distinct from llm_call's own
+    max_tokens-doubling retry loop, which handles content-shaped problems (truncated/empty
+    responses), not network ones.
+
+    Why this exists: _run_one_design (realization.py) wraps its ENTIRE body - orchestrator,
+    workers, compile loop, validator - in one try/except so it can report partial progress on any
+    failure. That means an uncaught transport exception from a single llm_call inside the compile
+    loop unwinds straight past max_compile_attempts (which only retries content/logic failures fed
+    back as error_feedback) to that outer handler, killing the whole angle on the first network
+    blip - the compile loop never got a chance to run its 3 attempts. Observed live: all 4 of a
+    run's top-k angles failed identically at compile with ReadTimeout('') - they realize
+    concurrently via asyncio.gather, so a slow window on one provider likely hit all four at once.
+    Retrying here, once, at the actual point of failure, protects every stage (ideation, judging,
+    orchestrator, worker, compiler, validator) through the one chokepoint they all share, rather
+    than teaching each caller its own retry policy.
+    """
+    last_exc = None
+    for attempt in range(max_attempts):
+        try:
+            async with client.messages.stream(**stream_kwargs) as stream:
+                return await stream.get_final_message()
+        except _TRANSPORT_ERRORS as exc:
+            last_exc = exc
+            if attempt < max_attempts - 1:
+                delay = base_delay * (2 ** attempt)
+                print(f"  [transport-retry] {stream_kwargs.get('model')}: {exc!r} - "
+                      f"retrying in {delay:.0f}s (attempt {attempt + 2}/{max_attempts})")
+                await asyncio.sleep(delay)
+    raise last_exc
 
 
 def _image_blocks(images: list[tuple[str, bytes]]) -> list[dict]:
@@ -141,13 +184,9 @@ async def llm_call(prompt: str, system_prompt: str = None, model: str = None, ca
     # nothing below this block - or any caller of llm_call - needs to change.
     async with LLM_SEMAPHORE:
         for attempt, tokens in enumerate((max_tokens, max_tokens * 2)):
-            async with client.messages.stream(
-                model=model,
-                max_tokens=tokens,
-                system=system_content,
-                messages=messages,
-            ) as stream:
-                response = await stream.get_final_message()
+            response = await _stream_with_retry(
+                client, model=model, max_tokens=tokens, system=system_content, messages=messages,
+            )
             text = "".join(block.text for block in response.content if block.type == "text")
             truncated = response.stop_reason == "max_tokens"
             if text.strip() and not (reject_truncated and truncated):

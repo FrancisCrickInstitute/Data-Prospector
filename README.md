@@ -14,8 +14,8 @@ tested and found unsupported, not swept away - because knowing what *isn't* true
 useful as knowing what is.
 
 *(One naming note up front: this tool is **Data Prospector**, but it was formerly called
-**Diverger** - the design log, the repository name, and the code's internal terminology still use
-that name, so don't be surprised to see both.)*
+**Diverger** - the design log and the code's internal terminology still use that name, so don't be
+surprised to see both.)*
 
 No single step here needs you to write or read Python - running an analysis is copy-pasting one
 command into a terminal. Understanding the *design* of the pipeline (further down this file) does
@@ -34,7 +34,26 @@ you, doesn't.
 >
 >This tool doesn't discover truth on its own. It's only ever as good as two things you provide: how clearly your report states what you actually want to know, and how clean and well-organised your data is. A vague report paired with messy, disorganised, or inconsistent data is unlikely to produce anything useful - not because the tool failed, but because there wasn't enough real signal in the input for it to work with. The clearer and more specific your question, and the more consistent your data, the better a shot it has.
 >
->It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). Every one of these is recorded, in detail, in [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
+>It's also a genuinely new, actively-developed research tool, not a finished, hardened product. Building it has surfaced a long list of real bugs and limitations along the way, and the large majority of them trace back to the same root cause: an assumption - made by the AI, not by you - about the input data or the report that turned out to be wrong (a response value the report never mentioned, a column that didn't mean what it looked like it meant, a software library that had quietly changed its behaviour). The generated code will also sometimes disregard instructions outright, no matter how clearly they're stated - it can invent its own plausible way of finding your data rather than using the layout it was told about, and its automatic repair step can loop back onto the same wrong approach several times rather than converge. Every one of these is recorded, in detail, in [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md), and fixing them has made the pipeline noticeably more reliable over time - but assume more are still out there on data and questions it hasn't seen before. **Always read the generated code and treat every finding, confirmed or not, as a lead to check yourself - not a conclusion to take on trust.**
+
+## A few practical notes
+
+- Generated code can only use the software libraries each example explicitly allows - see
+  `AVAILABLE_LIBRARIES` near the top of the relevant `*_config.py` file if you're curious exactly
+  what's available.
+- The pipeline itself runs on Python 3.14 (set up for you by pixi), but the AI-generated code runs
+  inside Docker images built on Python 3.13 - so the scripts it writes target 3.13, not your host
+  Python.
+- By default, the pipeline checks that Docker and the AI services it needs are actually reachable
+  *before* doing any real work, and stops with a clear message if something's wrong - rather than
+  running for several minutes and discovering the problem only at the end. If you deliberately skip
+  that check (`--skip-preflight`) and Docker turns out to be unavailable partway through, ideas are
+  still generated and scored as normal, but nothing gets built or tested as real code - every idea
+  that would have been tested is reported honestly as "couldn't be built," never silently marked as
+  a pass.
+- There's no automated check for whether an idea is a *good* one - that's deliberate. The only
+  automatic check is whether generated code actually runs correctly; judging whether a finding is
+  worth pursuing is left to you, the reader.
 
 ## Design influences
 
@@ -54,23 +73,14 @@ grew out of an earlier "converger" design that worked the opposite way.
    end-to-end automation of AI research *(known informally as "The AI Scientist")*. *Nature*, *651*,
    914–919. https://doi.org/10.1038/s41586-026-10265-5
 
-## Why "diverge" instead of "converge"?
-
-Most automated-analysis tools work like a single very persistent analyst: try something, look at
-the result, refine it, try again, and hand you one final, polished script. That process is good at
-producing something that *works* - but it tends to settle on the same conventional, unsurprising
-analysis a competent analyst would reach for first, because "keep refining the same idea" is
-exactly the process that rewards convention.
-
-Data Prospector does the opposite. It asks many independent "reasoners" to each propose a *different*
-idea about your data - deliberately never letting them see or build on each other's proposals mid-thought
-- then has two independent reviewers score every idea for how surprising it is and how well the
-data actually seems to support it, and only *then* picks the strongest handful to actually build
-and test. The result isn't one script - it's a spread of leads, ranked and explained, for you to
-read and judge for yourself. See [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) §1 for the fuller
-rationale, including the earlier "converger" design this project grew out of.
-
 ## How it works
+
+Most automated-analysis tools work like a single persistent analyst: try something, refine it,
+and hand you one final, polished script - which tends to settle on the conventional, unsurprising
+idea a competent analyst would reach for first. Data Prospector does the opposite: it fans out many
+independent ideas, scores each for how surprising and how well-supported it is, and only builds the
+strongest handful. (The full rationale, including the earlier "converger" design this grew out of,
+is in `docs/DEVELOPMENT_LOG.md` §1.) The steps:
 
 1. **Your inputs.** A short written report describing your research question (what you want to
    find out, and anything you already know or want to rule out), plus your actual dataset - CSVs,
@@ -148,9 +158,12 @@ this project uses (a one-off step, and again any time the project's `Dockerfile`
 docker build --target cbias-analysis -t cbias-analysis:latest .
 ```
 
-That command builds the image used by the `cbias` and `trello` examples. The `bioimage` example
-needs a different image, built with `docker build -t bia-analysis:latest .` - each example's
-`*_config.py` file names the image it expects, so run the matching build.
+That command builds the image used by the `cellprofiler` and `cellsurvey` examples (the target name
+is a legacy from an earlier example no longer in this public repo - the image itself is just a
+plain numpy/pandas/matplotlib/scipy/scikit-learn/nltk environment with nothing domain-specific
+baked in). The `bioimage` example needs a different image, built with
+`docker build -t bia-analysis:latest .` - each example's `*_config.py` file names the image it
+expects, so run the matching build.
 
 **3. An Anthropic API key.** This is what lets the pipeline talk to Claude. Get one at
 [console.anthropic.com](https://console.anthropic.com), then create a plain text file named
@@ -161,36 +174,47 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 (this file is already excluded from version control, so your key won't accidentally get shared).
-Both bundled, ready-to-run examples (`cbias` and `trello`) additionally route some of their calls
-to DeepSeek for cost reasons (get a key at [platform.deepseek.com](https://platform.deepseek.com))
-- without it, those two configs fail as soon as they reach a DeepSeek-routed call. Add two more
-lines to the same `.env` file:
+The `cellprofiler` and `cellsurvey` examples additionally route some of their calls to DeepSeek for
+cost reasons (get a key at [platform.deepseek.com](https://platform.deepseek.com)) - without it,
+those two configs fail as soon as they reach a DeepSeek-routed call. Add two more lines to the same
+`.env` file:
 
 ```
 DEEPSEEK_API_KEY=...
 DEEPSEEK_BASE_URL=https://api.deepseek.com/anthropic
 ```
 
-> **A note on cost.** Every run makes real calls to Claude (and, for the bundled example,
-> DeepSeek) - typically several dozen to a little over a hundred, depending on the settings below.
+> **A note on cost.** Every run makes real calls to Claude (and, for configs routed to DeepSeek) -
+> typically several dozen to a little over a hundred, depending on the settings below.
 > That has a genuine, if modest, cost billed to whichever account the API key belongs to. If
 > you're just getting a feel for the tool, consider starting with a smaller `--angles-per-iteration`
 > (see Flags below) before running it at full scale.
 
 ## Running your first analysis
 
-A worked example - a real academic symposium's registration data, feedback surveys, and
-programme - already ships with this repository, so this runs immediately with no setup beyond the
-above:
+This public repository doesn't ship a ready-to-run sample dataset. It used to - two example domains
+(`cbias`, a real academic symposium's registration/feedback/programme data; `trello`, a Trello board
+export) shipped their own sample data and ran with no setup beyond the above - but both have been
+removed from this public repository: even anonymised, both were real organisational data that
+someone at the organisation could plausibly recognise if they came across the public repo. The
+design/tuning history built on that data is unaffected and stays fully documented in
+`docs/DEVELOPMENT_LOG.md` - only the data and config files themselves were pulled.
+
+The most complete example still here is `cellsurvey`, though it needs its data extracted first (a
+one-off step, and only possible if you have access to the source data):
 
 ```bash
-pixi run python app.py --config cbias
+pixi run python scripts/preprocess_cellsurvey.py
+pixi run python app.py --config cellsurvey
 ```
 
-This takes a while (the pipeline is doing dozens of AI calls and running several pieces of
-generated code) - expect somewhere from several minutes to a while longer, depending on the
-settings. When it finishes, it prints exactly where everything was written; the report itself
-lands at `outputs/gallery_<timestamp>.md`.
+Otherwise, point `--report`/`--data-dir` at your own report and dataset instead (see "Using this on
+your own data" below).
+
+Either way, this takes a while (the pipeline is doing dozens of AI calls and running several pieces
+of generated code) - expect somewhere from several minutes to a while longer, depending on the
+settings. When it finishes, it prints exactly where everything was written; the report itself lands
+at `outputs/gallery_<timestamp>.md`.
 
 ### Flags
 
@@ -198,8 +222,13 @@ You won't need most of these on a first run - they're here for once you're comfo
 more or fewer ideas explored.
 
 ```
---config {bioimage,trello,cbias}   Which example/domain to run (default: cbias). cbias and trello
-                                    both ship sample data and a ready-to-use setup; bioimage is a template only
+--config {cellprofiler,cellsurvey,bioimage,trello,cbias}   Which example/domain to run
+                                    (default: cellsurvey). cellprofiler and cellsurvey need their
+                                    data prepared first (see their `scripts/preprocess_*.py`);
+                                    bioimage is a template only; `trello`/`cbias` are valid values
+                                    but their config files and sample data live only in local,
+                                    non-public checkouts of this project (see below), not in this
+                                    repository
 --report PATH                      Your own report file, if not using the bundled example
 --data-dir PATH                    Your own data folder, if not using the bundled example
 --output-dir PATH                  Where to write the report (default: ./outputs)
@@ -219,11 +248,10 @@ plan around it.
 
 ## Using this on your own data
 
-This currently ships with one fully worked example (CBIAS, above) and one further domain
-(`trello`) that has run successfully once but is still early days - see the table below. Pointing
-this at a genuinely new dataset and question is possible, but it's a task for whoever on your team
-is comfortable editing Python and reading a bit of existing example code, not a config file you
-fill in - expect to sit down with a collaborator for this part if that's not you.
+This repository ships three domain configs at varying stages of maturity - see the table below.
+Pointing this at a genuinely new dataset and question is possible, but it's a task for whoever on
+your team is comfortable editing Python and reading a bit of existing example code, not a config
+file you fill in - expect to sit down with a collaborator for this part if that's not you.
 
 <details>
 <summary><strong>What "adapting it" actually involves</strong> (click to expand)</summary>
@@ -239,38 +267,22 @@ domain does. Concretely, that file needs to:
   guessing
 - Provide a small function that scans the actual data folder and summarises what's really there
 
-`configs/cbias_config.py` is a complete, working example to copy from. The full technical checklist is in
+`configs/cellsurvey_config.py` is a complete, working example to copy from. The full technical checklist is in
 [`CLAUDE.md`](CLAUDE.md) under "Adding a new domain."
 
 | Example              | Status                                                                                                                                                                                                                                   |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `configs/cbias_config.py`    | The proven one. Every tuned setting in this project's design log is based on this example. Sample data ships in this repo, ready to run out of the box.                                                                                  |
-| `configs/trello_config.py`   | Has completed one full, successful run on a different kind of dataset (a Trello project-management board export) - real evidence the pipeline generalises, but still just one run's worth of confidence. Sample data ships in this repo. |
+| `configs/cellsurvey_config.py` | The most complete example in this public repo - a single-tissue-section 32-plex multiplexed-immunofluorescence sample (CellSurvey output), with several completed runs and follow-up work behind it. Needs its data extracted from a source zarr by `scripts/preprocess_cellsurvey.py` first. |
+| `configs/cellprofiler_config.py`  | Downstream analysis of a CellProfiler high-content screen (the public IDR idr0028 siRNA screen). Configured, not yet run. Needs its data prepared by `scripts/preprocess_idr0028.py` first (the raw download is ~2.4 GB). |
 | `configs/bioimage_config.py` | A template only - nobody has actually pointed it at real data yet. Pass `--config bioimage` only if you're supplying your own report and data.                                                                                           |
 
+Two further configs, `cbias` and `trello`, exist only in local, non-public checkouts of this
+project. Both had real, working sample data and completed runs (the pipeline's whole tuning history
+in `docs/DEVELOPMENT_LOG.md` is built on `cbias`), but that data - even anonymised - was real
+organisational data (a real academic symposium's registration/feedback/programme records; a real
+Trello board export), so both were removed from this public repository as a precaution.
+
 </details>
-
-## A few practical notes
-
-- Generated code can only use the software libraries each example explicitly allows - see
-  `AVAILABLE_LIBRARIES` near the top of the relevant `*_config.py` file if you're curious exactly
-  what's available for the bundled CBIAS example.
-- The pipeline itself runs on Python 3.14 (set up for you by pixi), but the AI-generated code runs
-  inside Docker images built on Python 3.13 - so the scripts it writes target 3.13, not your host
-  Python.
-- By default, the pipeline checks that Docker and the AI services it needs are actually reachable
-  *before* doing any real work, and stops with a clear message if something's wrong - rather than
-  running for several minutes and discovering the problem only at the end. If you deliberately skip
-  that check (`--skip-preflight`) and Docker turns out to be unavailable partway through, ideas are
-  still generated and scored as normal, but nothing gets built or tested as real code - every idea
-  that would have been tested is reported honestly as "couldn't be built," never silently marked as
-  a pass.
-- There's no automated check for whether an idea is a *good* one - that's deliberate. The only
-  automatic check is whether generated code actually runs correctly; judging whether a finding is
-  worth pursuing is left to you, the reader.
-- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) is this project's running design and decision log - every
-  tuning choice and known limitation is written up there, in detail, if you want to understand *why*
-  something works the way it does.
 
 ## License
 

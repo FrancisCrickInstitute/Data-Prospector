@@ -4,11 +4,19 @@ available BEFORE a run commits its ~25-110 LLM calls to it.
 Deliberately does NOT catch Run 28's actual failure (DeepSeek running out of credit mid-run) -
 credit exhaustion partway through is out of scope for any startup check, and is obvious from the
 console anyway when it happens (docs/DEVELOPMENT_LOG.md's Live Issue 29 entry is explicit about this).
-What this catches is a bad key, a stale model string, an empty account, or Docker not running -
-all knowable in three-to-five trivial calls, before the real spend starts.
+What this catches is a bad key, a stale model string, an empty account, Docker not running, or a
+bad --report/--data-dir - all knowable instantly and locally, before the real spend starts.
+
+The report/data-dir checks exist because both failure modes were previously either late or silent:
+a bad --report currently isn't caught until main()'s plain open()/read() call, which runs AFTER
+preflight's model/Docker probes have already spent their (small, but nonzero) cost; a bad --data-dir
+is worse - confirmed against cbias_config.py's extract_input_metadata, Path.glob against a
+nonexistent directory doesn't raise, it silently yields nothing, so the run would sail through every
+LLM call producing a gallery built from no real data instead of failing anywhere at all.
 """
 
 import asyncio
+from pathlib import Path
 
 import anthropic
 
@@ -66,23 +74,64 @@ async def _probe_model(model: str) -> tuple[str, bool, str]:
         return model, False, f"network unreachable: {e}"
 
 
-async def run_preflight(config: PipelineConfig) -> bool:
-    """Probe every distinct model string this config uses, plus Docker availability. Always
-    prints a per-item report; returns True iff every check passed.
+def _check_report_path(report_path: str) -> tuple[bool, str]:
+    """report_path must exist and be a file - main()'s first act is a plain open()/read() with no
+    error handling of its own, so this is the only thing standing between a typo'd --report and a
+    raw traceback after the model/Docker probes below have already run."""
+    p = Path(report_path)
+    if not p.is_file():
+        return False, f"not found: {p}"
+    return True, f"found ({p})"
+
+
+def _check_data_dir(data_dir: str) -> tuple[bool, str]:
+    """data_dir must exist and contain at least one entry. Deliberately just an existence/non-empty
+    check, not a domain-specific shape check (that's what each config's own extract_input_metadata
+    does at ideation time) - this only exists to catch the case that check can't: a directory that
+    isn't there at all, which every domain config's real-data scan (confirmed against
+    cbias_config.py) silently tolerates rather than raising on."""
+    p = Path(data_dir)
+    if not p.is_dir():
+        return False, f"not found: {p}"
+    if not any(p.iterdir()):
+        return False, f"exists but is empty: {p}"
+    return True, f"found and non-empty ({p})"
+
+
+async def run_preflight(config: PipelineConfig, report_path: str, data_dir: str) -> bool:
+    """Probe every distinct model string this config uses, plus Docker availability and the
+    --report/--data-dir paths. Always prints a per-item report; returns True iff every check passed.
+
+    Path checks run first and short-circuit the rest on failure - they're free and local, so a bad
+    --report/--data-dir is reported immediately rather than making someone wait on network probes
+    (small cost each, but nonzero, and pointless to spend on a run that can't proceed anyway).
 
     Deduplicates model strings first (cbias currently has three distinct strings across six
     role fields) - one call per string, not per role, since two roles sharing a model string
     would otherwise pay for and report the identical check twice.
     """
+    print("[preflight] checking --report/--data-dir...")
+
+    path_results = [
+        ("report", *_check_report_path(report_path)),
+        ("data_dir", *_check_data_dir(data_dir)),
+    ]
+    for label, ok, detail in path_results:
+        print(f"  [{'OK' if ok else 'FAIL'}] {label}: {detail}")
+    if not all(ok for _, ok, _ in path_results):
+        print("[preflight] one or more checks FAILED\n")
+        return False
+
     models = sorted({
         config.orchestrator_model, config.worker_model, config.compiler_model,
         config.requirements_evaluator_model, config.angle_model, config.judge_model,
     })
 
     print(f"[preflight] checking {len(models)} model(s) and Docker availability...")
-    results = await asyncio.gather(*(_probe_model(m) for m in models))
 
     all_ok = True
+    results = await asyncio.gather(*(_probe_model(m) for m in models))
+
     for model, ok, detail in results:
         print(f"  [{'OK' if ok else 'FAIL'}] {model}: {detail}")
         all_ok = all_ok and ok

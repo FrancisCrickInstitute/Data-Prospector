@@ -243,3 +243,20 @@ This project has the identical concern everywhere — §13's demonstrably-improv
 
 **That paragraph is in capitals and repeats itself because prompt-level orchestration has a compliance failure mode that needs shouting at.** `while attempt < max_compile_attempts` cannot decide to stop and ask permission. It is the clearest evidence yet for §14.4's framing: **prompt-level orchestration when the sequence should adapt; code when it genuinely must not vary.** Note the same document's D-simplify item 4 flags D8's saturation stopping as the point where this pipeline first acquires a decision that *should* adapt — so this distinction becomes live at exactly that step, not before.
 
+---
+
+## 7. Human-directed deepening ("go deep on angle N")
+
+**Status: BACKLOG, and the `explorations/` convention is the stop-gap that covers the common case today.**
+
+The idea, recorded in `DEVELOPMENT_LOG.md` §2 as out of scope and previously "deferred until after D8": give the pipeline a mode where, pointing it at a result already surfaced in a gallery, it drills into *that one angle* — re-generating from the angle as a seed, deepening or refining it rather than fanning out a new spread. D8 never had a deepening component of its own, and its sibling items (saturation stopping, economy instrumentation) were themselves moved here in rev. 68, so the "after D8" precondition has been dangling.
+
+**The honest interim, already in use:** a one-off, hand-written follow-up script under `explorations/<domain>/<name>.py`. This is the pattern used for `explorations/trello/group_management_review.py` (rev. 85) and `explorations/trello/domain_technology_review.py` (rev. 86), and it is the mechanism the `cellsurvey` domain's own `LITERATURE.md` entry points at (`explorations/cellsurvey/vascular_proximity.py`). It differs from the pipeline's deepening *in kind*, not just degree: a human decides what to follow up, writes the script, reads the answer — there is no seeded re-ideation, no judge, no Docker-oracle loop at all. That keeps a follow-up cheap and fully under human control, at the cost of the pipeline's own breadth.
+
+**Two things that are NOT on offer without real evidence:**
+- **Auto-retirement of a followed-up angle.** `BACKLOG.md` §6 (the `autoresearch` ledger) and `DEVELOPMENT_LOG.md` §8's sector question both establish why: a finding that has been followed up once by hand does not automatically become "already explored — never propose again". The human curates the report's Already Explored section on the merits of *what the follow-up found*, not the fact that a follow-up ran.
+- **A pipeline "deepening" mode as a thin wrapper over `explorations/`.** That would be D8-adjacent machinery (seeded re-ideation, a judge over a refinement) added to solve a problem the `explorations/` convention already covers for the cases that have actually arisen. Revisit only if hand-follow-ups start recurring on the *same* angle so often that automating the seed-and-rejudge cycle demonstrably beats writing another script.
+
+**Reopen when:** a specific gallery result is worth pursuing further and (a) a hand `explorations/` script would be genuinely burdensome rather than a few hours, or (b) the same angle keeps winning realisation slots across runs without anyone hand-following it up — at which point the "human is the deepening loop" assumption is failing and automation earns its place.
+
+

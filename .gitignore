@@ -1,10 +1,25 @@
+# Local secrets (ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL) - never commit.
+.env
+
 # pixi environments
 .pixi/*
 !.pixi/config.toml
 
+# Compiled Python bytecode - interpreter/platform-specific build artifacts, never source. Caught
+# after configs/__pycache__/*.pyc was accidentally staged following a real run.
+__pycache__/
+*.pyc
+
 # Raw CBIAS attendee data contains personal data (names, emails, locations, abstracts) - never
 # commit until anonymised. Remove this line once inputs/cbias_data/ only holds anonymised data.
 inputs/cbias_data/
+
+# Raw Trello export contains real names/usernames (board members, card assignees) - the board
+# itself is public, but the un-anonymised export was committed by mistake (removed 2026-09-06,
+# see docs/DEVELOPMENT_LOG.md) and should regenerate locally from a fresh export, not get
+# re-committed. _anonymise_trello.py reads this directory and writes inputs/trello_data_anonymised/,
+# which the pipeline actually uses (app.py's --config trello default) and stays committed.
+inputs/trello_data/
 
 # Quotes flagged raw text for manual PII review - never committed, regardless of where it's written.
 *_REVIEW_FLAGGED.txt
@@ -12,3 +27,35 @@ inputs/cbias_data/
 # Real names found via manual review that anonymize_cbias_data.py should also redact - never
 # committed, since the whole point is these strings are PII.
 manual_redactions.txt
+
+# cbias and trello configs + sample data + anonymisation scripts, untracked (2026-09-09): even
+# anonymised, both are real organisational data (a real academic symposium's registration/feedback/
+# programme records; a real Trello board export) that someone at the organisation could plausibly
+# recognise if they came across the public repo. Removed from GitHub for that reason (forward-only -
+# see docs/DEVELOPMENT_LOG.md for the reasoning and for git history containing prior commits) but
+# kept on disk here; nothing below this line is deleted, only untracked.
+anonymize_cbias_data.py
+configs/cbias_config.py
+inputs/cbias_data_anon/
+inputs/cbias_report/
+_anonymise_trello.py
+configs/trello_config.py
+inputs/trello_data_anonymised/
+inputs/trello_report/
+
+# idr0028 raw data (2.4GB) and its processed derivative (247MB, regenerated from the raw data by
+# preprocess_idr0028.py - see that script's docstring) - a size concern, not a PII one (this is
+# public IDR data), but both are far too large for a normal git commit either way.
+inputs/idr0028/
+inputs/idr0028_processed/
+
+# cellsurvey processed derivative (232MB cells.csv, regenerated from the source zarr on a remote
+# Z: path by preprocess_cellsurvey.py - see that script's docstring) - a size concern only, not a
+# PII one (no patient/subject privacy or ethics constraint on this sample - confirmed).
+inputs/cellsurvey_processed/
+
+# One-off analysis outputs (explorations/<domain>/out_*/ PNGs + CSVs) and the self-contained HTML
+# report derived from the markdown - all regenerable from the committed exploration scripts, and the
+# PNGs/HTML are multi-MB each. Commit the *.py / *.md source, ignore the artifacts.
+explorations/*/out_*/
+explorations/*/*.html
