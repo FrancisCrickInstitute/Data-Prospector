@@ -1,10 +1,51 @@
-﻿# Data Prospector development log (rev. 94)
+﻿# Data Prospector development log (rev. 95)
 
 Design, run, and decision log for `FrancisCrickInstitute/Data-Prospector` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 95: a new failure class — the pipeline analysed a technically-dead channel and produced a
+plausible-looking "macrophage" compartment, and only domain expertise caught it (user-reported).** The
+rev. 92 threshold-audit gallery's headline claim was that "PD-L1 is expressed across several cell
+compartments," one of them "macrophage (CD68⁺)". A colleague reading the sensitivity report flagged
+two things that neither the pipeline nor the config could have: (1) **CD68 did not work in this
+staining**, so a macrophage population shouldn't have been detectable at all; and (2) "have you
+excluded the bright non-specific cells present in every channel — could those be falsely counted as
+macrophages?" Direct check of `inputs/cellsurvey_processed/cells.csv` confirmed both. A real
+autofluorescent/debris population exists — **5,695 of 362,736 cells (1.57%) are bright (z > 2, in
+robust-scaled arcsinh units) in ≥ 8 of the 29 markers simultaneously**, with a tail of cells bright in
+all 29. Those cells essentially *are* the "macrophages": **81% of all CD68⁺ cells are non-specific-bright,
+and 92% of the non-specific cells are CD68⁺**, and the correlation between a cell's CD68 brightness and
+its mean brightness across the *other 28* markers is **r = 0.83**. CD68 here is not reading a
+macrophage-restricted signal — it is a readout of "this cell is bright in everything," which is exactly
+the debris signature the colleague asked about. The CD68⁺ compartment is therefore **not established**
+(and should be dropped, not just caveated), while the other three compartments (E-cadherin epithelial,
+CD31 endothelial, SMA stromal) have distinct, lower dynamic ranges and do not show the same
+contamination, so "PD-L1 spans multiple compartments" survives on three legs rather than four.
+
+**Why this is a distinct failure class, not another §15 A/B or §15.8 config item — recorded as §15.9.**
+Every prior failure in this document's taxonomy is a model misreading *accurate-but-incomplete* data
+(class A/B) or a config-authoring oversight in how the domain was *described* (§15.8). This one is
+different in kind: the report/`DOMAIN_NOTES`/`data_profile` were all *correct*, the analysis was
+statistically *right*, and it still produced a confident, plausible finding that is biologically wrong —
+because the fact that disposes of it ("CD68 failed in staining") is a piece of **domain knowledge about
+the protocol that lives in no config, report, or data file.** No amount of `DOMAIN_NOTES` accuracy or
+mechanical data-profiling could have prevented it; the channel's *numbers* look like real signal (they
+just happen to be the autofluorescent cells). This is the sharpest instance yet of the project's most
+fundamental design claim — that **the human reading the gallery is the final oracle for angle quality,
+not any automatic check** — and it exposes the corollary that statement has always implied but never
+stated: *the human must also bring the domain expertise to know when a channel is untrustworthy before
+analysis starts.* A researcher who didn't know CD68 was dead would have read the gallery and believed
+the macrophages. Implications for the project, none yet acted on: (a) the `cellsurvey` `DOMAIN_NOTES`
+should gain an explicit "channel quality — state which markers failed/are autofluorescent, and treat
+any cell bright across several channels as non-specific debris" note, the same shape as rev. 79–80's
+user-caught items; (b) more generally, the domain config now has an obvious slot that does not exist
+yet — a per-marker "channel status" field that can carry "failed" / "autofluorescent-debris" / "okay"
+upfront, which would have let the realisation stage refuse the CD68 compartment outright. See §15.9.
+Docs-only this rev; no code changed, pending whether (a)/(b) are taken up.
+
 
 **Rev. 94: this document's own header, and `README.md`'s naming note, corrected — the GitHub repo was
 renamed `diverger-agents-template` → `Data-Prospector` at some undocumented point after rev. 64.**
@@ -1762,6 +1803,63 @@ on this domain that noticing was almost entirely the user's, not this project's 
 **Scope note.** Like §15.7, this is about where this project's own domain-config-authoring process got
 things wrong, not a conclusion about the CellSurvey tissue's actual biology - none of the eight items
 above changed any data, only how it is described to the pipeline's later stages.
+
+### 15.9 A channel was technically dead, and the pipeline "found" a population in it (rev. 95)
+
+This is **not** a class-A/B data-misread and **not** a §15.8 config-authoring oversight, so it gets its
+own number rather than being folded into either. The distinction is the whole point of recording it:
+
+- **Class A/B** = the model misread data that was *accurate but incompletely described*. Fix the
+  description.
+- **§15.8** = the *config author* described the domain wrongly or incompletely. Fix the authoring
+  process.
+- **§15.9 (new)** = the report, `DOMAIN_NOTES`, and `data_profile` were all *correct*, the analysis was
+  *statistically correct*, and it still produced a confident, gallery-worthy finding that is biologically
+  wrong — because the dispositive fact ("CD68 failed in this staining") is **protocol knowledge that
+  exists in no config, report, or data file at all.** The channel's numbers even look like real signal:
+  they are just the autofluorescent/debris cells, which are bright in *everything*, so CD68's "real"
+  dynamic range is a microscope artefact, not a macrophage-restricted signal.
+
+The concrete evidence, computed directly from `inputs/cellsurvey_processed/cells.csv` (362,736 cells ×
+29 markers, robust-scaled arcsinh, brightness = z > 2):
+
+- **5,695 cells (1.57%) are bright in ≥ 8 of 29 markers simultaneously** — a genuine non-specific
+  autofluorescence/debris population, with a tail of cells bright in up to all 29 channels. This is
+  exactly the "bright in every channel" population the domain expert asked about.
+- **Those cells essentially are the "macrophages."** 81% of all CD68⁺ cells are in that non-specific
+  set; 92% of the non-specific cells are CD68⁺; and `corr(CD68 brightness, mean brightness of the other
+  28 markers) = 0.83`. CD68-as-measured is not distinguishing macrophages from debris cells at all.
+- The other three lineage markers (E-cadherin, CD31, SMA) each have their own lower, distinct dynamic
+  range and do **not** load on this non-specific factor, so the multi-compartment claim legitimately
+  survives on those three legs — it is the macrophage leg that collapses.
+
+**What it means for the project.** This is the cleanest demonstration to date of the project's central
+design commitment — *the human reading the gallery is the final oracle for angle quality, no automatic
+check substitutes* — and it exposes the corollary the project had never spelled out: **that oracle must
+also bring the domain expertise to know, *upstream of the run*, that a channel is untrustworthy.** The
+Docker oracle verifies that code *ran*; the judge verifies that an angle is non-obvious and plausibly
+sound; neither can verify that the input channel was biochemically valid. A biologist who didn't know
+CD68 was dead would have read the gallery and taken the macrophage result as a finding. That is not a
+bug in any pipeline stage; it is a boundary the architecture does not currently have any field to
+express. Two candidate fixes, recorded here and deliberately **not implemented this rev** (pending
+decision):
+
+1. **Minimum, domain-level:** add a "channel quality" note to `cellsurvey`'s `DOMAIN_NOTES` — state
+   which markers failed or are autofluorescence-prone, and instruct that any cell bright across several
+   channels be treated as non-specific debris before a lineage is assigned. Same shape as the rev. 79–80
+   user-caught items; stops this *specific* recurrence but not the next unknown-dead channel.
+2. **Structural, config-level:** add a per-marker "channel status" field (``ok`` / ``failed`` /
+   ``autofluorescent-debris``) to `PipelineConfig`, fed to the realisation prefixes the way
+   `domain_notes` already is, so a script can refuse to build a "macrophage" compartment from a
+   `failed` channel outright rather than silently treating it as usable. This is the general fix the way
+   `data_profile` (Live Issue 31) was the general fix for the class-A vocabulary hole — a field the
+   config author fills once, that the pipeline can then act on mechanically.
+
+The trigger for either fix is the same recognition Live Issue 31 already forced once: **a hand-written
+description is a stand-in for knowledge the pipeline cannot itself recover from the data.** A dead
+channel is the limiting case — the data *cannot* tell you the channel is dead, because the dead channel
+still produces the debris signal. Only the domain expert can supply that, so it needs a first-class
+place to live in the config.
 
 ---
 
