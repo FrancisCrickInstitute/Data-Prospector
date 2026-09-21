@@ -1,10 +1,37 @@
-﻿# Data Prospector development log (rev. 95)
+﻿# Data Prospector development log (rev. 96)
 
 Design, run, and decision log for `FrancisCrickInstitute/Data-Prospector` — still referred to
 internally as "diverger" (§1). This document was originally titled the "converger → diverger conversion
 plan," a name it outgrew once D1–D7 finished and it became this project's ongoing record rather than a
 single plan; see the rev. 68 banner below for the rename, and rev. 69/70 for where it and the domain
 configs now live on disk.
+
+**Rev. 96: the overview-before-analysis lesson — the pipeline spent many runs fanning out non-obvious
+angles on the CellSurvey data before anyone did a plain overview + quality-control pass, and the latter
+is what actually surfaced the dead channel and the debris cells (user-identified).** A domain-expert
+colleague, asked for feedback on the threshold-sensitivity report, said in effect: "I wanted a *broad
+overview* first — cell populations, spatial maps, clusters, representative images — not another
+hypothesis test." That prompted `explorations/cellsurvey/overview_analysis.py` (this rev), a hand-written
+one-off that just *describes* the tissue: 10 k-means clusters with marker profiles, per-cluster and
+per-lineage spatial maps, 49 spatial communities, and representative image composites. It is a data
+*description*, not a *finding* — and it collapsed two problems that had each been expensive to reach the
+long way round: (1) the §15.9 dead-CD68 channel was confirmed *directly* (81% of "CD68⁺" cells are
+non-specific-bright, `corr(CD68, mean-of-28-others) = 0.83`), and (2) three of the ten k-means clusters
+(1/3/8, ~3,600 nuclei) are almost entirely autofluorescent debris — bright simultaneously in
+CD68/FoxP3/LamininA5/H2AX — which the earlier angle-fan-out had never cleanly called out as such, only
+the CD68 leg indirectly. The lesson is not another model-vs-data failure (those are §15.1–15.6) nor a
+config-authoring mistake (§15.8): it is an **ordering** gap. The pipeline's entire shape is
+*report → fan out non-obvious hypotheses → judge → realise*, and nothing in that loop — not the config
+interface, not `DOMAIN_NOTES`, not the criteria split — ever asks "what does this data actually contain
+before we go looking for the surprising thing in it." A cheap, mechanical **overview + QC pass is the
+missing first step**, and it is precisely the pass that would have caught both the dead channel and the
+debris clusters *upfront* (the config only warns ideation about what a human already knows, and it
+never knew CD68 was dead until a domain expert said so). See §15.10 for the write-up. Recorded here
+rather than silently folded into §15.8 because the fixing lever is different: §15.8's fixes were all
+"write the config better", this one's is "run a descriptive pass the config cannot itself provide before
+running the exploratory one." No pipeline change made this rev; the overview is a hand-script under
+`explorations/`, and the structural question (does the pipeline itself gain an overview/QC stage, or does
+this stay a human preamble per §7's follow-up convention?) is left open.
 
 **Rev. 95: a new failure class — the pipeline analysed a technically-dead channel and produced a
 plausible-looking "macrophage" compartment, and only domain expertise caught it (user-reported).** The
@@ -1860,6 +1887,58 @@ description is a stand-in for knowledge the pipeline cannot itself recover from 
 channel is the limiting case — the data *cannot* tell you the channel is dead, because the dead channel
 still produces the debris signal. Only the domain expert can supply that, so it needs a first-class
 place to live in the config.
+
+### 15.10 Overview-before-analysis — the pipeline explores before it describes, and QC pays for it (rev. 96)
+
+This is a **process/ordering** observation, not another data or config failure, so it gets its own
+number. §15.1–15.6 are about the *model* misreading data; §15.8 is about the *config author*
+mis-describing it; §15.9 is about the *data* hiding a dead channel. This one is about the *sequence*:
+the pipeline goes straight from a report to fanning out non-obvious hypotheses, with no stage that first
+says "what is actually in this data, and is it sound before we pattern-hunt in it."
+
+**What happened.** The CellSurvey domain has had the most runs of any public domain (Runs 38/39/41/42
+plus follow-ups), all of which took the *report → angles → judge → realise* path. Only after a
+domain-expert colleague asked for a plain *overview* (populations, spatial maps, clusters, representative
+images) did anyone write `explorations/cellsurvey/overview_analysis.py` — and a single descriptive pass
+immediately surfaced at first-hand two things the angle-fan-out had reached only expensively or not at
+all:
+
+1. **The dead CD68 channel (§15.9).** The overview's marker-profile table showed clusters 1/3/8 loaded
+   simultaneously on CD68/FoxP3/LamininA5/H2AX — the autofluorescence signature — whereas the earlier
+   fan-out had only caught the CD68 leg indirectly (and the "macrophage" finding initially shipped as a
+   positive result until a human disputed it).
+2. **Three of ten k-means clusters are debris.** ~3,600 nuclei are bright in everything; the fan-out's
+   judges never named this as "a junk population to exclude," because no angle asked "is any part of this
+   data not real signal?" — ideation only asks what's *in* the data, never what's *wrong* with it.
+
+**Why the pipeline doesn't currently have this step.** Every stage is aimed at the *surprising*: the
+criteria split extracts guiding questions and anti-targets; ideation maximises non-obviousness; judging
+scores insight and soundness; realisation validates that code runs. There is no stage whose product is
+*"here is what the data contains, and its known defects."* `DOMAIN_NOTES` / `data_profile` carry
+hand-written or mechanically-derived *facts about the data* into the realisation prompts, but (a) they
+are written by the config author, who cannot know a channel is dead unless a domain expert tells them, and
+(b) they are injected as *constraints on the generated code*, not surfaced as a *claim the human reads
+first*. A descriptive overview the human actually looks at is a different artifact from a note the model
+is told to respect.
+
+**The lesson, stated generally.** For a tool whose output is "leads for a human to evaluate," the most
+valuable early output is often the *least* non-obvious one: a correct, human-readable description of the
+data with its quality problems called out. Nobody can judge whether a surprising lead is worth chasing
+without knowing the basic lay of the land and whether the instrument that collected the data was working.
+The fan-out is designed to skip the obvious in favour of the surprising — but the obvious (what cell
+types are here, is every channel alive, is any population just debris) is exactly what has to be
+right before the surprising is trustworthy.
+
+**Open question (not acted on this rev).** Should the pipeline gain a first-class "overview / QC" stage
+that runs before ideation and produces a human-facing summary (marker distributions, channel vigour,
+clusters, a debris/QC flag), or does this stay a human preamble — a hand-script under `explorations/`,
+the way §7's follow-up convention already covers "go deep on one angle"? The argument for making it a
+stage: it is cheap, mechanical, domain-portable, and both this rev's and §15.9's failures are things such
+a stage would have surfaced with no LLM involved. The argument against: the project has deliberately
+kept "the human reading the gallery" as the final oracle, and an auto-generated overview risks becoming
+a thing nobody reads — which is precisely the trap this rev is about. Left open deliberately, recorded
+here rather than in `BACKLOG.md` because it is a conclusion about the current architecture, not a parked
+feature.
 
 ---
 
