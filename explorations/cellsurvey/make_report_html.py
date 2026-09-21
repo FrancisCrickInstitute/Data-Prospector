@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-"""Convert the PD-L1 sensitivity-report markdown into a single self-contained HTML file.
+"""Convert a report markdown file into a single self-contained HTML file.
 
 Motivation: the report's readers are biologists who may not have a markdown viewer. A single .html
 file opens in any web browser, embeds the figures inline (as base64 data URIs, so it is one
 self-contained file that can be emailed/uploaded anywhere), and can be printed to PDF directly from
 the browser with Ctrl/Cmd-P -> "Save as PDF".
 
-The converter is intentionally small and specific to this report's subset of CommonMark (headings,
-paragraphs, bold/italic, inline code, fenced-free table syntax, blockquotes, and `![...](...)` image
-links with RELATIVE paths resolved against the report's directory). It is not a general markdown
-engine; it exists to ship this one report.
+The converter is intentionally small and specific to this project's reports' subset of CommonMark
+(headings, paragraphs, bold/italic, inline code, fenced-free table syntax, blockquotes, unordered and
+ordered lists, and `![...](...)` image links with RELATIVE paths resolved against the report's
+directory). It is not a general markdown engine; it exists to ship these reports.
 
-Run:  pixi run python explorations/cellsurvey/make_report_html.py
-Writes: explorations/cellsurvey/pd1pdl1_threshold_sensitivity_report.html
+Run (default):  pixi run python explorations/cellsurvey/make_report_html.py
+Writes (default): explorations/cellsurvey/pd1pdl1_threshold_sensitivity_report.html
+
+Run on any report:  pixi run python explorations/cellsurvey/make_report_html.py \
+                       explorations/cellsurvey/out_overview/overview_analysis_report.md \
+                       "CellSurvey tissue — a broad overview"
 """
 
 import base64
@@ -25,6 +29,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 REPORT = Path("explorations/cellsurvey/pd1pdl1_threshold_sensitivity_report.md")
 OUT = Path("explorations/cellsurvey/pd1pdl1_threshold_sensitivity_report.html")
+DEFAULT_TITLE = "PD-L1 across cell types — how robust is it?"
 
 CSS = """
 :root { color-scheme: light; }
@@ -59,10 +64,10 @@ def inline(text: str) -> str:
     return text
 
 
-def render_image(md: str) -> str:
+def render_image(md: str, report_dir: Path) -> str:
     m = re.match(r"!\[([^\]]*)\]\(([^)]+)\)", md)
     alt, src = m.group(1), m.group(2)
-    src_path = (REPORT.parent / src).resolve()
+    src_path = (report_dir / src).resolve()
     if src_path.exists():
         b64 = base64.b64encode(src_path.read_bytes()).decode("ascii")
         ext = src_path.suffix.lower()
@@ -73,7 +78,7 @@ def render_image(md: str) -> str:
     return f'<p><em>[image not found: {html.escape(src)}]</em></p>'
 
 
-def convert(md: str) -> str:
+def convert(md: str, report_dir: Path) -> str:
     lines = md.split("\n")
     out: list[str] = []
     in_table = False
@@ -92,7 +97,7 @@ def convert(md: str) -> str:
 
         # image (on its own line)
         if stripped.startswith("!["):
-            out.append(render_image(stripped))
+            out.append(render_image(stripped, report_dir))
             i += 1
             continue
 
@@ -201,15 +206,23 @@ def convert(md: str) -> str:
 
 
 def main() -> None:
-    md = REPORT.read_text(encoding="utf-8")
-    body = convert(md)
+    if len(sys.argv) >= 2:
+        report = Path(sys.argv[1])
+        title = sys.argv[2] if len(sys.argv) >= 3 else DEFAULT_TITLE
+        out = report.with_suffix(".html")
+    else:
+        report = REPORT
+        title = DEFAULT_TITLE
+        out = OUT
+    md = report.read_text(encoding="utf-8")
+    body = convert(md, report.parent)
     doc = (
         "<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='utf-8'>\n"
-        f"<title>PD-L1 across cell types — how robust is it?</title>\n<style>{CSS}</style>\n"
+        f"<title>{html.escape(title)}</title>\n<style>{CSS}</style>\n"
         "</head>\n<body>\n" + body + "\n</body>\n</html>\n"
     )
-    OUT.write_text(doc, encoding="utf-8")
-    print(f"Wrote {OUT} ({len(doc):,} bytes, figures embedded inline)")
+    out.write_text(doc, encoding="utf-8")
+    print(f"Wrote {out} ({len(doc):,} bytes, figures embedded inline)")
 
 
 if __name__ == "__main__":
