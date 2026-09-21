@@ -24,7 +24,7 @@ Python - but using it on the example data, or your own data once someone has con
 you, doesn't.
 
 <p align="center">
-  <img src="assets/pipeline_diagram.svg" alt="Data Prospector pipeline: your inputs branch into many independent ideas, each is scored, only the strongest few are turned into tested code, and everything is written up as a skimmable report." width="100%">
+  <img src="assets/pipeline_diagram.svg" alt="Data Prospector pipeline: your inputs branch into many independent ideas, each is scored, the strongest few are each turned into their own tested code in parallel, and everything is written up as a skimmable report." width="100%">
 </p>
 
 > [!WARNING]
