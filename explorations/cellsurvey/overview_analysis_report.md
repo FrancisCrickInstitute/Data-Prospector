@@ -3,8 +3,8 @@
 One tissue section, **362,736 segmented nuclei**, ~32 marker channels.
 
 This is a visual summary, not a single hypothesis test: who is in the tissue (cell
-populations), where they are (spatial maps), how the tissue is organised
-(communities), and what it looks like (representative images).
+populations), where they are (spatial maps), and how the tissue is organised
+(communities).
 
 ## How to read this (in plain terms)
 
@@ -89,14 +89,11 @@ similar the two cells' marker profiles are), then runs **Louvain** community det
 **resolution** setting. Higher resolution → more, smaller communities; lower → fewer, larger.
 
 The **default** resolution (0.1) gives **49 communities**. That is on the
-fine-grained end, and the sensitivity sweep below shows what happens as the resolution is
-lowered:
+fine-grained end — lowering the resolution merges most of that fine structure:
 
 - **Resolution sweep:** resolution 0.1 → 49 communities; resolution 0.05 → 36 communities; resolution 0.02 → 28 communities; resolution 0.01 → 26 communities.
 
-![Community resolution sweep](out_overview/community_resolution_sweep.png)
-
-![Community histogram and community map over the tissue](out_overview/communities.png)
+![Community outlines over the tissue image](out_overview/community_outlines.png)
 
 **Why the 13 CD31 communities are not "one group that got split up."**
 
@@ -129,18 +126,3 @@ isolated fragments already discussed, and are dropped from the composition plot)
   consistent with them being scattered autofluorescent cells, not a tissue compartment.
 
 ![Community composition by cluster](out_overview/community_composition.png)
-
-**Cluster sensitivity (k-means elbow).** The k-means `k` is also a free choice; the
-sweep shows inertia falls smoothly as `k` grows with no sharp elbow at `k=10` (the
-shipped value) — 10 is a reasonable but not special choice.
-
-![K-means inertia vs k](out_overview/cluster_elbow.png)
-
-## 4. Representative images
-
-DAPI/CD3/PD-L1 and DAPI/E-cadherin/SMA composites of the actual tissue at 16x
-downsampling:
-
-![Composite: DAPI / CD3 / PD-L1](out_overview/representative_images.png)
-
-![Composite: DAPI / E-cadherin / SMA](out_overview/representative_images_epi_stromal.png)

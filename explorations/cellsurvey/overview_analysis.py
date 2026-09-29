@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 """Broad dataset overview of the CellSurvey tissue section, for a biologist reader.
 
-Motivation: following the threshold-sensitivity report, a domain-expert colleague asked for a *visual
-summary* rather than another methodological audit - specifically (1) cell populations / classification,
-(2) spatial maps of where cell types and markers sit in the tissue, (3) neighbourhoods / clusters, and
-(4) representative images tying the analysis back to the actual tissue. This script delivers all four as
-a set of figures plus a markdown report, drawing on two sources:
+A visual summary of a single tissue section: cell populations (k-means clusters + marker
+distributions), spatial maps overlaid on the tissue image, and the spatial communities. Data sources:
 
   - `inputs/cellsurvey_processed/cells.csv` (repo-local): 362,736 segmented nuclei, each with x/y
     coordinates, area, a k-means cluster label, a spatial-community label, and ~32 marker intensities.
-  - The source SpatialData zarr (Z: network path, supplied by the user): the full-resolution (and
-    pyramid-downsampled) 32-channel image, used ONLY for the representative-image crops.
+  - `inputs/cellsurvey_processed/{community,cluster}_sweep*.csv` (repo-local): CellSurvey's read-only
+    parameter sweeps, for the community-resolution sensitivity.
+  - The source SpatialData zarr (Z: network path): the pyramid-downsampled DAPI channel, used as the
+    grey tissue background behind the spatial maps and community outlines (optional; skipped if Z: down).
 
 It is a hand-written, one-off follow-up (see docs/DEVELOPMENT_LOG.md rev. 91 / BACKLOG.md section 7 for
 the `explorations/` convention) - no Docker, no judge, no gallery.
 
 Run:  pixi run python explorations/cellsurvey/overview_analysis.py
-Reads: inputs/cellsurvey_processed/cells.csv; for the community/cluster sensitivity analysis and
-       representative images, the CellSurvey sweep CSVs and zarr on Z: (skipped gracefully if absent).
+Reads: inputs/cellsurvey_processed/cells.csv and the sweep CSVs (local); the zarr on Z: for the image
+       backgrounds (skipped gracefully if absent).
 Writes: explorations/cellsurvey/overview_analysis_report.md (tracked source) and explorations/cellsurvey/out_overview/*.png (gitignored figures).
 
 The CD68 caveat (docs/DEVELOPMENT_LOG.md rev. 95 / section 15.9) is applied throughout: CD68 is treated
@@ -34,6 +33,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.spatial import ConvexHull
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -53,9 +53,10 @@ ZARR_URL = (
 )
 
 # CellSurvey's read-only parameter sweeps (see https://cell-survey.readthedocs.io/en/latest/parameters/
-# #parameter-sweeps) write CSVs next to the zarr. These carry the community/cluster sensitivity results
-# that answer the "49 communities is a lot" question. Optional like the zarr: skip gracefully if Z: down.
-SWEEP_DIR = Path("Z:/working/barryd/hpc/projects/stps/lm/Spatial-Biology-Pipeline/outputs")
+# #parameter-sweeps). The user copied these CSVs locally into inputs/cellsurvey_processed/ so re-runs
+# don't depend on Z: for the sensitivity analysis. (The zarr/DAPI image is still read from Z: for the
+# image-overlay figures, and is optional.)
+SWEEP_DIR = Path("inputs/cellsurvey_processed")
 COMMUNITY_SWEEP_CSV = SWEEP_DIR / "community_sweep.csv"
 CLUSTER_SWEEP_CSV = SWEEP_DIR / "cluster_sweep.csv"
 COMMUNITY_SWEEP_SUMMARY = SWEEP_DIR / "community_sweep_summary.csv"
@@ -147,6 +148,7 @@ CLUSTER_NAMES = {
     8: "debris",
     9: "epithelial (E-cadherin)",
 }
+DEBRIS_CLUSTERS = {c for c, name in CLUSTER_NAMES.items() if name == "debris"}
 
 
 def load_cells():
@@ -211,36 +213,27 @@ def cluster_marker_profile(df):
 
 
 def figure_populations(df):
-    """Panel 1: cluster sizes + per-cluster marker heatmap (the 'who is in this tissue' figure)."""
+    """Two per-cluster mean-marker heatmaps: all 10 clusters, and the 7 non-debris clusters (the size
+    of each cluster is already in the report table, so it isn't plotted again here)."""
     marker_cols = [f"marker_{m}" for m in CHANNEL_INDEX if m not in CONTROL_CHANNELS]
     prof, top = cluster_marker_profile(df)
     clusters = sorted(df["kmeans_cluster"].unique())
+    non_debris = [c for c in clusters if c not in DEBRIS_CLUSTERS]
     sizes = df.groupby("kmeans_cluster").size()
 
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7), gridspec_kw={"width_ratios": [1, 2.2]})
-
-    # left: cluster sizes
-    ax = axes[0]
-    ax.bar([str(c) for c in clusters], [sizes.get(c, 0) for c in clusters],
-           color="#6C5B9E", alpha=0.85)
-    ax.set_xlabel("k-means cluster")
-    ax.set_ylabel("number of nuclei")
-    ax.set_title("Cluster sizes", fontsize=12)
-    for i, c in enumerate(clusters):
-        ax.text(i, sizes.get(c, 0), f"{sizes.get(c, 0):,}", ha="center", va="bottom", fontsize=8)
-
-    # right: marker profile heatmap (z-scored), clusters x markers
-    ax = axes[1]
+    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
     disp_names = [m.replace("_", "-") for m in marker_cols]
-    im = ax.imshow(prof.loc[[c for c in clusters]].to_numpy(), aspect="auto", cmap="RdBu_r",
-                   vmin=-2, vmax=2)
-    ax.set_xticks(range(len(disp_names)))
-    ax.set_xticklabels(disp_names, rotation=90, fontsize=7)
-    ax.set_yticks(range(len(clusters)))
-    ax.set_yticklabels([f"Cluster {c} ({sizes.get(c, 0):,})" for c in clusters], fontsize=8)
-    ax.set_title("Mean marker intensity per cluster (robust z-score)", fontsize=12)
-    fig.colorbar(im, ax=ax, fraction=0.03)
-    fig.suptitle("Cell populations: k-means clusters and their marker profiles", fontsize=14, y=1.02)
+    im = None
+    for ax, cs, title in [(axes[0], clusters, "all clusters"),
+                          (axes[1], non_debris, "debris clusters removed")]:
+        im = ax.imshow(prof.loc[cs].to_numpy(), aspect="auto", cmap="RdBu_r", vmin=-2, vmax=2)
+        ax.set_xticks(range(len(disp_names)))
+        ax.set_xticklabels(disp_names, rotation=90, fontsize=7)
+        ax.set_yticks(range(len(cs)))
+        ax.set_yticklabels([f"Cluster {c}" for c in cs], fontsize=8)
+        ax.set_title(f"Mean marker intensity per cluster — {title}", fontsize=11)
+    fig.colorbar(im, ax=axes.tolist(), fraction=0.03, label="robust z-score")
+    fig.suptitle("Cell populations: per-cluster marker profiles", fontsize=14, y=1.02)
     fig.tight_layout()
     fig.savefig(OUT_DIR / "populations_cluster_profile.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -283,8 +276,8 @@ def figure_spatial_maps(df, dapi):
     x = (df["x"] / DOWNSAMPLE if use_img else df["x"]).to_numpy()
     y = (df["y"] / DOWNSAMPLE if use_img else df["y"]).to_numpy()
 
-    clusters = sorted(df["kmeans_cluster"].unique())
-    fig, axes = plt.subplots(2, 5, figsize=(20, 8))
+    clusters = [c for c in sorted(df["kmeans_cluster"].unique()) if c not in DEBRIS_CLUSTERS]
+    fig, axes = plt.subplots(2, 4, figsize=(18, 8))
     for ax, c in zip(axes.ravel(), clusters):
         imshow_tissue(ax, dapi)
         sel = df["kmeans_cluster"].to_numpy() == c
@@ -293,7 +286,9 @@ def figure_spatial_maps(df, dapi):
             ax.set_aspect("equal")
         ax.set_title(f"Cluster {int(c)} ({int(sel.sum()):,})", fontsize=9)
         ax.tick_params(labelsize=6)
-    fig.suptitle("Where each k-means cluster sits (over the DAPI tissue image)", fontsize=14)
+    axes.ravel()[len(clusters)].axis("off")
+    fig.suptitle("Where each k-means cluster sits (over the DAPI tissue image; debris clusters omitted)",
+                 fontsize=14)
     fig.tight_layout()
     fig.savefig(OUT_DIR / "spatial_cluster_maps.png", dpi=150)
     plt.close(fig)
@@ -374,114 +369,46 @@ def figure_community_composition(df):
     return comp
 
 
-def figure_communities(df, dapi):
-    """Community overview: histogram (left) + community map overlaid on the DAPI tissue image (right)."""
-    comms = df.groupby("community").size().sort_values(ascending=False)
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
-    ax = axes[0]
-    ax.bar(range(len(comms)), comms.to_numpy(), color="#2E7D6B", alpha=0.85)
-    ax.set_xlabel("community (ranked by size)")
-    ax.set_ylabel("number of nuclei")
-    ax.set_title("Spatial communities (Louvain on a Delaunay network)", fontsize=11)
-    ax.tick_params(labelsize=7)
+def figure_community_outlines(df, dapi):
+    """Community boundaries (convex hulls) overlaid on the DAPI tissue image - the 'ROI' view.
 
-    ax = axes[1]
-    imshow_tissue(ax, dapi)
-    # colour communities by index for spatial legibility
-    comm_ids = sorted(df["community"].unique())
-    cmap = plt.get_cmap("tab20")
-    colors = {c: cmap(i % 20) for i, c in enumerate(comm_ids)}
-    cvec = np.array([colors[c] for c in df["community"].to_numpy()])
+    Only communities above MIN_COMMUNITY_SIZE are drawn (the tiny isolated fragments are omitted).
+    """
     use_img = dapi is not None
     x = (df["x"] / DOWNSAMPLE if use_img else df["x"]).to_numpy()
     y = (df["y"] / DOWNSAMPLE if use_img else df["y"]).to_numpy()
-    ax.scatter(x, y, c=cvec, s=0.4, alpha=0.7, linewidths=0)
+    comm = df["community"].to_numpy()
+    sizes = df.groupby("community").size()
+    large = [c for c in sizes.index if sizes[c] >= MIN_COMMUNITY_SIZE]
+    cmap = plt.get_cmap("tab20")
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    imshow_tissue(ax, dapi)
+    for i, c in enumerate(large):
+        m = comm == c
+        pts = np.column_stack((x[m], y[m]))
+        if len(pts) >= 3:
+            hull = ConvexHull(pts)
+            hx = np.append(pts[hull.vertices, 0], pts[hull.vertices[0], 0])
+            hy = np.append(pts[hull.vertices, 1], pts[hull.vertices[0], 1])
+            ax.plot(hx, hy, color=cmap(i % 20), lw=1.6)
     if not use_img:
         ax.set_aspect("equal")
-    ax.set_title("Communities overlaid on the tissue image", fontsize=11)
+    ax.set_title(f"Community outlines over the tissue image ({len(large)} communities)", fontsize=11)
     ax.tick_params(labelsize=7)
-    fig.suptitle("Neighbourhoods: the tissue's spatial-community structure", fontsize=14)
     fig.tight_layout()
-    fig.savefig(OUT_DIR / "communities.png", dpi=150)
+    fig.savefig(OUT_DIR / "community_outlines.png", dpi=150)
     plt.close(fig)
-    return comms
-
-
-def figure_representative_images():
-    """Panel 4: downsampled multi-channel composites from the zarr (optional; skip if Z: unavailable).
-
-    Reads the s4 pyramid level (2775 x 2790), which is a ~16x downsample of full res, and renders a
-    3-channel RGB composite (DAPI + two markers) plus a DAPI tissue outline. Kept to a few channels so
-    the network read is tolerable.
-    """
-    import zarr
-
-    try:
-        g = zarr.open_group(ZARR_URL, mode="r")
-    except Exception as e:
-        print(f"[skip representative images] could not open zarr: {e}")
-        return False
-
-    imgpath = "images/20260629_170222_3_mBsc8s_EHP893_25_29plex_V2_EHP576_26_COMET_29PLEX_3"
-    s4 = g[imgpath + "/s4"]
-
-    # read the channels we need in one go: DAPI (0), CD3 (24), PD-L1 (25), E-cadherin (8), SMA (28)
-    want = [0, 24, 25, 8, 28]
-    print("[images] reading downsampled channels ...")
-    stack = s4[want]  # (5, H, W) uint16 - one batched read
-    H, W = stack.shape[1], stack.shape[2]
-    dapi = stack[0]
-    cd3 = stack[1]
-    pdl1 = stack[2]
-    ecad = stack[3]
-    sma = stack[4]
-
-    def norm(im, p_lo=1.0, p_hi=99.5):
-        im = im.astype("float64")
-        lo, hi = np.percentile(im, p_lo), np.percentile(im, p_hi)
-        return np.clip((im - lo) / (hi - lo + 1e-9), 0, 1)
-
-    # 3-channel composite: DAPI (blue), CD3 (green), PD-L1 (red)
-    rgb = np.stack([norm(pdl1), norm(cd3), norm(dapi)], axis=-1)
-
-    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
-    axes[0].imshow(rgb)
-    axes[0].set_title("Composite: DAPI (blue) / CD3 (green) / PD-L1 (red)", fontsize=11)
-    axes[0].axis("off")
-    axes[1].imshow(norm(dapi), cmap="gray")
-    axes[1].set_title("DAPI (nuclei) — tissue outline", fontsize=11)
-    axes[1].axis("off")
-    fig.suptitle("Representative images (16x-downsampled full field of view)", fontsize=13)
-    fig.tight_layout()
-    fig.savefig(OUT_DIR / "representative_images.png", dpi=150)
-    plt.close(fig)
-
-    # Also a second composite: E-cadherin (epithelial) vs SMA (stromal)
-    rgb2 = np.stack([norm(ecad), norm(sma), norm(dapi)], axis=-1)
-    fig, ax = plt.subplots(figsize=(8, 8))
-    ax.imshow(rgb2)
-    ax.set_title("Composite: DAPI (blue) / E-cadherin (green) / SMA (red)", fontsize=11)
-    ax.axis("off")
-    fig.suptitle("Representative images (16x-downsampled full field of view)", fontsize=13)
-    fig.tight_layout()
-    fig.savefig(OUT_DIR / "representative_images_epi_stromal.png", dpi=150)
-    plt.close(fig)
-    return True
 
 
 def load_sweep_data():
-    """Load CellSurvey's read-only sweep outputs (community + cluster). Returns (summaries, sweep_dfs)
-    or None if Z: is unavailable. Sweep CSVs are ~20 MB each, so read them only once."""
+    """Load CellSurvey's community sweep outputs (local CSVs). Returns the sweep dict, or None on error."""
     try:
         comm_summary = pd.read_csv(COMMUNITY_SWEEP_SUMMARY)
-        cl_summary = pd.read_csv(CLUSTER_SWEEP_SUMMARY)
         comm_sweep = pd.read_csv(COMMUNITY_SWEEP_CSV)
-        cl_sweep = pd.read_csv(CLUSTER_SWEEP_CSV)
         return {
             "community_summary": comm_summary,
-            "cluster_summary": cl_summary,
             "community_sweep": comm_sweep,
-            "cluster_sweep": cl_sweep,
         }
     except Exception as e:
         print(f"[skip sweep analysis] could not load sweep CSVs: {e}")
@@ -514,80 +441,17 @@ def analyse_cd31_communities(df, sweep):
     # total CD31 (cluster 6) cells, and how they're distributed
     n_cd31_total = int((m["kmeans_cluster"] == 6).sum())
     n_cd31_in_tiny = int(cd31_mask.sum())
-    # spatial spread of the tiny-CD31 cells (to show they're scattered, not one vessel)
-    xs = cd31_cells["x"].to_numpy()
-    ys = cd31_cells["y"].to_numpy()
 
     return {
         "cd31_communities": cd31_comms,
         "n_cd31_total": n_cd31_total,
         "n_cd31_in_tiny": n_cd31_in_tiny,
         "merge_counts": merge_counts,
-        "tiny_x": xs,
-        "tiny_y": ys,
         "community_summary": sweep["community_summary"],
-        "cluster_summary": sweep["cluster_summary"],
-        "merged_df": m,
     }
 
 
-def figure_community_resolution(df, sweep_info):
-    """Resolution sensitivity: n communities vs resolution (left) and the 13 CD31 communities shown as
-    isolated scattered cells over the tissue (right)."""
-    comm_summary = sweep_info["community_summary"]
-    # order resolutions descending to match "higher resolution -> more communities"
-    res = comm_summary["resolution"].to_numpy()
-    ncom = comm_summary["n_communities"].to_numpy()
-
-    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
-    ax = axes[0]
-    ax.plot(range(len(res)), ncom, marker="o", color="#6C5B9E", linewidth=2)
-    ax.set_xticks(range(len(res)))
-    ax.set_xticklabels([f"{r:g}" for r in res])
-    ax.set_xlabel("Louvain resolution")
-    ax.set_ylabel("number of communities")
-    ax.set_title("Communities vs resolution\n(higher = more, smaller communities)", fontsize=11)
-    for i, v in enumerate(ncom):
-        ax.annotate(str(int(v)), (i, v), textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9)
-    ax.set_ylim(0, max(ncom) * 1.15)
-
-    ax = axes[1]
-    # tissue outline (all cells, faint) + the tiny CD31 cells (red)
-    ax.hexbin(df["x"], df["y"], gridsize=100, cmap="Greys", mincnt=1, edgecolors="none", alpha=0.2)
-    ax.scatter(sweep_info["tiny_x"], sweep_info["tiny_y"], c="#C1622D", s=8, label="CD31-only cells")
-    ax.set_aspect("equal")
-    ax.set_title(
-        f"The {len(sweep_info['cd31_communities'])} CD31-only communities\n"
-        f"({sweep_info['n_cd31_in_tiny']:,} isolated cells, scattered across the tissue)",
-        fontsize=11,
-    )
-    ax.legend(fontsize=8, loc="upper right")
-    ax.tick_params(labelsize=7)
-    fig.suptitle("Community sensitivity: 49 is the high-resolution default, and the CD31 communities "
-                 "are isolated cells", fontsize=13)
-    fig.tight_layout()
-    fig.savefig(OUT_DIR / "community_resolution_sweep.png", dpi=150)
-    plt.close(fig)
-
-
-def figure_cluster_elbow(sweep_info):
-    """K-means inertia vs k (the elbow plot the cluster sweep is for)."""
-    cs = sweep_info["cluster_summary"]
-    k = cs["n_clusters"].to_numpy()
-    inertia = cs["inertia"].to_numpy()
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(k, inertia, marker="o", color="#2E7D6B", linewidth=2)
-    ax.set_xlabel("k (number of clusters)")
-    ax.set_ylabel("k-means inertia (sum of squared distances)")
-    ax.set_title("Cluster sweep: inertia vs k (no sharp elbow at k=10)", fontsize=11)
-    ax.annotate("k=10 (used here)", (10, inertia[2]), textcoords="offset points",
-                xytext=(8, 10), fontsize=9, color="#C1622D")
-    fig.tight_layout()
-    fig.savefig(OUT_DIR / "cluster_elbow.png", dpi=150)
-    plt.close(fig)
-
-
-def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, image_overlays):
+def write_report(df, prof, top, sizes, comp, sweep_info, image_overlays):
     n = len(df)
     n_nonspecific = int(non_specific_mask(df).sum())
     debris = debris_mask(df)
@@ -599,8 +463,8 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, image
     lines.append("# CellSurvey tissue — a broad overview\n")
     lines.append(f"One tissue section, **{n:,} segmented nuclei**, ~32 marker channels.\n")
     lines.append("This is a visual summary, not a single hypothesis test: who is in the tissue (cell\n"
-                 "populations), where they are (spatial maps), how the tissue is organised\n"
-                 "(communities), and what it looks like (representative images).\n")
+                 "populations), where they are (spatial maps), and how the tissue is organised\n"
+                 "(communities).\n")
     lines.append("## How to read this (in plain terms)\n")
     lines.append("**\"z-score\"** is just a way to put every marker on the same ruler. Raw brightness\n"
                  "numbers can't be compared directly — each marker is photographed at its own settings and\n"
@@ -667,19 +531,15 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, image
                  "neighbouring nuclei (Delaunay triangulation, edges up to 1,000 px, each weighted by how\n"
                  "similar the two cells' marker profiles are), then runs **Louvain** community detection at a\n"
                  "**resolution** setting. Higher resolution → more, smaller communities; lower → fewer, larger.\n")
-    lines.append(f"The **default** resolution (0.1) gives **{len(comms)} communities**. That is on the\n"
-                 f"fine-grained end, and the sensitivity sweep below shows what happens as the resolution is\n"
-                 f"lowered:\n")
+    lines.append(f"The **default** resolution (0.1) gives **{comp.shape[0]} communities**. That is on the\n"
+                 f"fine-grained end — lowering the resolution merges most of that fine structure:\n")
     if sweep_info is not None:
         cs = sweep_info["community_summary"]
         res_vals = cs["resolution"].to_numpy()
         n_vals = cs["n_communities"].to_numpy()
         sweep_str = "; ".join(f"resolution {r:g} → {int(n)} communities" for r, n in zip(res_vals, n_vals))
         lines.append(f"- **Resolution sweep:** {sweep_str}.\n")
-        lines.append("![Community resolution sweep](out_overview/community_resolution_sweep.png)\n")
-    else:
-        lines.append("- *(resolution sweep skipped — Z: not reachable this run)*\n")
-    lines.append("![Community histogram and community map over the tissue](out_overview/communities.png)\n")
+    lines.append("![Community outlines over the tissue image](out_overview/community_outlines.png)\n")
 
     # The colleague's question: the 13 CD31 communities.
     if sweep_info is not None:
@@ -718,23 +578,6 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, image
                  f"  only {int(((dom_cluster := comp['dominant_cluster']).isin([1, 3, 8])).sum())} community —\n"
                  f"  consistent with them being scattered autofluorescent cells, not a tissue compartment.\n")
     lines.append("![Community composition by cluster](out_overview/community_composition.png)\n")
-
-    # cluster sweep (k-means elbow)
-    if sweep_info is not None:
-        cl = sweep_info["cluster_summary"]
-        lines.append("**Cluster sensitivity (k-means elbow).** The k-means `k` is also a free choice; the\n"
-                     "sweep shows inertia falls smoothly as `k` grows with no sharp elbow at `k=10` (the\n"
-                     "shipped value) — 10 is a reasonable but not special choice.\n")
-        lines.append("![K-means inertia vs k](out_overview/cluster_elbow.png)\n")
-
-    lines.append("## 4. Representative images\n")
-    if images_ok:
-        lines.append("DAPI/CD3/PD-L1 and DAPI/E-cadherin/SMA composites of the actual tissue at 16x\n"
-                     "downsampling:\n")
-        lines.append("![Composite: DAPI / CD3 / PD-L1](out_overview/representative_images.png)\n")
-        lines.append("![Composite: DAPI / E-cadherin / SMA](out_overview/representative_images_epi_stromal.png)\n")
-    else:
-        lines.append("*(skipped — source zarr not reachable at Z: this run)*\n")
     REPORT_MD.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -761,21 +604,14 @@ def main():
     figure_spatial_maps(df, dapi)
 
     print("Figure 3: communities ...")
-    comms = figure_communities(df, dapi)
     comp = figure_community_composition(df)
+    figure_community_outlines(df, dapi)
 
-    print("Sweep analysis (resolution / k-means sensitivity) ...")
+    print("Community sensitivity (resolution) ...")
     sweep = load_sweep_data()
-    sweep_info = None
-    if sweep is not None:
-        sweep_info = analyse_cd31_communities(df, sweep)
-        figure_community_resolution(df, sweep_info)
-        figure_cluster_elbow(sweep_info)
+    sweep_info = analyse_cd31_communities(df, sweep) if sweep is not None else None
 
-    print("Figure 4: representative images ...")
-    images_ok = figure_representative_images()
-
-    write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, dapi is not None)
+    write_report(df, prof, top, sizes, comp, sweep_info, dapi is not None)
     print(f"Done. Outputs in {OUT_DIR}/")
 
 
