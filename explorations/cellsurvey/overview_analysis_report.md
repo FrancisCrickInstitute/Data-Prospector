@@ -130,28 +130,46 @@ isolated fragments already discussed, and are dropped from the composition plot)
 ## 4. Feasibility of the four thymus questions
 
 This is a **single thymus section**, and the marker panel contains everything the
-collaborator asks about — but three data-quality limits shape what can be answered:
+collaborator asks about — but a few data-quality limits shape what can be answered:
+
+**The measurement compartment is the most fundamental limit.** Every object is a
+**Stardist nuclear segmentation**, so each marker is read as "mean intensity inside the
+nucleus". That is only the right compartment for a minority of the markers:
+
+| Compartment | Markers | Nuclear mean valid? |
+|---|---|---|
+| nuclear | TP63, TP73, p16, Ki-67, FoxP3, H2AX | ✅ yes — these live in the nucleus |
+| membrane | E-cadherin, CD31, CD45, CD3/4/8, CD20, CD56, CD11c, HLA-DR, PD-1/PD-L1, LY75, BCAM | ❌ signal is at the cell boundary |
+| cytoplasmic | SMA (αSMA), Vimentin, CD68 | ❌ cytoplasm is excluded by nuclear segmentation |
+| extracellular matrix | Collagen I/IV, Fibronectin, LamininA5 | ❌ signal is *between* cells, not in a nucleus |
+
+So only the six nuclear markers are measured in the right place. The membrane markers read
+mostly background/autofluorescence inside the nucleus (which is why the immune markers come
+out debris-dominated in the table below), and the ECM markers aren't cell-localised at all.
+A membrane-ring / dilated-cytoplasm readout (the approach QuPath takes) is the likely fix.
 
 1. **Thymic epithelial stem-cell niches (E-cadherin⁺/TP63⁺ and BCAM⁺/TP73⁺).** Answerable
    in principle — all four markers are present, and E-cadherin/TP73/BCAM are relatively
-   clean — but **TP63 is 78% debris**, so a naive niche call would be
-   mostly autofluorescence and needs the debris cells removed first.
+   clean — but **TP63 is 78% debris**, and E-cadherin/BCAM are membrane
+   markers, so the epithelial half of the niche is a poor nuclear proxy.
 
 2. **Thymic residues via immune markers.** The hardest to answer. **CD68 did not work**
    (autofluorescent), so 'myeloid' can only be read from CD11c. And CD45/CD3/CD4/HLA-DR
    have almost no real signal in this tissue (each <0.5% 'positive',
    with the few bright cells mostly debris) — consistent with an involuted thymus with few
-   remaining thymocytes, but it means these markers cannot be thresholded naively.
+   remaining thymocytes. All of these are membrane markers read through the nucleus, so the
+   immune readout is doubly compromised.
 
 3. **Matrix/vascular remodelling *with age*.** The markers (fibronectin, laminin, αSMA,
    CD31, collagens I/IV) are all present and reasonably clean, but this is **one section** —
    so it can show the current tissue architecture, not change over time. 'With age' needs
-   multiple age/timepoint samples.
+   multiple age/timepoint samples; and these are membrane/cytoplasmic/ECM markers, so they
+   are not well captured by nuclear intensity either.
 
-4. **Senescence (p16, H2AX).** Markers present; p16 is clean, but H2AX is ~
-   47% debris and it is unconfirmed whether the panel's H2AX is the
-   phosphorylated (γH2AX) DNA-damage form. 'Senescent behaviour' is also a stronger claim
-   than 'expresses p16'.
+4. **Senescence (p16, H2AX).** Markers present and **both nuclear**, so this is the most
+   reliable question in the panel. p16 is clean, but H2AX is ~47% debris
+   and it is unconfirmed whether the panel's H2AX is the phosphorylated (γH2AX) DNA-damage
+   form. 'Senescent behaviour' is also a stronger claim than 'expresses p16'.
 
 The table below quantifies this for every marker the questions depend on:
 

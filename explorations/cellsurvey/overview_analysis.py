@@ -619,24 +619,39 @@ def write_report(df, prof, top, sizes, comp, sweep_info, image_overlays):
 
     lines.append("## 4. Feasibility of the four thymus questions\n")
     lines.append("This is a **single thymus section**, and the marker panel contains everything the\n"
-                 "collaborator asks about — but three data-quality limits shape what can be answered:\n")
+                 "collaborator asks about — but a few data-quality limits shape what can be answered:\n")
+    lines.append("**The measurement compartment is the most fundamental limit.** Every object is a\n"
+                 "**Stardist nuclear segmentation**, so each marker is read as \"mean intensity inside the\n"
+                 "nucleus\". That is only the right compartment for a minority of the markers:\n")
+    lines.append("| Compartment | Markers | Nuclear mean valid? |\n"
+                 "|---|---|---|\n"
+                 "| nuclear | TP63, TP73, p16, Ki-67, FoxP3, H2AX | ✅ yes — these live in the nucleus |\n"
+                 "| membrane | E-cadherin, CD31, CD45, CD3/4/8, CD20, CD56, CD11c, HLA-DR, PD-1/PD-L1, LY75, BCAM | ❌ signal is at the cell boundary |\n"
+                 "| cytoplasmic | SMA (αSMA), Vimentin, CD68 | ❌ cytoplasm is excluded by nuclear segmentation |\n"
+                 "| extracellular matrix | Collagen I/IV, Fibronectin, LamininA5 | ❌ signal is *between* cells, not in a nucleus |\n")
+    lines.append("So only the six nuclear markers are measured in the right place. The membrane markers read\n"
+                 "mostly background/autofluorescence inside the nucleus (which is why the immune markers come\n"
+                 "out debris-dominated in the table below), and the ECM markers aren't cell-localised at all.\n"
+                 "A membrane-ring / dilated-cytoplasm readout (the approach QuPath takes) is the likely fix.\n")
     lines.append("1. **Thymic epithelial stem-cell niches (E-cadherin⁺/TP63⁺ and BCAM⁺/TP73⁺).** Answerable\n"
                  f"   in principle — all four markers are present, and E-cadherin/TP73/BCAM are relatively\n"
-                 f"   clean — but **TP63 is {f['TP63']['pct_debris']:.0f}% debris**, so a naive niche call would be\n"
-                 f"   mostly autofluorescence and needs the debris cells removed first.\n")
+                 f"   clean — but **TP63 is {f['TP63']['pct_debris']:.0f}% debris**, and E-cadherin/BCAM are membrane\n"
+                 "   markers, so the epithelial half of the niche is a poor nuclear proxy.\n")
     lines.append("2. **Thymic residues via immune markers.** The hardest to answer. **CD68 did not work**\n"
                  "   (autofluorescent), so 'myeloid' can only be read from CD11c. And CD45/CD3/CD4/HLA-DR\n"
                  f"   have almost no real signal in this tissue (each <{f['CD45']['pct_positive']:.1f}% 'positive',\n"
                  "   with the few bright cells mostly debris) — consistent with an involuted thymus with few\n"
-                 "   remaining thymocytes, but it means these markers cannot be thresholded naively.\n")
+                 "   remaining thymocytes. All of these are membrane markers read through the nucleus, so the\n"
+                 "   immune readout is doubly compromised.\n")
     lines.append("3. **Matrix/vascular remodelling *with age*.** The markers (fibronectin, laminin, αSMA,\n"
                  "   CD31, collagens I/IV) are all present and reasonably clean, but this is **one section** —\n"
                  "   so it can show the current tissue architecture, not change over time. 'With age' needs\n"
-                 "   multiple age/timepoint samples.\n")
-    lines.append("4. **Senescence (p16, H2AX).** Markers present; p16 is clean, but H2AX is ~\n"
-                 f"   {f['H2AX']['pct_debris']:.0f}% debris and it is unconfirmed whether the panel's H2AX is the\n"
-                 "   phosphorylated (γH2AX) DNA-damage form. 'Senescent behaviour' is also a stronger claim\n"
-                 "   than 'expresses p16'.\n")
+                 "   multiple age/timepoint samples; and these are membrane/cytoplasmic/ECM markers, so they\n"
+                 "   are not well captured by nuclear intensity either.\n")
+    lines.append("4. **Senescence (p16, H2AX).** Markers present and **both nuclear**, so this is the most\n"
+                 f"   reliable question in the panel. p16 is clean, but H2AX is ~{f['H2AX']['pct_debris']:.0f}% debris\n"
+                 "   and it is unconfirmed whether the panel's H2AX is the phosphorylated (γH2AX) DNA-damage\n"
+                 "   form. 'Senescent behaviour' is also a stronger claim than 'expresses p16'.\n")
     lines.append("The table below quantifies this for every marker the questions depend on:\n")
     lines.append("| Marker | % positive (z>+2) | % of positive that are debris | Flag |\n"
                  "|---|---|---|---|")
