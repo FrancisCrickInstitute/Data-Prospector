@@ -33,7 +33,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.spatial import ConvexHull
+from scipy.ndimage import gaussian_filter
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -221,7 +221,7 @@ def figure_populations(df):
     non_debris = [c for c in clusters if c not in DEBRIS_CLUSTERS]
     sizes = df.groupby("kmeans_cluster").size()
 
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+    fig, axes = plt.subplots(1, 2, figsize=(18, 7), constrained_layout=True)
     disp_names = [m.replace("_", "-") for m in marker_cols]
     im = None
     for ax, cs, title in [(axes[0], clusters, "all clusters"),
@@ -232,9 +232,9 @@ def figure_populations(df):
         ax.set_yticks(range(len(cs)))
         ax.set_yticklabels([f"Cluster {c}" for c in cs], fontsize=8)
         ax.set_title(f"Mean marker intensity per cluster — {title}", fontsize=11)
-    fig.colorbar(im, ax=axes.tolist(), fraction=0.03, label="robust z-score")
-    fig.suptitle("Cell populations: per-cluster marker profiles", fontsize=14, y=1.02)
-    fig.tight_layout()
+    # single shared colour scale on its own axes, so it never overlaps the heatmaps
+    fig.colorbar(im, ax=axes, shrink=0.75, label="robust z-score")
+    fig.suptitle("Cell populations: per-cluster marker profiles", fontsize=14)
     fig.savefig(OUT_DIR / "populations_cluster_profile.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
     return prof, top, sizes
@@ -356,8 +356,8 @@ def figure_community_composition(df):
                color=cluster_colors[c], width=0.9, label=f"{c}: {CLUSTER_NAMES[c]}")
         bottom += vals
     ax.set_xticks(range(len(order)))
-    ax.set_xticklabels([f"{c}\n({CLUSTER_NAMES[keep.loc[c, 'dominant_cluster']]})" for c in order], fontsize=6)
-    ax.set_xlabel("community (grouped by dominant composition, then size)")
+    ax.set_xticklabels([str(int(c)) for c in order], rotation=90, fontsize=7)
+    ax.set_xlabel("community (grouped by dominant composition, then size; colour = dominant cluster)")
     ax.set_ylabel("fraction of community")
     ax.set_title(
         f"Community composition by k-means cluster — {len(order)} communities "
@@ -370,9 +370,10 @@ def figure_community_composition(df):
 
 
 def figure_community_outlines(df, dapi):
-    """Community boundaries (convex hulls) overlaid on the DAPI tissue image - the 'ROI' view.
+    """Community boundaries overlaid on the DAPI tissue image - the 'ROI' view.
 
-    Only communities above MIN_COMMUNITY_SIZE are drawn (the tiny isolated fragments are omitted).
+    Each community is outlined by a smoothed density contour (not a coarse convex hull), so the
+    boundary follows the actual cell positions. Only communities >= MIN_COMMUNITY_SIZE are drawn.
     """
     use_img = dapi is not None
     x = (df["x"] / DOWNSAMPLE if use_img else df["x"]).to_numpy()
@@ -382,16 +383,21 @@ def figure_community_outlines(df, dapi):
     large = [c for c in sizes.index if sizes[c] >= MIN_COMMUNITY_SIZE]
     cmap = plt.get_cmap("tab20")
 
+    grid = 300
+    xmin, xmax = x.min(), x.max()
+    ymin, ymax = y.min(), y.max()
+
     fig, ax = plt.subplots(figsize=(10, 10))
     imshow_tissue(ax, dapi)
     for i, c in enumerate(large):
         m = comm == c
-        pts = np.column_stack((x[m], y[m]))
-        if len(pts) >= 3:
-            hull = ConvexHull(pts)
-            hx = np.append(pts[hull.vertices, 0], pts[hull.vertices[0], 0])
-            hy = np.append(pts[hull.vertices, 1], pts[hull.vertices[0], 1])
-            ax.plot(hx, hy, color=cmap(i % 20), lw=1.6)
+        H, xe, ye = np.histogram2d(x[m], y[m], bins=grid, range=[[xmin, xmax], [ymin, ymax]])
+        H = gaussian_filter(H, sigma=1.5)
+        xc = (xe[:-1] + xe[1:]) / 2
+        yc = (ye[:-1] + ye[1:]) / 2
+        X, Y = np.meshgrid(xc, yc)
+        level = max(H.max() * 0.02, 0.5)
+        ax.contour(X, Y, H.T, levels=[level], colors=[cmap(i % 20)], linewidths=1.4)
     if not use_img:
         ax.set_aspect("equal")
     ax.set_title(f"Community outlines over the tissue image ({len(large)} communities)", fontsize=11)
