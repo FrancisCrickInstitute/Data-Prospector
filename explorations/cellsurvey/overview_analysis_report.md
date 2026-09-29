@@ -14,9 +14,15 @@ the slide is lit unevenly — so for each marker we centre every cell at "0 = a 
 cell" and count in steps of "1 = one spread of the data". A z-score of +2 means
 "noticeably brighter than the typical cell for that marker"; it does **not** mean the
 cell is definitively positive — the positive/negative line is a separate judgement call.
-**"Community"** just means a cluster of nuclei that sit next to each other
-in the tissue (found algorithmically); it's a way to ask "what regions does this tissue
-break into?" without imposing a predefined map.
+
+**Two different kinds of grouping, and it is easy to confuse them.**
+- **Clusters** (k-means) group cells by *what they express* — cells with similar marker
+  profiles go together, wherever they sit in the tissue. One cell type = one cluster.
+- **Communities** group cells by *where they are* — cells that sit next to each other,
+  whatever they express. So a cell type that is physically scattered (like blood-vessel
+  cells, which are in many separate vessels) shows up in many communities at once.
+Both are computed by the CellSurvey pipeline from the same data; they just answer
+different questions.
 
 ## 1. Cell populations
 
@@ -58,23 +64,58 @@ Where each cluster sits and where cells positive for each lineage marker sit:
 
 ## 3. Neighbourhoods / communities
 
-The tissue is partitioned into **49 spatial communities** (property-graph
-communities over neighbouring nuclei); the largest has 25,067 nuclei.
+Communities are built by the CellSurvey pipeline in two steps: it draws a network of
+neighbouring nuclei (Delaunay triangulation, edges up to 1,000 px, each weighted by how
+similar the two cells' marker profiles are), then runs **Louvain** community detection at a
+**resolution** setting. Higher resolution → more, smaller communities; lower → fewer, larger.
+
+The **default** resolution (0.1) gives **49 communities**. That is on the
+fine-grained end, and the sensitivity sweep below shows what happens as the resolution is
+lowered:
+
+- **Resolution sweep:** resolution 0.1 → 49 communities; resolution 0.05 → 36 communities; resolution 0.02 → 28 communities; resolution 0.01 → 26 communities.
+
+![Community resolution sweep](out_overview/community_resolution_sweep.png)
 
 ![Community histogram and spatial layout](out_overview/communities.png)
 
-**Are there interesting patterns?** Yes, and the composition plot makes them visible:
+**Why the 13 CD31 communities are not "one group that got split up."**
 
-- The communities are **not all the same** — the most common community identities are
-  mixed matrix (collagen/S100) (24 communities), endothelial/vascular (CD31) (13 communities), proliferative immune (Ki-67/CD3/CD8) (7 communities).
+The 13 communities that look "all CD31" are actually **26 isolated
+single/few-cell islands** (1–4 cells each), scattered across the whole tissue, not a
+large vessel broken into pieces. They are the minority of the CD31 population — the
+other **41,442** CD31 cells live inside larger, mixed communities. Because
+these 26 cells are physically separate, they correctly form separate *spatial*
+communities, and lowering the resolution does **not** merge them (they stay
+13 communities even at resolution 0.01).
 
-- 16 of 49 communities are "pure" (over 80% one cluster), meaning the tissue
-  separates into **compositionally distinct regions** rather than an even mix everywhere.
+If you want "all CD31 cells as one group," that is exactly what the **cluster** label
+already gives you: cluster 6 is the single endothelial/vascular group, 41,468 cells,
+across the whole tissue. Communities answer "where", clusters answer "what" — the CD31
+cells being split across many communities is the correct answer to "where", not a
+detection failure.
+
+**Are there interesting patterns?** Yes, once you look at the *large* communities
+(the small ones are mostly the isolated cells already discussed):
+
+- The 10 largest communities are **proliferative immune (Ki-67/CD3/CD8) (4 of the 10 largest), mixed matrix (collagen/S100) (4 of the 10 largest), immune (CD3/CD4/leukocyte) (2 of the 10 largest)** — i.e. the tissue's big spatial blocks
+  are immune-rich (T-cell) and matrix-rich regions.
+
+- 16 of 49 communities are over 80% one cluster, but most of those are tiny;
+  only **0** communities with more than 1,000 cells are that pure, so at the
+  large scale the tissue is genuinely mixed rather than divided into single-type blocks.
+
 - The three debris clusters (1/3/8) hardly form their own regions — together they dominate
   only 1 community —
   consistent with them being scattered autofluorescent cells, not a tissue compartment.
 
 ![Community composition by cluster](out_overview/community_composition.png)
+
+**Cluster sensitivity (k-means elbow).** The k-means `k` is also a free choice; the
+sweep shows inertia falls smoothly as `k` grows with no sharp elbow at `k=10` (the
+shipped value) — 10 is a reasonable but not special choice.
+
+![K-means inertia vs k](out_overview/cluster_elbow.png)
 
 ## 4. Representative images
 

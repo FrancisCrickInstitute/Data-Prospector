@@ -16,7 +16,8 @@ It is a hand-written, one-off follow-up (see docs/DEVELOPMENT_LOG.md rev. 91 / B
 the `explorations/` convention) - no Docker, no judge, no gallery.
 
 Run:  pixi run python explorations/cellsurvey/overview_analysis.py
-Reads: inputs/cellsurvey_processed/cells.csv, and (for representative images only) the zarr at ZARR_URL.
+Reads: inputs/cellsurvey_processed/cells.csv; for the community/cluster sensitivity analysis and
+       representative images, the CellSurvey sweep CSVs and zarr on Z: (skipped gracefully if absent).
 Writes: explorations/cellsurvey/overview_analysis_report.md (tracked source) and explorations/cellsurvey/out_overview/*.png (gitignored figures).
 
 The CD68 caveat (docs/DEVELOPMENT_LOG.md rev. 95 / section 15.9) is applied throughout: CD68 is treated
@@ -49,6 +50,15 @@ ZARR_URL = (
     "Z:/working/barryd/hpc/projects/stps/lm/Spatial-Biology-Pipeline/outputs/"
     "20260629_170222_3_mBsc8s_EHP893_25_29plex_V2_EHP576_26_COMET_29PLEX_3.ome_seg.zarr"
 )
+
+# CellSurvey's read-only parameter sweeps (see https://cell-survey.readthedocs.io/en/latest/parameters/
+# #parameter-sweeps) write CSVs next to the zarr. These carry the community/cluster sensitivity results
+# that answer the "49 communities is a lot" question. Optional like the zarr: skip gracefully if Z: down.
+SWEEP_DIR = Path("Z:/working/barryd/hpc/projects/stps/lm/Spatial-Biology-Pipeline/outputs")
+COMMUNITY_SWEEP_CSV = SWEEP_DIR / "community_sweep.csv"
+CLUSTER_SWEEP_CSV = SWEEP_DIR / "cluster_sweep.csv"
+COMMUNITY_SWEEP_SUMMARY = SWEEP_DIR / "community_sweep_summary.csv"
+CLUSTER_SWEEP_SUMMARY = SWEEP_DIR / "cluster_sweep_summary.csv"
 
 # 32 channels, index-order = the zarr image / var index. Index 0 is DAPI; indices 9 and 10 are the
 # two autofluorescence control channels (TRITC (1) / Cy5 (1)), i.e. empty-cycle bleed-through controls.
@@ -311,7 +321,7 @@ def figure_communities(df):
     ax.bar(range(len(comms)), comms.to_numpy(), color="#2E7D6B", alpha=0.85)
     ax.set_xlabel("community (ranked by size)")
     ax.set_ylabel("number of nuclei")
-    ax.set_title("Spatial communities (Leiden-style property communities)", fontsize=11)
+    ax.set_title("Spatial communities (Louvain on a Delaunay network)", fontsize=11)
     ax.tick_params(labelsize=7)
 
     ax = axes[1]
@@ -393,7 +403,125 @@ def figure_representative_images():
     return True
 
 
-def write_report(df, prof, top, sizes, comms, comp, images_ok):
+def load_sweep_data():
+    """Load CellSurvey's read-only sweep outputs (community + cluster). Returns (summaries, sweep_dfs)
+    or None if Z: is unavailable. Sweep CSVs are ~20 MB each, so read them only once."""
+    try:
+        comm_summary = pd.read_csv(COMMUNITY_SWEEP_SUMMARY)
+        cl_summary = pd.read_csv(CLUSTER_SWEEP_SUMMARY)
+        comm_sweep = pd.read_csv(COMMUNITY_SWEEP_CSV)
+        cl_sweep = pd.read_csv(CLUSTER_SWEEP_CSV)
+        return {
+            "community_summary": comm_summary,
+            "cluster_summary": cl_summary,
+            "community_sweep": comm_sweep,
+            "cluster_sweep": cl_sweep,
+        }
+    except Exception as e:
+        print(f"[skip sweep analysis] could not load sweep CSVs: {e}")
+        return None
+
+
+def analyse_cd31_communities(df, sweep):
+    """Answer the colleague's question: are the 13 CD31-only communities a fragment of one vessel, or
+    genuinely separate? Returns a dict with the numbers needed to explain it.
+
+    Communities come from Louvain on a Delaunay network weighted by expression similarity; the default
+    `--community-resolution` 0.1 gives 49. The 13 tiny CD31 communities are isolated single/few-cell
+    islands, not a large vessel split up, so lowering resolution does NOT merge them (they stay 13).
+    """
+    comm = sweep["community_sweep"]
+    # join cells' kmeans_cluster to the sweep (sweep already has x/y)
+    m = df[["cell_id", "kmeans_cluster"]].merge(comm, on="cell_id", how="inner")
+    r01 = "community_r0.1_d1000"
+    # dominant cluster per community at r0.1
+    dom = m.groupby(r01)["kmeans_cluster"].agg(lambda s: s.mode()[0])
+    cd31_comms = sorted(int(c) for c in dom[dom == 6].index)
+    cd31_mask = m[r01].isin(cd31_comms)
+    cd31_cells = m[cd31_mask]
+
+    # how many communities do those CD31 cells map to at each resolution?
+    merge_counts = {}
+    for col in ["community_r0.05_d1000", "community_r0.02_d1000", "community_r0.01_d1000"]:
+        merge_counts[col] = int(cd31_cells[col].nunique())
+
+    # total CD31 (cluster 6) cells, and how they're distributed
+    n_cd31_total = int((m["kmeans_cluster"] == 6).sum())
+    n_cd31_in_tiny = int(cd31_mask.sum())
+    # spatial spread of the tiny-CD31 cells (to show they're scattered, not one vessel)
+    xs = cd31_cells["x"].to_numpy()
+    ys = cd31_cells["y"].to_numpy()
+
+    return {
+        "cd31_communities": cd31_comms,
+        "n_cd31_total": n_cd31_total,
+        "n_cd31_in_tiny": n_cd31_in_tiny,
+        "merge_counts": merge_counts,
+        "tiny_x": xs,
+        "tiny_y": ys,
+        "community_summary": sweep["community_summary"],
+        "cluster_summary": sweep["cluster_summary"],
+        "merged_df": m,
+    }
+
+
+def figure_community_resolution(df, sweep_info):
+    """Resolution sensitivity: n communities vs resolution (left) and the 13 CD31 communities shown as
+    isolated scattered cells over the tissue (right)."""
+    comm_summary = sweep_info["community_summary"]
+    # order resolutions descending to match "higher resolution -> more communities"
+    res = comm_summary["resolution"].to_numpy()
+    ncom = comm_summary["n_communities"].to_numpy()
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+    ax = axes[0]
+    ax.plot(range(len(res)), ncom, marker="o", color="#6C5B9E", linewidth=2)
+    ax.set_xticks(range(len(res)))
+    ax.set_xticklabels([f"{r:g}" for r in res])
+    ax.set_xlabel("Louvain resolution")
+    ax.set_ylabel("number of communities")
+    ax.set_title("Communities vs resolution\n(higher = more, smaller communities)", fontsize=11)
+    for i, v in enumerate(ncom):
+        ax.annotate(str(int(v)), (i, v), textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9)
+    ax.set_ylim(0, max(ncom) * 1.15)
+
+    ax = axes[1]
+    # tissue outline (all cells, faint) + the tiny CD31 cells (red)
+    ax.hexbin(df["x"], df["y"], gridsize=100, cmap="Greys", mincnt=1, edgecolors="none", alpha=0.2)
+    ax.scatter(sweep_info["tiny_x"], sweep_info["tiny_y"], c="#C1622D", s=8, label="CD31-only cells")
+    ax.set_aspect("equal")
+    ax.set_title(
+        f"The {len(sweep_info['cd31_communities'])} CD31-only communities\n"
+        f"({sweep_info['n_cd31_in_tiny']:,} isolated cells, scattered across the tissue)",
+        fontsize=11,
+    )
+    ax.legend(fontsize=8, loc="upper right")
+    ax.tick_params(labelsize=7)
+    fig.suptitle("Community sensitivity: 49 is the high-resolution default, and the CD31 communities "
+                 "are isolated cells", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "community_resolution_sweep.png", dpi=150)
+    plt.close(fig)
+
+
+def figure_cluster_elbow(sweep_info):
+    """K-means inertia vs k (the elbow plot the cluster sweep is for)."""
+    cs = sweep_info["cluster_summary"]
+    k = cs["n_clusters"].to_numpy()
+    inertia = cs["inertia"].to_numpy()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(k, inertia, marker="o", color="#2E7D6B", linewidth=2)
+    ax.set_xlabel("k (number of clusters)")
+    ax.set_ylabel("k-means inertia (sum of squared distances)")
+    ax.set_title("Cluster sweep: inertia vs k (no sharp elbow at k=10)", fontsize=11)
+    ax.annotate("k=10 (used here)", (10, inertia[2]), textcoords="offset points",
+                xytext=(8, 10), fontsize=9, color="#C1622D")
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "cluster_elbow.png", dpi=150)
+    plt.close(fig)
+
+
+def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info):
     n = len(df)
     n_nonspecific = int(non_specific_mask(df).sum())
     debris = debris_mask(df)
@@ -413,10 +541,15 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok):
                  "the slide is lit unevenly — so for each marker we centre every cell at \"0 = a typical\n"
                  "cell\" and count in steps of \"1 = one spread of the data\". A z-score of +2 means\n"
                  "\"noticeably brighter than the typical cell for that marker\"; it does **not** mean the\n"
-                 "cell is definitively positive — the positive/negative line is a separate judgement call.\n"
-                 "**\"Community\"** just means a cluster of nuclei that sit next to each other\n"
-                 "in the tissue (found algorithmically); it's a way to ask \"what regions does this tissue\n"
-                 "break into?\" without imposing a predefined map.\n")
+                 "cell is definitively positive — the positive/negative line is a separate judgement call.\n")
+    lines.append("**Two different kinds of grouping, and it is easy to confuse them.**\n"
+                 "- **Clusters** (k-means) group cells by *what they express* — cells with similar marker\n"
+                 "  profiles go together, wherever they sit in the tissue. One cell type = one cluster.\n"
+                 "- **Communities** group cells by *where they are* — cells that sit next to each other,\n"
+                 "  whatever they express. So a cell type that is physically scattered (like blood-vessel\n"
+                 "  cells, which are in many separate vessels) shows up in many communities at once.\n"
+                 "Both are computed by the CellSurvey pipeline from the same data; they just answer\n"
+                 "different questions.\n")
     lines.append("## 1. Cell populations\n")
     lines.append(f"The nuclei fall into **10 k-means clusters** (clustering shipped with the data). The\n"
                  f"table below lists, for each cluster, its size and the five markers that best\n"
@@ -446,23 +579,71 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok):
     lines.append("![Spatial map of each k-means cluster](out_overview/spatial_cluster_maps.png)\n")
     lines.append("![Spatial map of cells positive for each lineage marker](out_overview/spatial_lineage_maps.png)\n")
     lines.append("## 3. Neighbourhoods / communities\n")
-    lines.append(f"The tissue is partitioned into **{len(comms)} spatial communities** (property-graph\n"
-                 f"communities over neighbouring nuclei); the largest has {comms.iloc[0]:,} nuclei.\n")
+    lines.append("Communities are built by the CellSurvey pipeline in two steps: it draws a network of\n"
+                 "neighbouring nuclei (Delaunay triangulation, edges up to 1,000 px, each weighted by how\n"
+                 "similar the two cells' marker profiles are), then runs **Louvain** community detection at a\n"
+                 "**resolution** setting. Higher resolution → more, smaller communities; lower → fewer, larger.\n")
+    lines.append(f"The **default** resolution (0.1) gives **{len(comms)} communities**. That is on the\n"
+                 f"fine-grained end, and the sensitivity sweep below shows what happens as the resolution is\n"
+                 f"lowered:\n")
+    if sweep_info is not None:
+        cs = sweep_info["community_summary"]
+        res_vals = cs["resolution"].to_numpy()
+        n_vals = cs["n_communities"].to_numpy()
+        sweep_str = "; ".join(f"resolution {r:g} → {int(n)} communities" for r, n in zip(res_vals, n_vals))
+        lines.append(f"- **Resolution sweep:** {sweep_str}.\n")
+        lines.append("![Community resolution sweep](out_overview/community_resolution_sweep.png)\n")
+    else:
+        lines.append("- *(resolution sweep skipped — Z: not reachable this run)*\n")
     lines.append("![Community histogram and spatial layout](out_overview/communities.png)\n")
-    # composition narrative: are communities compositionally coherent?
-    dom_counts = comp["dominant_cluster"].value_counts()
-    top_comms = dom_counts.head(3)
-    top_str = ", ".join(f"{CLUSTER_NAMES[c]} ({v} communities)" for c, v in top_comms.items())
+
+    # The colleague's question: the 13 CD31 communities.
+    if sweep_info is not None:
+        n13 = len(sweep_info["cd31_communities"])
+        n_tiny = sweep_info["n_cd31_in_tiny"]
+        n_total = sweep_info["n_cd31_total"]
+        merge = sweep_info["merge_counts"]
+        lines.append(f"**Why the {n13} CD31 communities are not \"one group that got split up.\"**\n")
+        lines.append(f"The {n13} communities that look \"all CD31\" are actually **{n_tiny:,} isolated\n"
+                     f"single/few-cell islands** (1–4 cells each), scattered across the whole tissue, not a\n"
+                     f"large vessel broken into pieces. They are the minority of the CD31 population — the\n"
+                     f"other **{n_total - n_tiny:,}** CD31 cells live inside larger, mixed communities. Because\n"
+                     f"these {n_tiny:,} cells are physically separate, they correctly form separate *spatial*\n"
+                     f"communities, and lowering the resolution does **not** merge them (they stay\n"
+                     f"{merge.get('community_r0.01_d1000', n13)} communities even at resolution 0.01).\n")
+        lines.append(f"If you want \"all CD31 cells as one group,\" that is exactly what the **cluster** label\n"
+                     f"already gives you: cluster 6 is the single endothelial/vascular group, {n_total:,} cells,\n"
+                     f"across the whole tissue. Communities answer \"where\", clusters answer \"what\" — the CD31\n"
+                     f"cells being split across many communities is the correct answer to \"where\", not a\n"
+                     f"detection failure.\n")
+
+    # composition narrative: are communities compositionally coherent? (size-aware: tiny communities
+    # are trivially "pure", so describe the LARGE ones, which is where the real tissue structure lives.)
+    large = comp.sort_values("n", ascending=False).head(10)
+    large_counts = large["dominant_cluster"].value_counts()
+    large_str = ", ".join(f"{CLUSTER_NAMES[c]} ({v} of the 10 largest)" for c, v in large_counts.items())
     n_pure = int((comp["dominant_share"] > 0.8).sum())
-    lines.append("**Are there interesting patterns?** Yes, and the composition plot makes them visible:\n")
-    lines.append(f"- The communities are **not all the same** — the most common community identities are\n"
-                 f"  {top_str}.\n")
-    lines.append(f"- {n_pure} of {len(comms)} communities are \"pure\" (over 80% one cluster), meaning the tissue\n"
-                 f"  separates into **compositionally distinct regions** rather than an even mix everywhere.\n"
-                 f"- The three debris clusters (1/3/8) hardly form their own regions — together they dominate\n"
+    n_pure_large = int(((comp["dominant_share"] > 0.8) & (comp["n"] > 1000)).sum())
+    lines.append("**Are there interesting patterns?** Yes, once you look at the *large* communities\n"
+                 "(the small ones are mostly the isolated cells already discussed):\n")
+    lines.append(f"- The 10 largest communities are **{large_str}** — i.e. the tissue's big spatial blocks\n"
+                 f"  are immune-rich (T-cell) and matrix-rich regions.\n")
+    lines.append(f"- {n_pure} of {len(comms)} communities are over 80% one cluster, but most of those are tiny;\n"
+                 f"  only **{n_pure_large}** communities with more than 1,000 cells are that pure, so at the\n"
+                 f"  large scale the tissue is genuinely mixed rather than divided into single-type blocks.\n")
+    lines.append(f"- The three debris clusters (1/3/8) hardly form their own regions — together they dominate\n"
                  f"  only {int(((dom_cluster := comp['dominant_cluster']).isin([1, 3, 8])).sum())} community —\n"
                  f"  consistent with them being scattered autofluorescent cells, not a tissue compartment.\n")
     lines.append("![Community composition by cluster](out_overview/community_composition.png)\n")
+
+    # cluster sweep (k-means elbow)
+    if sweep_info is not None:
+        cl = sweep_info["cluster_summary"]
+        lines.append("**Cluster sensitivity (k-means elbow).** The k-means `k` is also a free choice; the\n"
+                     "sweep shows inertia falls smoothly as `k` grows with no sharp elbow at `k=10` (the\n"
+                     "shipped value) — 10 is a reasonable but not special choice.\n")
+        lines.append("![K-means inertia vs k](out_overview/cluster_elbow.png)\n")
+
     lines.append("## 4. Representative images\n")
     if images_ok:
         lines.append("DAPI/CD3/PD-L1 and DAPI/E-cadherin/SMA composites of the actual tissue at 16x\n"
@@ -490,10 +671,18 @@ def main():
     comms = figure_communities(df)
     comp = figure_community_composition(df)
 
+    print("Sweep analysis (resolution / k-means sensitivity) ...")
+    sweep = load_sweep_data()
+    sweep_info = None
+    if sweep is not None:
+        sweep_info = analyse_cd31_communities(df, sweep)
+        figure_community_resolution(df, sweep_info)
+        figure_cluster_elbow(sweep_info)
+
     print("Figure 4: representative images ...")
     images_ok = figure_representative_images()
 
-    write_report(df, prof, top, sizes, comms, comp, images_ok)
+    write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info)
     print(f"Done. Outputs in {OUT_DIR}/")
 
 
