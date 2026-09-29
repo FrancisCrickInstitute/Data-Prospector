@@ -126,3 +126,63 @@ isolated fragments already discussed, and are dropped from the composition plot)
   consistent with them being scattered autofluorescent cells, not a tissue compartment.
 
 ![Community composition by cluster](out_overview/community_composition.png)
+
+## 4. Feasibility of the four thymus questions
+
+This is a **single thymus section**, and the marker panel contains everything the
+collaborator asks about — but three data-quality limits shape what can be answered:
+
+1. **Thymic epithelial stem-cell niches (E-cadherin⁺/TP63⁺ and BCAM⁺/TP73⁺).** Answerable
+   in principle — all four markers are present, and E-cadherin/TP73/BCAM are relatively
+   clean — but **TP63 is 78% debris**, so a naive niche call would be
+   mostly autofluorescence and needs the debris cells removed first.
+
+2. **Thymic residues via immune markers.** The hardest to answer. **CD68 did not work**
+   (autofluorescent), so 'myeloid' can only be read from CD11c. And CD45/CD3/CD4/HLA-DR
+   have almost no real signal in this tissue (each <0.5% 'positive',
+   with the few bright cells mostly debris) — consistent with an involuted thymus with few
+   remaining thymocytes, but it means these markers cannot be thresholded naively.
+
+3. **Matrix/vascular remodelling *with age*.** The markers (fibronectin, laminin, αSMA,
+   CD31, collagens I/IV) are all present and reasonably clean, but this is **one section** —
+   so it can show the current tissue architecture, not change over time. 'With age' needs
+   multiple age/timepoint samples.
+
+4. **Senescence (p16, H2AX).** Markers present; p16 is clean, but H2AX is ~
+   47% debris and it is unconfirmed whether the panel's H2AX is the
+   phosphorylated (γH2AX) DNA-damage form. 'Senescent behaviour' is also a stronger claim
+   than 'expresses p16'.
+
+The table below quantifies this for every marker the questions depend on:
+
+| Marker | % positive (z>+2) | % of positive that are debris | Flag |
+|---|---|---|---|
+| E_cadherin | 7.2% | 10% | clean |
+| TP63 | 1.2% | 78% | debris-dominated |
+| BCAM | 5.6% | 17% | clean |
+| TP73 | 7.3% | 13% | clean |
+| CD45 | 0.5% | 100% | debris-dominated |
+| CD3 | 0.1% | 65% | debris-dominated |
+| CD4 | 0.0% | 98% | debris-dominated |
+| CD8 | 2.4% | 37% | suspect |
+| CD20 | 2.1% | 46% | suspect |
+| CD68 | 1.8% | 55% | debris-dominated |
+| CD11c | 5.1% | 19% | clean |
+| HLADR | 1.4% | 63% | debris-dominated |
+| LY75 | 4.8% | 20% | clean |
+| FoxP3 | 4.6% | 21% | clean |
+| CD56 | 2.5% | 37% | suspect |
+| Fibronectin | 5.5% | 15% | clean |
+| LamininA5 | 2.4% | 41% | suspect |
+| SMA | 7.0% | 14% | clean |
+| CD31 | 8.6% | 11% | clean |
+| Collagen_I | 5.1% | 1% | clean |
+| Collagen_IV | 3.1% | 20% | clean |
+| p16 | 3.2% | 14% | clean |
+| H2AX | 2.1% | 47% | suspect |
+
+> The debris cells (clusters 1/3/8) are the autofluorescent population that contaminates
+> these markers, and they must be excluded before any co-expression / niche / proximity
+> analysis. What the collaborator is ultimately asking for — niche detection, Ki-67
+> co-staining, HLA-DR in residual regions, cell-to-niche proximity — is a hypothesis-driven
+> analysis that can be built on this same data once that debris gate is applied.

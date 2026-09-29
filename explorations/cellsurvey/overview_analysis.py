@@ -196,6 +196,31 @@ def debris_mask(df, z_cut=2.0):
     return m
 
 
+# Markers the collaborator's four thymus questions depend on, for the feasibility section.
+FEASIBILITY_MARKERS = [
+    "E_cadherin", "TP63", "BCAM", "TP73",                       # Q1 TEC niche
+    "CD45", "CD3", "CD4", "CD8", "CD20", "CD68", "CD11c",       # Q2 immune residues
+    "HLADR", "LY75", "FoxP3", "CD56",
+    "Fibronectin", "LamininA5", "SMA", "CD31", "Collagen_I",    # Q3 matrix / vascular
+    "Collagen_IV",
+    "p16", "H2AX",                                              # Q4 senescence
+]
+
+
+def feasibility_stats(df):
+    """Per-marker: % 'positive' (z>+2) and, of those, the % that are autofluorescent debris
+    (clusters 1/3/8). Used to flag which of the collaborator's markers can't be thresholded naively."""
+    debris = df["kmeans_cluster"].isin(sorted(DEBRIS_CLUSTERS)).to_numpy()
+    rows = []
+    for m in FEASIBILITY_MARKERS:
+        pos = robust_z(df[f"marker_{m}"].to_numpy()) > POSITIVE_Z
+        n_pos = int(pos.sum())
+        pct_pos = pos.mean() * 100
+        pct_debris = (pos & debris).sum() / n_pos * 100 if n_pos else 0.0
+        rows.append({"marker": m, "pct_positive": pct_pos, "pct_debris": pct_debris})
+    return pd.DataFrame(rows)
+
+
 def cluster_marker_profile(df):
     """Mean robust-z intensity of each marker within each k-means cluster -> a profiling table."""
     marker_cols = [f"marker_{m}" for m in CHANNEL_INDEX if m not in CONTROL_CHANNELS]
@@ -584,6 +609,46 @@ def write_report(df, prof, top, sizes, comp, sweep_info, image_overlays):
                  f"  only {int(((dom_cluster := comp['dominant_cluster']).isin([1, 3, 8])).sum())} community —\n"
                  f"  consistent with them being scattered autofluorescent cells, not a tissue compartment.\n")
     lines.append("![Community composition by cluster](out_overview/community_composition.png)\n")
+
+    # --- Feasibility of the collaborator's four thymus questions --------------------------------
+    feas = feasibility_stats(df)
+    f = {r["marker"]: r for _, r in feas.iterrows()}
+
+    def flag(pct):
+        return "debris-dominated" if pct > 50 else ("suspect" if pct > 25 else "clean")
+
+    lines.append("## 4. Feasibility of the four thymus questions\n")
+    lines.append("This is a **single thymus section**, and the marker panel contains everything the\n"
+                 "collaborator asks about — but three data-quality limits shape what can be answered:\n")
+    lines.append("1. **Thymic epithelial stem-cell niches (E-cadherin⁺/TP63⁺ and BCAM⁺/TP73⁺).** Answerable\n"
+                 f"   in principle — all four markers are present, and E-cadherin/TP73/BCAM are relatively\n"
+                 f"   clean — but **TP63 is {f['TP63']['pct_debris']:.0f}% debris**, so a naive niche call would be\n"
+                 f"   mostly autofluorescence and needs the debris cells removed first.\n")
+    lines.append("2. **Thymic residues via immune markers.** The hardest to answer. **CD68 did not work**\n"
+                 "   (autofluorescent), so 'myeloid' can only be read from CD11c. And CD45/CD3/CD4/HLA-DR\n"
+                 f"   have almost no real signal in this tissue (each <{f['CD45']['pct_positive']:.1f}% 'positive',\n"
+                 "   with the few bright cells mostly debris) — consistent with an involuted thymus with few\n"
+                 "   remaining thymocytes, but it means these markers cannot be thresholded naively.\n")
+    lines.append("3. **Matrix/vascular remodelling *with age*.** The markers (fibronectin, laminin, αSMA,\n"
+                 "   CD31, collagens I/IV) are all present and reasonably clean, but this is **one section** —\n"
+                 "   so it can show the current tissue architecture, not change over time. 'With age' needs\n"
+                 "   multiple age/timepoint samples.\n")
+    lines.append("4. **Senescence (p16, H2AX).** Markers present; p16 is clean, but H2AX is ~\n"
+                 f"   {f['H2AX']['pct_debris']:.0f}% debris and it is unconfirmed whether the panel's H2AX is the\n"
+                 "   phosphorylated (γH2AX) DNA-damage form. 'Senescent behaviour' is also a stronger claim\n"
+                 "   than 'expresses p16'.\n")
+    lines.append("The table below quantifies this for every marker the questions depend on:\n")
+    lines.append("| Marker | % positive (z>+2) | % of positive that are debris | Flag |\n"
+                 "|---|---|---|---|")
+    for _, r in feas.iterrows():
+        lines.append(f"| {r['marker']} | {r['pct_positive']:.1f}% | {r['pct_debris']:.0f}% | {flag(r['pct_debris'])} |")
+    lines.append("")
+    lines.append("> The debris cells (clusters 1/3/8) are the autofluorescent population that contaminates\n"
+                 "> these markers, and they must be excluded before any co-expression / niche / proximity\n"
+                 "> analysis. What the collaborator is ultimately asking for — niche detection, Ki-67\n"
+                 "> co-staining, HLA-DR in residual regions, cell-to-niche proximity — is a hypothesis-driven\n"
+                 "> analysis that can be built on this same data once that debris gate is applied.\n")
+
     REPORT_MD.write_text("\n".join(lines), encoding="utf-8")
 
 
