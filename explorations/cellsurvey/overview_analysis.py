@@ -25,6 +25,7 @@ as autofluorescent/debris, not as a real macrophage lineage marker, so it is EXC
 attribution and flagged where it would otherwise mislead.
 """
 
+import math
 import sys
 from pathlib import Path
 
@@ -59,6 +60,46 @@ COMMUNITY_SWEEP_CSV = SWEEP_DIR / "community_sweep.csv"
 CLUSTER_SWEEP_CSV = SWEEP_DIR / "cluster_sweep.csv"
 COMMUNITY_SWEEP_SUMMARY = SWEEP_DIR / "community_sweep_summary.csv"
 CLUSTER_SWEEP_SUMMARY = SWEEP_DIR / "cluster_sweep_summary.csv"
+
+# The s4 pyramid level is a ~16x downsample of full res; cell x/y (full-res pixel coords) divide by
+# this to land on the s4 image grid. Orientation: y increases upward, matching imshow(origin="lower").
+DOWNSAMPLE = 16.0
+# The illustrative "positive" threshold used across this report (robust z-score). It is a display
+# convenience, NOT a calibrated biological gate - see the marker-distribution note in the report.
+POSITIVE_Z = 2.0
+# Communities below this many cells are isolated fragments (e.g. the 13 CD31 single/few-cell islands);
+# they are dropped from the composition ranking so the plot reflects real tissue regions, not debris.
+MIN_COMMUNITY_SIZE = 1000
+
+_dapi_cache = None
+
+
+def read_dapi_s4():
+    """Read the DAPI channel (index 0) from the s4 pyramid level, cached across figures."""
+    global _dapi_cache
+    if _dapi_cache is not None:
+        return _dapi_cache
+    import zarr
+    g = zarr.open_group(ZARR_URL, mode="r")
+    imgpath = "images/20260629_170222_3_mBsc8s_EHP893_25_29plex_V2_EHP576_26_COMET_29PLEX_3"
+    dapi = np.asarray(g[imgpath + "/s4"][0], dtype="float32")
+    _dapi_cache = dapi
+    return dapi
+
+
+def imshow_tissue(ax, dapi):
+    """Draw the DAPI channel as a grayscale tissue background, in the cell-coordinate frame.
+
+    No-op if dapi is None (Z: unavailable) - callers fall back to points on a plain background.
+    """
+    if dapi is None:
+        return
+    ax.imshow(dapi, cmap="gray", origin="lower",
+              vmin=np.percentile(dapi, 1.0), vmax=np.percentile(dapi, 99.5))
+    ax.set_xlim(0, dapi.shape[1])
+    ax.set_ylim(0, dapi.shape[0])
+    ax.set_aspect("equal")
+    ax.tick_params(labelsize=6)
 
 # 32 channels, index-order = the zarr image / var index. Index 0 is DAPI; indices 9 and 10 are the
 # two autofluorescence control channels (TRITC (1) / Cy5 (1)), i.e. empty-cycle bleed-through controls.
@@ -206,54 +247,69 @@ def figure_populations(df):
     return prof, top, sizes
 
 
-def figure_spatial_maps(df):
-    """Panel 2: hexbin spatial maps - one per cluster and one per key lineage marker.
+def figure_marker_distributions(df):
+    """Distribution of every biological marker (robust z-score), with the illustrative 'positive'
+    line at z=+2 overlaid, so a reader can see how arbitrary the on/off call is on near-unimodal data."""
+    markers = [m for m in CHANNEL_INDEX if m not in CONTROL_CHANNELS]
+    cols = 5
+    rows = math.ceil(len(markers) / cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 3 * rows))
+    for ax, m in zip(axes.ravel(), markers):
+        z = robust_z(df[f"marker_{m}"].to_numpy())
+        ax.hist(z, bins=120, color="#9A9FA8", alpha=0.75, log=True)
+        ax.axvline(POSITIVE_Z, color="#C1622D", lw=1.6)
+        ax.axvline(0.0, color="#6C5B9E", lw=0.8, ls=":")
+        pct_pos = float((z > POSITIVE_Z).mean() * 100)
+        ax.set_title(f"{m}  ({pct_pos:.1f}% 'positive')", fontsize=8)
+        ax.tick_params(labelsize=6)
+    for ax in axes.ravel()[len(markers):]:
+        ax.axis("off")
+    fig.suptitle(
+        "Marker distributions (robust z-score) — orange line = the illustrative 'positive' cutoff "
+        "(z = +2); dotted = median (z = 0)",
+        fontsize=13, y=1.02,
+    )
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "marker_distributions.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
-    Each cluster's cells span the whole tissue (they are not spatially separated), so a raw density
-    map of the cluster alone looks identical to every other cluster. Instead each panel shows the
-    cluster's LOCAL ENRICHMENT: (cluster density in a hex) / (total-cell density in that hex), so
-    regions where the cluster is locally over- or under-represented become visible rather than being
-    swamped by the shared tissue outline.
+def figure_spatial_maps(df, dapi):
+    """Spatial maps overlaid on the DAPI tissue image: one panel per cluster, one per lineage marker.
+
+    Points are the cells (centroids), drawn over the actual tissue image so the maps sit in context
+    instead of on a blank page. If Z: is down (dapi is None), fall back to full-res points on white.
     """
-    clusters = sorted(df["kmeans_cluster"].unique())
-    # reference: total-cell density per hex (fixed gridsize, shared across all panels)
-    grid = 140
-    _, xedges, yedges = np.histogram2d(df["x"], df["y"], bins=grid)
-    total_h, _, _ = np.histogram2d(df["x"], df["y"], bins=[xedges, yedges])
+    use_img = dapi is not None
+    x = (df["x"] / DOWNSAMPLE if use_img else df["x"]).to_numpy()
+    y = (df["y"] / DOWNSAMPLE if use_img else df["y"]).to_numpy()
 
+    clusters = sorted(df["kmeans_cluster"].unique())
     fig, axes = plt.subplots(2, 5, figsize=(20, 8))
     for ax, c in zip(axes.ravel(), clusters):
-        sel = df["kmeans_cluster"] == c
-        # faint tissue outline (all cells) for orientation
-        ax.hexbin(df["x"], df["y"], gridsize=grid, cmap="Greys", mincnt=1, edgecolors="none", alpha=0.15)
-        cl_h, _, _ = np.histogram2d(df["x"][sel], df["y"][sel], bins=[xedges, yedges])
-        # local enrichment = cluster density / total density, softened where total is sparse
-        enrich = cl_h / np.maximum(total_h, 1.0)
-        enrich[total_h < 10] = np.nan  # mask sparse cells so noise doesn't dominate
-        im = ax.pcolormesh(xedges, yedges, enrich.T, cmap="RdBu_r", vmin=0.0, vmax=2.0,
-                           shading="auto", alpha=0.9)
+        imshow_tissue(ax, dapi)
+        sel = df["kmeans_cluster"].to_numpy() == c
+        ax.scatter(x[sel], y[sel], s=0.2, alpha=0.15, color="#C1622D", linewidths=0)
+        if not use_img:
+            ax.set_aspect("equal")
         ax.set_title(f"Cluster {int(c)} ({int(sel.sum()):,})", fontsize=9)
-        ax.set_aspect("equal")
         ax.tick_params(labelsize=6)
-    fig.suptitle("Spatial maps: local enrichment of each k-means cluster (red = locally over-represented)",
-                 fontsize=14)
+    fig.suptitle("Where each k-means cluster sits (over the DAPI tissue image)", fontsize=14)
     fig.tight_layout()
     fig.savefig(OUT_DIR / "spatial_cluster_maps.png", dpi=150)
     plt.close(fig)
 
-    # lineage marker maps (CD68 excluded)
     lineage = [ln for ln in LINEAGE_MARKERS.values() if ln not in AUTOFLUORESCENT]
     fig, axes = plt.subplots(2, 5, figsize=(20, 8))
     for ax, m in zip(axes.ravel(), lineage):
-        v = df[f"marker_{m}"].to_numpy()
-        hi = robust_z(v) > 2.0
+        imshow_tissue(ax, dapi)
+        hi = robust_z(df[f"marker_{m}"].to_numpy()) > POSITIVE_Z
         n = int(hi.sum())
-        ax.hexbin(df["x"], df["y"], gridsize=100, cmap="Greys", mincnt=1, edgecolors="none", alpha=0.25)
-        ax.hexbin(df["x"][hi], df["y"][hi], gridsize=100, cmap="Reds", mincnt=1, edgecolors="none")
+        ax.scatter(x[hi], y[hi], s=0.3, alpha=0.35, color="#C1622D", linewidths=0)
+        if not use_img:
+            ax.set_aspect("equal")
         ax.set_title(f"{m} (n={n:,})", fontsize=9)
-        ax.set_aspect("equal")
         ax.tick_params(labelsize=6)
-    fig.suptitle("Spatial maps: cells positive for each lineage marker (z>2)", fontsize=14)
+    fig.suptitle("Cells positive for each lineage marker (z>+2), over the DAPI tissue image", fontsize=14)
     fig.tight_layout()
     fig.savefig(OUT_DIR / "spatial_lineage_maps.png", dpi=150)
     plt.close(fig)
@@ -280,14 +336,17 @@ def community_composition(df):
 
 
 def figure_community_composition(df):
-    """Panel 3b: a stacked-bar of community composition, coloured by dominant cluster type, so the
-    reader can see at a glance whether the tissue is organised into distinct, compositionally coherent
-    regions (i.e. whether there are 'interesting patterns' in the spatial structure)."""
+    """Stacked-bar of community composition, grouped by dominant cluster (not size) and with the tiny
+    isolated communities (below MIN_COMMUNITY_SIZE) dropped, so the plot shows the real tissue regions
+    rather than being dominated by 1-4 cell fragments."""
     comp, frac = community_composition(df)
-    # order communities left->right by size; stack the cluster fractions
-    comms_ordered = comp.sort_values("n", ascending=False).index.to_numpy()
+    # drop the tiny isolated communities (e.g. the 13 CD31 single/few-cell islands)
+    keep = comp[comp["n"] >= MIN_COMMUNITY_SIZE]
+    frac_keep = frac.loc[keep.index]
+    # rank by composition: group by dominant cluster, then size descending within each group
+    order = keep.sort_values(["dominant_cluster", "n"], ascending=[True, False]).index.to_numpy()
     clusters = sorted(df["kmeans_cluster"].unique())
-    frac_reord = frac.loc[comms_ordered, clusters]
+    frac_reord = frac_keep.loc[order, clusters]
     # colour each cluster by a stable palette; debris clusters get a grey
     cmap = plt.get_cmap("tab10")
     cluster_colors = {c: cmap(i) for i, c in enumerate(clusters)}
@@ -295,17 +354,19 @@ def figure_community_composition(df):
         cluster_colors[c] = (0.7, 0.7, 0.7)  # debris -> grey
 
     fig, ax = plt.subplots(figsize=(18, 6))
-    bottom = np.zeros(len(comms_ordered))
+    bottom = np.zeros(len(order))
     for c in clusters:
         vals = frac_reord[c].to_numpy()
-        ax.bar(range(len(comms_ordered)), vals, bottom=bottom,
+        ax.bar(range(len(order)), vals, bottom=bottom,
                color=cluster_colors[c], width=0.9, label=f"{c}: {CLUSTER_NAMES[c]}")
         bottom += vals
-    ax.set_xticks(range(len(comms_ordered)))
-    ax.set_xticklabels([f"{c}" for c in comms_ordered], fontsize=7)
-    ax.set_xlabel("community (ranked by size)")
+    ax.set_xticks(range(len(order)))
+    ax.set_xticklabels([f"{c}\n({CLUSTER_NAMES[keep.loc[c, 'dominant_cluster']]})" for c in order], fontsize=6)
+    ax.set_xlabel("community (grouped by dominant composition, then size)")
     ax.set_ylabel("fraction of community")
-    ax.set_title("Community composition by k-means cluster (tissue regions are not uniform)", fontsize=12)
+    ax.set_title(
+        f"Community composition by k-means cluster — {len(order)} communities "
+        f"({len(comp) - len(order)} tiny fragments <{MIN_COMMUNITY_SIZE} cells dropped)", fontsize=12)
     ax.legend(fontsize=7, ncol=2, loc="upper right")
     fig.tight_layout()
     fig.savefig(OUT_DIR / "community_composition.png", dpi=150)
@@ -313,8 +374,8 @@ def figure_community_composition(df):
     return comp
 
 
-def figure_communities(df):
-    """Panel 3: spatial-community overview - community histogram + community map."""
+def figure_communities(df, dapi):
+    """Community overview: histogram (left) + community map overlaid on the DAPI tissue image (right)."""
     comms = df.groupby("community").size().sort_values(ascending=False)
     fig, axes = plt.subplots(1, 2, figsize=(18, 7))
     ax = axes[0]
@@ -325,14 +386,19 @@ def figure_communities(df):
     ax.tick_params(labelsize=7)
 
     ax = axes[1]
+    imshow_tissue(ax, dapi)
     # colour communities by index for spatial legibility
     comm_ids = sorted(df["community"].unique())
     cmap = plt.get_cmap("tab20")
     colors = {c: cmap(i % 20) for i, c in enumerate(comm_ids)}
     cvec = np.array([colors[c] for c in df["community"].to_numpy()])
-    ax.scatter(df["x"], df["y"], c=cvec, s=0.3, alpha=0.6)
-    ax.set_aspect("equal")
-    ax.set_title("Spatial layout of communities", fontsize=11)
+    use_img = dapi is not None
+    x = (df["x"] / DOWNSAMPLE if use_img else df["x"]).to_numpy()
+    y = (df["y"] / DOWNSAMPLE if use_img else df["y"]).to_numpy()
+    ax.scatter(x, y, c=cvec, s=0.4, alpha=0.7, linewidths=0)
+    if not use_img:
+        ax.set_aspect("equal")
+    ax.set_title("Communities overlaid on the tissue image", fontsize=11)
     ax.tick_params(labelsize=7)
     fig.suptitle("Neighbourhoods: the tissue's spatial-community structure", fontsize=14)
     fig.tight_layout()
@@ -521,7 +587,7 @@ def figure_cluster_elbow(sweep_info):
     plt.close(fig)
 
 
-def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info):
+def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, image_overlays):
     n = len(df)
     n_nonspecific = int(non_specific_mask(df).sum())
     debris = debris_mask(df)
@@ -551,6 +617,19 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info):
                  "Both are computed by the CellSurvey pipeline from the same data; they just answer\n"
                  "different questions.\n")
     lines.append("## 1. Cell populations\n")
+    lines.append("### Marker distributions, and what \"positive\" means\n")
+    lines.append(f"The figure below shows the brightness distribution of every biological marker (on the z-score\n"
+                 f"scale described above). The **orange line** is the illustrative \"positive\" cutoff used\n"
+                 f"throughout this report: **z = +2**, i.e. the ~2% brightest cells for each marker. The dotted\n"
+                 f"line is the median (z = 0).\n")
+    lines.append(f"Two things worth reading from this: (1) **most markers have no clean second peak** — the\n"
+                 f"histogram is one broad pile with a tail, so there is no obvious \"off\" vs \"on\" population\n"
+                 f"to separate, and (2) the positive line is therefore a *choice*, not an inherent property of\n"
+                 f"the data — move it and different cells flip sides. This report uses z = +2 purely as a\n"
+                 f"display convenience, and where the biology matters the line should be chosen deliberately\n"
+                 f"(or the marker treated as a continuous quantity instead of a positive/negative call).\n")
+    lines.append("![Marker distributions with the positive cutoff](out_overview/marker_distributions.png)\n")
+    lines.append("### The 10 k-means clusters\n")
     lines.append(f"The nuclei fall into **10 k-means clusters** (clustering shipped with the data). The\n"
                  f"table below lists, for each cluster, its size and the five markers that best\n"
                  f"distinguish it (mean robust z-score). **Debris%** flags how much of the cluster is\n"
@@ -575,7 +654,12 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info):
                  f"{n_nonspecific:,} nuclei\n> ({n_nonspecific/n*100:.1f}%) are bright in ≥8 markers "
                  "simultaneously and are flagged as non-specific.\n")
     lines.append("## 2. Spatial maps\n")
-    lines.append("Where each cluster sits and where cells positive for each lineage marker sit:\n")
+    if image_overlays:
+        lines.append("Where each cluster sits and where cells positive for each lineage marker sit, shown as\n"
+                     "coloured points **overlaid on the actual tissue image** (DAPI = the greyscale nuclei):\n")
+    else:
+        lines.append("Where each cluster sits and where cells positive for each lineage marker sit (points only;\n"
+                     "the tissue image background was skipped because Z: was unavailable):\n")
     lines.append("![Spatial map of each k-means cluster](out_overview/spatial_cluster_maps.png)\n")
     lines.append("![Spatial map of cells positive for each lineage marker](out_overview/spatial_lineage_maps.png)\n")
     lines.append("## 3. Neighbourhoods / communities\n")
@@ -595,7 +679,7 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info):
         lines.append("![Community resolution sweep](out_overview/community_resolution_sweep.png)\n")
     else:
         lines.append("- *(resolution sweep skipped — Z: not reachable this run)*\n")
-    lines.append("![Community histogram and spatial layout](out_overview/communities.png)\n")
+    lines.append("![Community histogram and community map over the tissue](out_overview/communities.png)\n")
 
     # The colleague's question: the 13 CD31 communities.
     if sweep_info is not None:
@@ -617,20 +701,19 @@ def write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info):
                      f"cells being split across many communities is the correct answer to \"where\", not a\n"
                      f"detection failure.\n")
 
-    # composition narrative: are communities compositionally coherent? (size-aware: tiny communities
-    # are trivially "pure", so describe the LARGE ones, which is where the real tissue structure lives.)
-    large = comp.sort_values("n", ascending=False).head(10)
+    # composition narrative (size-aware: tiny communities are trivially "pure", so describe the
+    # filtered set >= MIN_COMMUNITY_SIZE, matching the composition figure).
+    comp_keep = comp[comp["n"] >= MIN_COMMUNITY_SIZE]
+    large = comp_keep.sort_values("n", ascending=False).head(10)
     large_counts = large["dominant_cluster"].value_counts()
     large_str = ", ".join(f"{CLUSTER_NAMES[c]} ({v} of the 10 largest)" for c, v in large_counts.items())
-    n_pure = int((comp["dominant_share"] > 0.8).sum())
-    n_pure_large = int(((comp["dominant_share"] > 0.8) & (comp["n"] > 1000)).sum())
     lines.append("**Are there interesting patterns?** Yes, once you look at the *large* communities\n"
-                 "(the small ones are mostly the isolated cells already discussed):\n")
+                 f"(the {len(comp) - len(comp_keep)} communities below {MIN_COMMUNITY_SIZE} cells are the\n"
+                 f"isolated fragments already discussed, and are dropped from the composition plot):\n")
     lines.append(f"- The 10 largest communities are **{large_str}** — i.e. the tissue's big spatial blocks\n"
                  f"  are immune-rich (T-cell) and matrix-rich regions.\n")
-    lines.append(f"- {n_pure} of {len(comms)} communities are over 80% one cluster, but most of those are tiny;\n"
-                 f"  only **{n_pure_large}** communities with more than 1,000 cells are that pure, so at the\n"
-                 f"  large scale the tissue is genuinely mixed rather than divided into single-type blocks.\n")
+    lines.append(f"- None of the {len(comp_keep)} remaining communities are over 80% one cluster, so\n"
+                 f"  the large-scale tissue is genuinely mixed rather than divided into single-type blocks.\n")
     lines.append(f"- The three debris clusters (1/3/8) hardly form their own regions — together they dominate\n"
                  f"  only {int(((dom_cluster := comp['dominant_cluster']).isin([1, 3, 8])).sum())} community —\n"
                  f"  consistent with them being scattered autofluorescent cells, not a tissue compartment.\n")
@@ -661,14 +744,24 @@ def main():
     df = load_cells()
     print(f"  {len(df):,} nuclei")
 
+    print("Reading DAPI background (optional) ...")
+    dapi = None
+    try:
+        dapi = read_dapi_s4()
+    except Exception as e:
+        print(f"  [skip image overlays] could not read DAPI: {e}")
+
+    print("Figure 0: marker distributions ...")
+    figure_marker_distributions(df)
+
     print("Figure 1: populations ...")
     prof, top, sizes = figure_populations(df)
 
     print("Figure 2: spatial maps ...")
-    figure_spatial_maps(df)
+    figure_spatial_maps(df, dapi)
 
     print("Figure 3: communities ...")
-    comms = figure_communities(df)
+    comms = figure_communities(df, dapi)
     comp = figure_community_composition(df)
 
     print("Sweep analysis (resolution / k-means sensitivity) ...")
@@ -682,7 +775,7 @@ def main():
     print("Figure 4: representative images ...")
     images_ok = figure_representative_images()
 
-    write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info)
+    write_report(df, prof, top, sizes, comms, comp, images_ok, sweep_info, dapi is not None)
     print(f"Done. Outputs in {OUT_DIR}/")
 
 

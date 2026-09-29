@@ -26,6 +26,24 @@ different questions.
 
 ## 1. Cell populations
 
+### Marker distributions, and what "positive" means
+
+The figure below shows the brightness distribution of every biological marker (on the z-score
+scale described above). The **orange line** is the illustrative "positive" cutoff used
+throughout this report: **z = +2**, i.e. the ~2% brightest cells for each marker. The dotted
+line is the median (z = 0).
+
+Two things worth reading from this: (1) **most markers have no clean second peak** — the
+histogram is one broad pile with a tail, so there is no obvious "off" vs "on" population
+to separate, and (2) the positive line is therefore a *choice*, not an inherent property of
+the data — move it and different cells flip sides. This report uses z = +2 purely as a
+display convenience, and where the biology matters the line should be chosen deliberately
+(or the marker treated as a continuous quantity instead of a positive/negative call).
+
+![Marker distributions with the positive cutoff](out_overview/marker_distributions.png)
+
+### The 10 k-means clusters
+
 The nuclei fall into **10 k-means clusters** (clustering shipped with the data). The
 table below lists, for each cluster, its size and the five markers that best
 distinguish it (mean robust z-score). **Debris%** flags how much of the cluster is
@@ -56,7 +74,8 @@ non-specific autofluorescence (bright in CD68 + FoxP3 + LamininA5 + H2AX at once
 
 ## 2. Spatial maps
 
-Where each cluster sits and where cells positive for each lineage marker sit:
+Where each cluster sits and where cells positive for each lineage marker sit, shown as
+coloured points **overlaid on the actual tissue image** (DAPI = the greyscale nuclei):
 
 ![Spatial map of each k-means cluster](out_overview/spatial_cluster_maps.png)
 
@@ -77,7 +96,7 @@ lowered:
 
 ![Community resolution sweep](out_overview/community_resolution_sweep.png)
 
-![Community histogram and spatial layout](out_overview/communities.png)
+![Community histogram and community map over the tissue](out_overview/communities.png)
 
 **Why the 13 CD31 communities are not "one group that got split up."**
 
@@ -96,14 +115,14 @@ cells being split across many communities is the correct answer to "where", not 
 detection failure.
 
 **Are there interesting patterns?** Yes, once you look at the *large* communities
-(the small ones are mostly the isolated cells already discussed):
+(the 18 communities below 1000 cells are the
+isolated fragments already discussed, and are dropped from the composition plot):
 
 - The 10 largest communities are **proliferative immune (Ki-67/CD3/CD8) (4 of the 10 largest), mixed matrix (collagen/S100) (4 of the 10 largest), immune (CD3/CD4/leukocyte) (2 of the 10 largest)** — i.e. the tissue's big spatial blocks
   are immune-rich (T-cell) and matrix-rich regions.
 
-- 16 of 49 communities are over 80% one cluster, but most of those are tiny;
-  only **0** communities with more than 1,000 cells are that pure, so at the
-  large scale the tissue is genuinely mixed rather than divided into single-type blocks.
+- None of the 31 remaining communities are over 80% one cluster, so
+  the large-scale tissue is genuinely mixed rather than divided into single-type blocks.
 
 - The three debris clusters (1/3/8) hardly form their own regions — together they dominate
   only 1 community —
