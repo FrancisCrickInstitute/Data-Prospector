@@ -79,6 +79,12 @@ coloured points **overlaid on the actual tissue image** (DAPI = the greyscale nu
 
 ![Spatial map of each k-means cluster](out_overview/spatial_cluster_maps.png)
 
+The single map below shows **all clusters at once** (one colour per cluster, debris clusters
+in grey) so the spatial layout of the cell types is visible without flipping between the
+per-cluster panels above:
+
+![Hexbin map of all k-means clusters over the tissue image](out_overview/cluster_hexmap.png)
+
 ![Spatial map of cells positive for each lineage marker](out_overview/spatial_lineage_maps.png)
 
 ## 3. Neighbourhoods / communities

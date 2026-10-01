@@ -1,30 +1,41 @@
 # -*- coding: utf-8 -*-
-"""Preprocess one CellSurvey `.ome_seg.zarr` store into the flat per-cell CSV this repo's
-cellsurvey config actually reads (`inputs/cellsurvey_processed/cells.csv`, plus a
-`marker_channel_names.csv` sidecar).
+"""Preprocess one CellSurvey `.ome_seg.zarr` store into the flat per-cell CSV this repo reads
+(`cells.csv`, plus a `marker_channel_names.csv` sidecar), for either segmentation variant.
 
 WHY THIS EXISTS (and why the pipeline never reads the zarr itself)
 ------------------------------------------------------------------
 The source is a SpatialData Zarr v3 store (produced by https://github.com/FrancisCrickInstitute/
 CellSurvey, a 32-plex COMET multiplexed-immunofluorescence segmentation pipeline): a single tissue
-sample, nuclei segmented with Stardist, each nucleus's per-marker MEAN intensity measured, cells
-grouped by a fixed-k KMeans clustering, and a Delaunay spatial network partitioned into Louvain
-communities. Reading it properly needs the `spatialdata`/`anndata` stack on top of `zarr`; neither
-of those is in this project's pixi env, and NONE of it is needed for a purely tabular per-cell
-analysis - this data is, after extraction, just a flat CSV. So this one-off script (run ONCE,
-outside Docker, on the host where the Z: network path is mounted) pulls exactly the per-cell table
-out of the zarr via `zarr` alone and writes it locally.
+sample, nuclei segmented with Stardist (and, in the whole-cell variant, each nucleus dilated into
+its surrounding cytoplasm), each object's per-marker MEAN intensity measured, cells grouped by a
+fixed-k KMeans clustering, and a Delaunay spatial network partitioned into Louvain communities.
+Reading it properly needs the `spatialdata`/`anndata` stack on top of `zarr`; neither of those is in
+this project's pixi env, and NONE of it is needed for a purely tabular per-cell analysis - this
+data is, after extraction, just a flat CSV. So this one-off script (run ONCE, outside Docker, on the
+host where the Z: network path is mounted) pulls exactly the per-cell table out of the zarr via
+`zarr` alone and writes it locally.
 
-OUTPUT (what the config's `DOMAIN_NOTES` describes as one file under the data dir):
-  cells.csv                 one row per segmented NUCLEUS (the CellSurvey pipeline's own "cell"
-                            terminology; Stardist segments nuclei only - there is no whole-cell
-                            boundary anywhere in this pipeline's output). Columns:
-                              cell_id, area, x, y, kmeans_cluster, kmeans_cluster_label,
-                              community, marker_* (32 columns, sanitised names)
-  marker_channel_names.csv  traceability sidecar mapping each sanitised `marker_*` column name
-                            back to the original acquisition-channel label (which carries the
-                            exposure/gain/cycle/fluorophore metadata, e.g. the CYCLIC C1-C19
-                            COMET protocol). NOT meant to be read by generated scripts.
+TWO SEGMENTATION VARIANTS, SAME SCHEMA:
+  - Nuclear (default): Stardist nuclei only. The measurement region is the nucleus, so most
+    membrane/cytoplasmic markers (CD3/8, CD31, E-cadherin, etc.) read signal only in/around the
+    nucleus. Writes to `inputs/cellsurvey_processed/`.
+  - Whole-cell (`--whole-cell`): each nucleus dilated into a cytoplasmic ring, so each marker is the
+    mean over nucleus + cytoplasm. A real improvement for cytoplasmic markers (SMA, Vimentin, CD68)
+    but still a single per-marker mean, not a per-marker compartment. Writes to
+    `inputs/cellsurvey_wholecell_processed/`.
+
+The two variants come from different zarr stores but share an identical anndata table layout
+(`tables/table`: same `obs` columns, same 32 `var` channels, same `X`/`obsm/spatial` shapes), so the
+extraction code is identical - only the source path and output directory differ.
+
+OUTPUT:
+  cells.csv                 one row per segmented object (nucleus, or whole cell under --whole-cell),
+                            columns: cell_id, area, x, y, kmeans_cluster, kmeans_cluster_label,
+                            community, marker_* (32 columns, sanitised names)
+  marker_channel_names.csv  traceability sidecar mapping each sanitised `marker_*` column name back
+                            to the original acquisition-channel label (which carries the
+                            exposure/gain/cycle/fluorophore metadata, e.g. the CYCLIC C1-C19 COMET
+                            protocol). NOT meant to be read by generated scripts.
 
 The `marker_*` column names are SANITISED from the raw OME channel labels (e.g.
 `αSMA_868_600-C17-CY3 - TRITC_ch_28` -> `marker_SMA`; `TRITC (1) - TRITC_ch_9` -> `marker_TRITC_1_TRITC`)
@@ -38,10 +49,11 @@ The `X`, `obsm/spatial`, and every `obs` array is read directly from the zarr gr
 `region` and `slide` (constant spatialdata-region bookkeeping) are dropped - the config's column
 reference does not list them.
 
-Run:  pixi run python scripts/preprocess_cellsurvey.py [--input <zarr_dir>] [--output <out_dir>]
+Run:  pixi run python scripts/preprocess_cellsurvey.py [--whole-cell] [--input <zarr_dir>] [--output <out_dir>]
 
 Re-run only if the source zarr changes - the output is committed to `inputs/cellsurvey_processed/`
-and the pipeline reads that flat CSV, never the zarr.
+(or `inputs/cellsurvey_wholecell_processed/` under --whole-cell) and the pipeline reads that flat
+CSV, never the zarr.
 """
 
 import argparse
@@ -57,11 +69,16 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 # Defaults matching the config's `data_dir_default` (`./inputs/cellsurvey_processed`) and the
 # source zarr path currently mounted on this machine. Override with the CLI flags when either moves.
-DEFAULT_INPUT = Path(
+# The nuclear zarr is `*_seg.zarr`; the whole-cell variant (same sample, nuclei dilated into
+# cytoplasm) is the sibling `*_whole_cell_seg.zarr`.
+_BASE = (
     "Z:/working/barryd/hpc/projects/stps/lm/Spatial-Biology-Pipeline/outputs/"
-    "20260629_170222_3_mBsc8s_EHP893_25_29plex_V2_EHP576_26_COMET_29PLEX_3.ome_seg.zarr"
+    "20260629_170222_3_mBsc8s_EHP893_25_29plex_V2_EHP576_26_COMET_29PLEX_3"
 )
-DEFAULT_OUTPUT = Path("inputs/cellsurvey_processed")
+NUCLEAR_INPUT = Path(_BASE + ".ome_seg.zarr")
+NUCLEAR_OUTPUT = Path("inputs/cellsurvey_processed")
+WHOLE_CELL_INPUT = Path(_BASE + "_whole_cell_seg.zarr")
+WHOLE_CELL_OUTPUT = Path("inputs/cellsurvey_wholecell_processed")
 
 # Path to the anndata table inside the spatialdata store.
 TABLE_PATH = "tables/table"
@@ -137,12 +154,23 @@ def _decode_categorical(group) -> np.ndarray:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=str, default=str(DEFAULT_INPUT))
-    parser.add_argument("--output", type=str, default=str(DEFAULT_OUTPUT))
+    parser.add_argument(
+        "--whole-cell",
+        action="store_true",
+        help="Extract the WHOLE-CELL segmentation (nucleus dilated into cytoplasm) instead of the "
+             "default nuclear segmentation; writes to inputs/cellsurvey_wholecell_processed/.",
+    )
+    parser.add_argument("--input", type=str, default=None)
+    parser.add_argument("--output", type=str, default=None)
     args = parser.parse_args()
 
-    input_path = Path(args.input)
-    output_dir = Path(args.output)
+    if args.whole_cell:
+        default_input, default_output = WHOLE_CELL_INPUT, WHOLE_CELL_OUTPUT
+    else:
+        default_input, default_output = NUCLEAR_INPUT, NUCLEAR_OUTPUT
+
+    input_path = Path(args.input or default_input)
+    output_dir = Path(args.output or default_output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Opening {input_path}")

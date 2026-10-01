@@ -31,7 +31,9 @@ from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.colors import BoundaryNorm, ListedColormap
 import numpy as np
 import pandas as pd
 from scipy.ndimage import gaussian_filter
@@ -435,6 +437,55 @@ def figure_community_outlines(df, dapi):
     plt.close(fig)
 
 
+def figure_cluster_hexmap(df, dapi):
+    """Single hexbin map of all k-means clusters over the DAPI tissue image.
+
+    One hexagon per spatial bin, filled with the colour of the DOMINANT cluster in that bin (the
+    cluster with the most cells there), so the hexes are non-overlapping and each tile of the tissue
+    is a single solid colour. Debris clusters are grey. Sized to match the community outlines map
+    (10x10). The hex grid itself reflects density: a hex only appears where cells are present.
+    """
+    use_img = dapi is not None
+    x = (df["x"] / DOWNSAMPLE if use_img else df["x"]).to_numpy()
+    y = (df["y"] / DOWNSAMPLE if use_img else df["y"]).to_numpy()
+
+    clusters = sorted(df["kmeans_cluster"].unique())
+    cmap_src = plt.get_cmap("tab10")
+    cluster_colors = {c: cmap_src(i) for i, c in enumerate(clusters)}
+    for c in DEBRIS_CLUSTERS:
+        cluster_colors[c] = (0.7, 0.7, 0.7)  # debris -> grey
+
+    labels = df["kmeans_cluster"].to_numpy().astype(float)
+
+    def dominant(vals):
+        """Most frequent cluster label among the cells in one hex (mode)."""
+        counts = np.bincount(np.asarray(vals, dtype=int))
+        return int(np.argmax(counts))
+
+    # Discrete colormap: one colour per cluster, in label order 0..9.
+    cmap = ListedColormap([cluster_colors[c] for c in clusters])
+    bounds = np.arange(len(clusters) + 1) - 0.5
+    norm = BoundaryNorm(bounds, cmap.N)
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    imshow_tissue(ax, dapi)
+    ax.hexbin(x, y, C=labels, reduce_C_function=dominant, cmap=cmap, norm=norm,
+              gridsize=160, mincnt=1, edgecolors="none", alpha=0.9)
+    if not use_img:
+        ax.set_aspect("equal")
+    ax.set_title(f"k-means clusters over the tissue image ({len(clusters)} clusters)", fontsize=11)
+    handles = [
+        mpatches.Patch(facecolor=cluster_colors[c], edgecolor="none",
+                       label=f"{int(c)}: {CLUSTER_NAMES[c]}")
+        for c in clusters
+    ]
+    ax.legend(handles=handles, fontsize=7, ncol=2, loc="upper right")
+    ax.tick_params(labelsize=7)
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "cluster_hexmap.png", dpi=150)
+    plt.close(fig)
+
+
 def load_sweep_data():
     """Load CellSurvey's community sweep outputs (local CSVs). Returns the sweep dict, or None on error."""
     try:
@@ -559,6 +610,10 @@ def write_report(df, prof, top, sizes, comp, sweep_info, image_overlays):
         lines.append("Where each cluster sits and where cells positive for each lineage marker sit (points only;\n"
                      "the tissue image background was skipped because Z: was unavailable):\n")
     lines.append("![Spatial map of each k-means cluster](out_overview/spatial_cluster_maps.png)\n")
+    lines.append("The single map below shows **all clusters at once** (one colour per cluster, debris clusters\n"
+                 "in grey) so the spatial layout of the cell types is visible without flipping between the\n"
+                 "per-cluster panels above:\n")
+    lines.append("![Hexbin map of all k-means clusters over the tissue image](out_overview/cluster_hexmap.png)\n")
     lines.append("![Spatial map of cells positive for each lineage marker](out_overview/spatial_lineage_maps.png)\n")
     lines.append("## 3. Neighbourhoods / communities\n")
     lines.append("Communities are built by the CellSurvey pipeline in two steps: it draws a network of\n"
@@ -700,6 +755,7 @@ def main():
 
     print("Figure 2: spatial maps ...")
     figure_spatial_maps(df, dapi)
+    figure_cluster_hexmap(df, dapi)
 
     print("Figure 3: communities ...")
     comp = figure_community_composition(df)
