@@ -44,6 +44,12 @@ nothing in the public repo runs truly out of the box anymore. `cbias`/`trello` r
 since their config files still work in a local checkout that has them. Passing `--config bioimage` selects
 paths (`./inputs/report/`, `./inputs/images/`) that do not exist in this repository.
 
+> **Pending split (handoff):** the CellSurvey *analysis* work — especially
+> `explorations/cellsurvey_wholecell/` (whole-cell overview + thymus feasibility) — has outgrown this
+> repo and is slated to move into its own project (`CellSurveyThymusAnalysis`). See **`CLONE_PLAN.md`**
+> for the full plan: what moves, what stays, the `docs/DEVELOPMENT_LOG.md` decision, and the rename
+> surface. Do not start new CellSurvey *analysis* work here until that split is executed.
+
 ## Commands
 
 Dependency management is via **pixi**, not pip/requirements.txt (the README's `pip install -r
